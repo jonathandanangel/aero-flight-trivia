@@ -129,7 +129,30 @@ class AudioManager {
   }
 
   setTempoMultiplier(multiplier: number) {
-    this.tempoMultiplier = Math.min(2, Math.max(0.75, multiplier));
+    this.tempoMultiplier = Math.min(3, Math.max(0.75, multiplier));
+  }
+
+  /** Select one of the five escalating Aerodynamics Extreme turbulence tracks (0-4). */
+  setExtremeTrack(index: number) {
+    const next = Math.min(SUPERSONIC_TRACKS.length - 1, Math.max(0, Math.round(index)));
+    if (next === this.extremeTrack) return;
+    this.extremeTrack = next;
+    this.step = 0;
+    if (!this.ctx || !this.musicGain) return;
+    const t = this.ctx.currentTime;
+    this.musicGain.gain.setTargetAtTime(0.02, t, 0.12);
+    window.setTimeout(() => {
+      if (!this.ctx || !this.musicGain) return;
+      this.musicGain.gain.setTargetAtTime(this.settings.music * 0.35, this.ctx.currentTime, 0.25);
+    }, 260);
+  }
+
+  private get activePreset() {
+    if (this.genre === "supersonic") {
+      const track = SUPERSONIC_TRACKS[this.extremeTrack]!;
+      return { bpm: track.bpm, root: track.root, scale: track.scale, wave: track.wave, pulse: track.pulse };
+    }
+    return GENRE_PRESETS[this.genre];
   }
 
   startMusic() {
@@ -137,7 +160,7 @@ class AudioManager {
     if (!this.ctx || this.loopTimer !== null) return;
     this.resume();
     const tick = () => {
-      const preset = GENRE_PRESETS[this.genre];
+      const preset = this.activePreset;
       const beat = 60000 / (preset.bpm * this.tempoMultiplier) / 2;
       this.playStep();
       this.loopTimer = window.setTimeout(tick, beat);
