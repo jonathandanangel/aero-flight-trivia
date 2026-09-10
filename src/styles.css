@@ -882,5 +882,5 @@
 
 .nerd-brain-flyaway {
   animation: nerd-brain-flyaway 2.4s ease-in-out forwards;
-  filter: drop-shadow(0 0 18px hsl(var(--magenta) / 0.7));
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--magenta) 70%, transparent));
 }
