@@ -175,8 +175,45 @@ class AudioManager {
     if ((this.genre === "breakbeat" || this.genre === "chiptune") && this.step % 2 === 1) {
       this.noiseBurst(0.06, 1800, 0.09, bus);
     }
+
+    // supersonic: driving kick, hi-hat and rushing turbulence noise
+    if (this.genre === "supersonic") {
+      if (this.step % 2 === 0) {
+        const kick = ctx.createOscillator();
+        const kickGain = ctx.createGain();
+        kick.type = "sine";
+        kick.frequency.setValueAtTime(140, now);
+        kick.frequency.exponentialRampToValueAtTime(42, now + 0.13);
+        kickGain.gain.setValueAtTime(0.32 * this.intensity, now);
+        kickGain.gain.exponentialRampToValueAtTime(0.0008, now + 0.18);
+        kick.connect(kickGain).connect(bus);
+        kick.start(now);
+        kick.stop(now + 0.2);
+      } else {
+        this.noiseBurst(0.045, 7200, 0.08 * this.intensity, bus);
+      }
+      // turbulent air rush sweeping every bar
+      if (this.step % 8 === 0) {
+        this.noiseBurst(1.1, 420 + Math.random() * 900, 0.16 * this.intensity, bus);
+      }
+      // shock-wave shriek
+      if (this.step % 16 === 7) {
+        const shriek = ctx.createOscillator();
+        const sg = ctx.createGain();
+        shriek.type = "sawtooth";
+        shriek.frequency.setValueAtTime(900, now);
+        shriek.frequency.exponentialRampToValueAtTime(2600, now + 0.5);
+        sg.gain.setValueAtTime(0, now);
+        sg.gain.linearRampToValueAtTime(0.05 * this.intensity, now + 0.08);
+        sg.gain.exponentialRampToValueAtTime(0.0006, now + 0.6);
+        shriek.connect(sg).connect(bus);
+        shriek.start(now);
+        shriek.stop(now + 0.65);
+      }
+    }
     this.step += 1;
   }
+
 
   private noiseBurst(duration: number, filterHz: number, level: number, bus: AudioNode) {
     const ctx = this.ctx;
