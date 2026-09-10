@@ -266,7 +266,7 @@ export function AeroGrid() {
   const gainRecall = React.useCallback(() => {
     setProgress((p) => {
       const next = Math.min(MAX_HP, p.recoveryLength + 3);
-      if (next > 11) setOverloadBurst((burst) => burst + 1);
+      if (next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
       return { recoveryLength: next, recallWins: p.recallWins + 1 };
     });
   }, [setProgress]);
