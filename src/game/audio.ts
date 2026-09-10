@@ -11,6 +11,10 @@ export type SoundName =
   | "recall-note"
   | "recall-win"
   | "recall-fail"
+  | "cycle-start"
+  | "cycle-turn"
+  | "cycle-crash"
+  | "cycle-win"
   | "launch";
 
 export interface AudioSettings {
@@ -42,6 +46,7 @@ class AudioManager {
   private step = 0;
   private genre: AudioGenre = "synthwave";
   private intensity = 0.6;
+  private tempoMultiplier = 1;
   settings: AudioSettings = { master: 0.7, music: 0.5, effects: 0.8, muted: false };
 
   get ready() {
@@ -90,13 +95,17 @@ class AudioManager {
     }, 500);
   }
 
+  setTempoMultiplier(multiplier: number) {
+    this.tempoMultiplier = Math.min(2, Math.max(0.75, multiplier));
+  }
+
   startMusic() {
     this.init();
     if (!this.ctx || this.loopTimer !== null) return;
     this.resume();
     const tick = () => {
       const preset = GENRE_PRESETS[this.genre];
-      const beat = 60000 / preset.bpm / 2;
+      const beat = 60000 / (preset.bpm * this.tempoMultiplier) / 2;
       this.playStep();
       this.loopTimer = window.setTimeout(tick, beat);
     };
@@ -227,6 +236,19 @@ class AudioManager {
         break;
       case "recall-fail":
         this.blip([300, 220, 150, 90], 0.26, "sawtooth", 0.16);
+        break;
+      case "cycle-start":
+        this.blip([110, 165, 220, 440], 0.24, "square", 0.18);
+        break;
+      case "cycle-turn":
+        this.blip([660 + extra * 40], 0.045, "square", 0.07);
+        break;
+      case "cycle-crash":
+        this.noiseBurst(0.75, 420, 0.2, this.fxGain!);
+        this.blip([260, 150, 80], 0.3, "sawtooth", 0.18);
+        break;
+      case "cycle-win":
+        this.blip([392, 523, 659, 784, 1046], 0.15, "square", 0.16);
         break;
       case "launch":
         this.noiseBurst(2.4, 260, 0.22, this.fxGain!);

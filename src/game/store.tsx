@@ -24,6 +24,8 @@ export interface Progress {
   answeredIds: string[];
   recallWins: number;
   recallLosses: number;
+  /** Highest 15-correct Grid Run milestone completed. */
+  lightCycleMilestone: number;
   gameOver: boolean;
   completed: boolean;
 }
@@ -58,6 +60,7 @@ export const defaultProgress: Progress = {
   answeredIds: [],
   recallWins: 0,
   recallLosses: 0,
+  lightCycleMilestone: 0,
   gameOver: false,
   completed: false,
 };

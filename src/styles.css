@@ -70,6 +70,9 @@
   --magenta: #da4dff;
   --moon: #eaf7ff;
   --amber: #ffc857;
+  --sky-day: #185b88;
+  --sky-sunset: #b34776;
+  --cycle-red: #ff633d;
   --panel: rgba(7, 18, 37, 0.82);
   --panel-border: rgba(37, 217, 255, 0.35);
 
@@ -329,4 +332,40 @@
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
+}
+
+.lightcycle-shell {
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--deepblue) 90%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--midnight) 80%, transparent),
+    0 0 42px color-mix(in srgb, var(--neon-cyan) 24%, transparent),
+    inset 0 0 35px color-mix(in srgb, var(--flight-blue) 10%, transparent);
+}
+
+.lightcycle-shell canvas {
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+.scene-fade {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  background: var(--midnight);
+  animation: scene-fade-pulse 820ms ease-in-out both;
+}
+
+@keyframes scene-fade-pulse {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  45%,
+  55% {
+    opacity: 1;
+  }
 }
