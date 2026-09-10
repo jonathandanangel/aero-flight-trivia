@@ -1,5 +1,16 @@
 import * as React from "react";
 import brainAsset from "@/assets/winged-brain.png.asset.json";
+import cyanBrainAsset from "@/assets/winged-brain-cyan.png.asset.json";
+import solarBrainAsset from "@/assets/winged-brain-solar.png.asset.json";
+import voltBrainAsset from "@/assets/winged-brain-volt.png.asset.json";
+
+const originalVariant = { src: brainAsset.url, theme: "magenta" } as const;
+const variants = [
+  originalVariant,
+  { src: cyanBrainAsset.url, theme: "cyan" },
+  { src: solarBrainAsset.url, theme: "solar" },
+  { src: voltBrainAsset.url, theme: "volt" },
+] as const;
 
 type Flyer = {
   id: number;
@@ -9,8 +20,12 @@ type Flyer = {
   duration: number;
   delay: number;
   rotation: number;
-  hue: number;
+  variant: (typeof variants)[number];
 };
+
+function selectVariant(index: number): (typeof variants)[number] {
+  return variants[index % variants.length] ?? originalVariant;
+}
 
 function createFlyers(seed: number): Flyer[] {
   const count = 1 + (seed % 3);
@@ -25,7 +40,7 @@ function createFlyers(seed: number): Flyer[] {
       duration: 1500 + ((n * 13) % 1050),
       delay: index * 170,
       rotation: -14 + ((n * 17) % 29),
-      hue: index === 0 ? 0 : (n * 19) % 70 - 35,
+      variant: selectVariant(seed * 3 + index * 5),
     };
   });
 }
@@ -36,9 +51,10 @@ export function BrainCelebration({ burst, reducedMotion }: { burst: number; redu
   if (burst === 0) return null;
 
   if (reducedMotion) {
+    const variant = selectVariant(burst);
     return (
-      <div key={burst} className="brain-celebration brain-celebration-static" aria-hidden>
-        <img src={brainAsset.url} alt="" />
+      <div key={burst} className={`brain-celebration brain-celebration-static brain-theme-${variant.theme}`} aria-hidden>
+        <img src={variant.src} alt="" />
       </div>
     );
   }
@@ -48,9 +64,9 @@ export function BrainCelebration({ burst, reducedMotion }: { burst: number; redu
       {flyers.map((flyer) => (
         <img
           key={flyer.id}
-          src={brainAsset.url}
+          src={flyer.variant.src}
           alt=""
-          className="brain-flyer"
+          className={`brain-flyer brain-theme-${flyer.variant.theme}`}
           style={
             {
               "--brain-size": `${flyer.size}px`,
@@ -59,7 +75,6 @@ export function BrainCelebration({ burst, reducedMotion }: { burst: number; redu
               "--brain-duration": `${flyer.duration}ms`,
               "--brain-delay": `${flyer.delay}ms`,
               "--brain-rotation": `${flyer.rotation}deg`,
-              "--brain-hue": `${flyer.hue}deg`,
             } as React.CSSProperties
           }
         />
