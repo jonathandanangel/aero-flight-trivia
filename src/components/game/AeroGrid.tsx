@@ -285,11 +285,15 @@ export function AeroGrid() {
       setScreen("gameover");
       return;
     }
-    setProgress((p) => ({
-      recoveryLength: nextRecoveryLength(p.recoveryLength, won),
+    setProgress((p) => {
+      const next = nextRecoveryLength(p.recoveryLength, won);
+      if (next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
+      return {
+      recoveryLength: next,
       recallWins: p.recallWins + (won ? 1 : 0),
       recallLosses: p.recallLosses + (won ? 0 : 1),
-    }));
+      };
+    });
     if (pendingIntermission) {
       enterPendingIntermission();
       return;
