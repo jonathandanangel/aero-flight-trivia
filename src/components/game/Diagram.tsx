@@ -219,7 +219,7 @@ export interface DiagramProps {
   /** Highlighted target ids (selected / answered). */
   selected?: string[];
   labels?: Record<string, string>;
-  onTargetClick?: (id: string) => void;
+  onTargetClick?: ((id: string) => void) | undefined;
   correctId?: string;
   revealed?: boolean;
   className?: string;
