@@ -142,10 +142,16 @@ export function AeroGrid() {
 
   React.useEffect(() => {
     if (mode === "extreme") {
+      // Every 3 completed questions the turbulent track rotates and escalates.
+      const stage = Math.floor(localIndex / 3);
+      const track = stage % 5;
+      const cycle = Math.floor(stage / 5);
       audio.setGenre("supersonic", 1);
-      audio.setTempoMultiplier(1.5);
+      audio.setExtremeTrack(track);
+      audio.setTempoMultiplier(Math.min(2.6, 1.3 + track * 0.16 + cycle * 0.12));
       return () => {
         audio.setTempoMultiplier(1);
+        audio.setExtremeTrack(0);
       };
     }
     if (!question) return undefined;
