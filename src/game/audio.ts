@@ -180,7 +180,8 @@ class AudioManager {
     const ctx = this.ctx;
     const bus = this.musicGain;
     if (!ctx || !bus) return;
-    const preset = GENRE_PRESETS[this.genre];
+    const preset = this.activePreset;
+    const turbulence = this.genre === "supersonic" ? SUPERSONIC_TRACKS[this.extremeTrack]!.turbulence : 1;
     const now = ctx.currentTime;
     const degree = preset.scale[this.step % preset.scale.length] ?? 0;
     const octave = this.step % 8 === 0 ? 12 : this.step % 5 === 0 ? 7 : 0;
