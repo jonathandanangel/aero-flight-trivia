@@ -315,7 +315,9 @@ export function AeroGrid() {
             <section className="panel space-y-5 p-5">
               <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                 <span className="text-cyan">{setTitle(question.setId)}</span>
-                <span>{question.category}</span>
+                {question.category.toLowerCase() !== setTitle(question.setId).toLowerCase() && (
+                  <span>{question.category}</span>
+                )}
                 <span className="text-amber">Difficulty {question.difficulty}</span>
               </div>
 
