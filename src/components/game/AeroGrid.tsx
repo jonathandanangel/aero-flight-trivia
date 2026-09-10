@@ -148,8 +148,9 @@ export function AeroGrid() {
         audio.setTempoMultiplier(1);
       };
     }
-    if (!question) return;
+    if (!question) return undefined;
     audio.setGenre(question.audioGenre, 0.5 + Math.min(0.4, progress.streak * 0.05));
+    return undefined;
   }, [question, progress.streak, mode]);
 
 
