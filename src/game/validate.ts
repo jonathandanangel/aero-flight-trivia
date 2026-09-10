@@ -25,13 +25,13 @@ function interactionDataOk(q: Question): boolean {
       return (
         !!q.choices &&
         q.choices.length === 4 &&
-        q.choices.includes(q.correctAnswer[0])
+        q.choices.includes(q.correctAnswer[0] ?? "")
       );
     case "compare-select":
       return (
         !!q.choices &&
         q.choices.length >= 2 &&
-        q.choices.includes(q.correctAnswer[0])
+        q.choices.includes(q.correctAnswer[0] ?? "")
       );
     case "hotspot":
       return (
@@ -55,7 +55,7 @@ function interactionDataOk(q: Question): boolean {
       return (
         !!q.acceptedAnswers &&
         q.acceptedAnswers.length > 0 &&
-        q.acceptedAnswers.includes(q.correctAnswer[0].toLowerCase())
+        q.acceptedAnswers.includes((q.correctAnswer[0] ?? "").toLowerCase())
       );
     default:
       return false;
