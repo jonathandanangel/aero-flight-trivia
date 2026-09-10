@@ -10,6 +10,17 @@ import notes3 from "@/assets/notes-122957.png.asset.json";
 import notes4 from "@/assets/notes-123007.png.asset.json";
 import notes5 from "@/assets/notes-123014.png.asset.json";
 import notes6 from "@/assets/notes-123020.png.asset.json";
+import basicAerodynamics from "@/assets/basic-aerodynamics.png.asset.json";
+import lectureB1 from "@/assets/lecture-b1.png.asset.json";
+import lectureB2 from "@/assets/lecture-b2.png.asset.json";
+import lectureB3 from "@/assets/lecture-b3.png.asset.json";
+import lectureB4 from "@/assets/lecture-b4.png.asset.json";
+import lectureB5 from "@/assets/lecture-b5.png.asset.json";
+import lectureB6 from "@/assets/lecture-b6.png.asset.json";
+import lectureB7 from "@/assets/lecture-b7.png.asset.json";
+import lectureB8 from "@/assets/lecture-b8.png.asset.json";
+import lectureB9 from "@/assets/lecture-b9.png.asset.json";
+import lectureB10 from "@/assets/lecture-b10.png.asset.json";
 import lectureVideo from "@/assets/briefing-lecture.mp4.asset.json";
 import nerdBrain from "@/assets/nerd-brain.png.asset.json";
 import rudderSheet from "@/assets/vertical-stabilizer-rudder.png.asset.json";
@@ -19,6 +30,17 @@ const SLIDES = [
   { url: wingForces.url, title: "Wing Forces and Moments", alt: "Three-dimensional wing with lift, drag and side forces plus roll, pitch and yaw moments" },
   { url: forceVectors.url, title: "Force Vectors on an Airfoil", alt: "Airfoil showing lift, drag and resultant force at the center of pressure" },
   { url: airfoilGeometry.url, title: "Airfoil Geometry", alt: "Airfoil geometry: leading edge, chord line, mean camber line, maximum thickness" },
+  { url: basicAerodynamics.url, title: "Review of Basic Aerodynamics", alt: "Lecture notes reviewing lift, drag, thrust, weight and flowfield properties" },
+  { url: lectureB1.url, title: "Flow Point Properties", alt: "Lecture notes defining flow pressure, density, temperature and velocity" },
+  { url: lectureB2.url, title: "Steady Flow, Units & Perfect Gas", alt: "Lecture notes covering steady flow, physical units and the perfect-gas equation of state" },
+  { url: lectureB3.url, title: "Compressibility & Bernoulli's Equation", alt: "Lecture notes covering incompressible and compressible flow and Bernoulli's equation" },
+  { url: lectureB4.url, title: "Momentum, Speed of Sound & Mach Number", alt: "Lecture notes covering momentum, speed of sound and Mach number" },
+  { url: lectureB5.url, title: "Mach Regimes & Standard Atmosphere", alt: "Lecture notes covering Mach regimes, dynamic pressure and the standard atmosphere" },
+  { url: lectureB6.url, title: "Standard Atmosphere Ratios", alt: "Lecture notes defining theta, sigma and delta standard-atmosphere ratios" },
+  { url: lectureB7.url, title: "Fundamentals of Airfoils", alt: "Class 03 notes on two-dimensional infinite wings, pressure and shear stress" },
+  { url: lectureB8.url, title: "Lift Force & Pressure Distributions", alt: "Lecture notes explaining lift force and pressure distributions around an airfoil" },
+  { url: lectureB9.url, title: "Bernoulli Lift & Skin Friction Drag", alt: "Lecture notes explaining the Bernoulli lift mechanism and skin-friction drag" },
+  { url: lectureB10.url, title: "Skin Friction & Pressure Drag", alt: "Lecture notes covering skin-friction drag coefficient, pressure drag and flow separation" },
   { url: notes1.url, title: "Notes 1 — Profile Drag & Airfoil Terminology", alt: "Lecture notes: profile drag, chord line, mean camber line, max camber" },
   { url: notes2.url, title: "Notes 2 — Thickness, AoA & Coefficients", alt: "Lecture notes: thickness, angle of attack, lift drag and moment coefficients" },
   { url: notes3.url, title: "Notes 3 — Coefficient Definitions", alt: "Lecture notes: CL, CD, CM definitions and per unit span coefficients" },
