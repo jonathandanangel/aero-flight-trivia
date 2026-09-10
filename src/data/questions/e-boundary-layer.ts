@@ -569,7 +569,7 @@ export const chapterEQuestions: QuestionSeed[] = [
     interactionType: "equation-builder",
     prompt: "Build the Reynolds number formula in terms of density, velocity, length, and dynamic viscosity.",
     formula: "Re = ρVL⁄μ",
-    sentenceParts: ["Re = ", "V", "L ⁄ ", ""],
+    sentenceParts: ["Re = ", "VL ⁄ ", ""],
     draggableTokens: ["ρ", "μ", "ν", "α"],
     correctAnswer: ["ρ", "μ"],
     explanation: "The Reynolds number is defined as Re = ρVL/μ, where ρ is density, V is velocity, L is a characteristic length, and μ is dynamic viscosity; it also equals VL/ν using kinematic viscosity ν.",

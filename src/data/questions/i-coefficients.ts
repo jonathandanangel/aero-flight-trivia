@@ -10,7 +10,7 @@ export const chapterIQuestions: QuestionSeed[] = [
     interactionType: "equation-builder",
     prompt: "Build the equation for dynamic pressure in terms of density and velocity.",
     formula: "q = ½ρV²",
-    sentenceParts: ["q = ", "·", "·", ""],
+    sentenceParts: ["q = ", "·", ""],
     draggableTokens: ["½ρ", "V²", "ρV", "V", "μV²"],
     correctAnswer: ["½ρ", "V²"],
     explanation: "Dynamic pressure q = ½ρV² represents the kinetic energy per unit volume of the flow.",
