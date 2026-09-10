@@ -130,7 +130,7 @@ export function MemoryGauntlet({
           window.setTimeout(() => {
             if (stage === 3) audio.play("path-clear");
             setFlash(null);
-            setPhase("input");
+            setPhase(stage === 3 ? "fadeout" : "input");
           }, gap),
         );
         return;
