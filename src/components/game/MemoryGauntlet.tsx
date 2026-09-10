@@ -283,7 +283,7 @@ export function MemoryGauntlet({
                       y1={from.top}
                       x2={point.left}
                       y2={point.top}
-                      className="gauntlet-laser"
+                      className={cn("gauntlet-laser", fading && "gauntlet-laser-fade")}
                     />
                   );
                 })}
