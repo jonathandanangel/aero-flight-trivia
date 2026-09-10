@@ -110,6 +110,7 @@ export function AeroGrid() {
   const [extremeScore, setExtremeScore] = React.useState(0);
   const [overloadBurst, setOverloadBurst] = React.useState(0);
   const [psychedelicActive, setPsychedelicActive] = React.useState(false);
+  const [gauntletRecovery, setGauntletRecovery] = React.useState(false);
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
