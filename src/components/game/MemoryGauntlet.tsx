@@ -81,7 +81,8 @@ export function MemoryGauntlet({
   const [attempt, setAttempt] = React.useState(0);
   const [lives, setLives] = React.useState(3);
   const [score, setScore] = React.useState(0);
-  const [length, setLength] = React.useState(4);
+  // Sequence length tracks current recall HP: 14 HP means 14 links to remember.
+  const [length, setLength] = React.useState(() => Math.max(3, hp));
   const [phase, setPhase] = React.useState<Phase>("brief");
   const [step, setStep] = React.useState(0);
   const [flash, setFlash] = React.useState<number | null>(null);
@@ -205,7 +206,7 @@ export function MemoryGauntlet({
         return;
       }
       setStage((s) => (s + 1) as Stage);
-      setLength((l) => l + 1);
+      setLength(Math.max(3, hp));
       setAttempt((a) => a + 1);
       setPhase("brief");
       setStep(0);
@@ -216,7 +217,7 @@ export function MemoryGauntlet({
       onAbort(score);
       return;
     }
-    setLength((l) => Math.max(3, l - 1));
+    setLength(Math.max(3, hp));
     setAttempt((a) => a + 1);
     setPhase("brief");
     setStep(0);
@@ -228,7 +229,8 @@ export function MemoryGauntlet({
 
   // Preview lines draw during watch, fade during fadeout, then vanish for recall.
   const playbackLinks = phase === "watch" || phase === "fadeout" ? linkPoints(drawn) : [];
-  const tracedLinks = phase === "input" ? linkPoints(step + 1) : [];
+  // Only nodes the player has already clicked are linked — never the next one.
+  const tracedLinks = phase === "input" ? linkPoints(step) : [];
   const rainbow = stage === 3 && phase === "input" && !reducedMotion;
   const fading = phase === "fadeout";
 
@@ -247,7 +249,7 @@ export function MemoryGauntlet({
           <h2 className="font-display text-2xl text-cyan text-glow">{STAGE_TITLES[stage]}</h2>
           <p className="font-mono text-sm text-muted-foreground">{STAGE_BLURBS[stage]}</p>
           <p className="font-mono text-xs text-amber">
-            Sequence length {length} · clear for +3, fail for -3 and one life
+            Sequence length {length} (matches your HP) · clear for +3 HP, fail for -3 HP and one life
           </p>
           <button
             type="button"

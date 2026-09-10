@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { extremeQuestions } from "@/game/extreme";
 import { BrainCelebration } from "./BrainCelebration";
 import { BrainOverload } from "./BrainOverload";
-import { HealthBar, MAX_HP } from "./HealthBar";
+import { HealthBar } from "./HealthBar";
 import { MemoryGauntlet } from "./MemoryGauntlet";
 import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
@@ -277,11 +277,12 @@ export function AeroGrid() {
 
   const gainRecall = React.useCallback(() => {
     setProgress((p) => {
-      const next = Math.min(MAX_HP, p.recoveryLength + 3);
-      if (next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
+      const next = p.recoveryLength + 3;
+      if (next > 11) setOverloadBurst((burst) => burst + 1);
       return { recoveryLength: next, recallWins: p.recallWins + 1 };
     });
   }, [setProgress]);
+
 
   const damageRecall = React.useCallback(() => {
     setProgress((p) => ({
