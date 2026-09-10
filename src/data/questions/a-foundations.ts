@@ -377,7 +377,7 @@ export const chapterAQuestions: QuestionSeed[] = [
     interactionType: "equation-builder",
     prompt: "Build the equation of state relating air pressure p, density ρ, specific gas constant R, and absolute temperature T.",
     formula: "p = ρRT",
-    sentenceParts: ["p = ", " · ", " · "],
+    sentenceParts: ["p = ", " · ", " · ", ""],
     draggableTokens: ["ρ", "R", "T", "μ", "ν"],
     correctAnswer: ["ρ", "R", "T"],
     explanation: "The ideal (perfect) gas equation of state is p = ρRT, linking pressure, density, and temperature through the specific gas constant.",
