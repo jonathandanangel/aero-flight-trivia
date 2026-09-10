@@ -30,6 +30,7 @@ export type SoundName =
   | "stage-fail"
   | "gauntlet-start"
   | "brain-overload"
+  | "gunshot"
   | "launch";
 
 export interface AudioSettings {
