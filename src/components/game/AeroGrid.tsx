@@ -519,6 +519,7 @@ export function AeroGrid() {
             score={mode === "extreme" ? extremeScore : progress.score}
             streak={progress.streak}
             recoveryLength={progress.recoveryLength}
+            glow={mode === "extreme"}
             onPause={() => setPaused(true)}
           />
 
