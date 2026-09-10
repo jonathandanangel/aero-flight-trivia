@@ -223,6 +223,92 @@
   }
 }
 
+.recall-evolved-field {
+  position: relative;
+  min-height: clamp(20rem, 52vw, 25rem);
+  border: 1px solid color-mix(in srgb, var(--magenta) 38%, transparent);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(color-mix(in srgb, var(--magenta) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--neon-cyan) 7%, transparent) 1px, transparent 1px),
+    color-mix(in srgb, var(--midnight) 76%, transparent);
+  background-size: 28px 28px;
+  box-shadow: inset 0 0 34px color-mix(in srgb, var(--magenta) 13%, transparent);
+}
+
+.recall-evolved-pad {
+  position: absolute;
+  width: clamp(2.75rem, 10vw, 4rem);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.recall-evolved-distracting:not(:disabled) {
+  animation: recall-neon-shift 880ms linear var(--recall-delay) infinite;
+}
+
+.recall-evolved-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--midnight) 82%, transparent);
+  pointer-events: none;
+}
+
+.recall-evolved-splash span {
+  color: var(--magenta);
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 10vw, 5.5rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-shadow:
+    0 0 8px var(--magenta),
+    0 0 22px var(--magenta),
+    0 0 44px var(--flight-blue);
+  animation: recall-evolved-arrive 1.15s ease-out both;
+}
+
+@keyframes recall-evolved-arrive {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  32%,
+  78% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes recall-neon-shift {
+  0% {
+    border-color: var(--neon-cyan);
+    background-color: color-mix(in srgb, var(--neon-cyan) 45%, var(--deepblue));
+    box-shadow: 0 0 16px color-mix(in srgb, var(--neon-cyan) 76%, transparent);
+  }
+  33% {
+    border-color: var(--magenta);
+    background-color: color-mix(in srgb, var(--magenta) 48%, var(--deepblue));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--magenta) 78%, transparent);
+  }
+  66% {
+    border-color: var(--amber);
+    background-color: color-mix(in srgb, var(--amber) 44%, var(--deepblue));
+    box-shadow: 0 0 16px color-mix(in srgb, var(--amber) 74%, transparent);
+  }
+  100% {
+    border-color: var(--mint);
+    background-color: color-mix(in srgb, var(--mint) 45%, var(--deepblue));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--mint) 78%, transparent);
+  }
+}
+
 .brain-celebration {
   position: fixed;
   inset: 0;

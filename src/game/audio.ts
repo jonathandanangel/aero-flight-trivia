@@ -9,6 +9,7 @@ export type SoundName =
   | "wrong"
   | "whoosh"
   | "recall-note"
+  | "recall-note-fast"
   | "recall-win"
   | "recall-fail"
   | "cycle-start"
@@ -237,6 +238,9 @@ class AudioManager {
         break;
       case "recall-note":
         this.blip([330 * Math.pow(2, extra / 12)], 0.24, "square", 0.16);
+        break;
+      case "recall-note-fast":
+        this.blip([392 * Math.pow(2, extra / 12)], 0.13, "square", 0.17);
         break;
       case "recall-win":
         this.blip([659, 784, 988, 1319], 0.18, "square", 0.18);
