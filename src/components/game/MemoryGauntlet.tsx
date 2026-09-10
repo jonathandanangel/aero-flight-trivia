@@ -161,7 +161,7 @@ export function MemoryGauntlet({
       setScore((s) => s + 3);
       audio.play("stage-clear");
       setMessage(stage === 3 ? "PATH LOCKED · +3" : "STAGE CLEAR · +3");
-      if (hp + 3 > 11) onOvercharge();
+      onOvercharge();
     } else {
       setScore((s) => s - 3);
       audio.play("stage-fail");

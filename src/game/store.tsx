@@ -171,6 +171,8 @@ export function useGame() {
   return ctx;
 }
 
-/** 11 -> 8 -> 5 -> 2 and back up again, per the recovery rules. */
+/** Recall HP ladder: 2 -> 5 -> 8 -> 11, with an overcharged 14 ceiling. */
+export const MAX_RECALL_HP = 14;
+
 export const nextRecoveryLength = (current: number, won: boolean) =>
-  won ? Math.min(11, current + 3) : Math.max(2, current - 3);
+  won ? Math.min(MAX_RECALL_HP, current + 3) : Math.max(2, current - 3);
