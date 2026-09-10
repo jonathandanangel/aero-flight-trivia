@@ -11,6 +11,20 @@ export interface ValidationRule {
 const hasDupes = (values: string[]) =>
   new Set(values.map((v) => v.trim().toLowerCase())).size !== values.length;
 
+const scienceChapterIds = new Set([
+  "foundations",
+  "streamlines",
+  "momentum",
+  "viscosity",
+  "boundary-layer",
+  "airfoil",
+  "forces",
+  "drag",
+  "coefficients",
+  "mach",
+  "high-speed",
+]);
+
 function interactionDataOk(q: Question): boolean {
   switch (q.interactionType) {
     case "drag-drop":
@@ -97,9 +111,9 @@ export function runValidation(): ValidationRule[] {
     },
     {
       name: "Every question is aerodynamics science",
-      passed: allQuestions.every((q) => q.chapterId !== "impact" && q.category !== "Legacy Impact"),
-      failingIds: collect((q) => q.chapterId === "impact" || q.category === "Legacy Impact"),
-      detail: "no legacy non-science content",
+      passed: allQuestions.every((q) => scienceChapterIds.has(q.chapterId)),
+      failingIds: collect((q) => !scienceChapterIds.has(q.chapterId)),
+      detail: "approved science chapter metadata",
     },
     {
       name: "Every question has a correct answer",
