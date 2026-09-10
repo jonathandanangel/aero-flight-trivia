@@ -373,6 +373,9 @@ export function AeroGrid() {
             setShowHint(false);
             setExtremeScore(0);
             setPendingIntermission(null);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
             setScreen("gauntlet");
           }}
           onSettings={() => setScreen("settings")}
