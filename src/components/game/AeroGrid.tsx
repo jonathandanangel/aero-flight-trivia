@@ -264,6 +264,11 @@ export function AeroGrid() {
       advance();
       return;
     }
+    if (mode === "extreme") {
+      setGauntletRecovery(true);
+      setScreen("gauntlet");
+      return;
+    }
     setPhase("recall");
   };
 
