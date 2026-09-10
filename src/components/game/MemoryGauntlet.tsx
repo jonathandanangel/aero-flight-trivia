@@ -264,11 +264,13 @@ export function MemoryGauntlet({
               ? stage === 3
                 ? "Laser path drawing"
                 : "Watch the sequence"
-              : phase === "input"
-                ? `Reproduce it (${step}/${sequence.length})`
-                : won
-                  ? "Trial cleared"
-                  : "Trial failed"}
+              : phase === "fadeout"
+                ? "Memorize the path"
+                : phase === "input"
+                  ? `Reproduce it (${step}/${sequence.length})`
+                  : won
+                    ? "Trial cleared"
+                    : "Trial failed"}
           </p>
 
           <div className={cn("gauntlet-field", stage === 3 && "gauntlet-field-path", rainbow && "gauntlet-rainbow")}>
