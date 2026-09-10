@@ -9,10 +9,12 @@ export function WorldBackground({
   progress,
   scanlines,
   reducedMotion,
+  bloodMoon,
 }: {
   progress: number;
   scanlines: boolean;
   reducedMotion: boolean;
+  bloodMoon: boolean;
 }) {
   const phase = Math.min(1, Math.max(0, progress));
   const sky =
@@ -25,9 +27,14 @@ export function WorldBackground({
   return (
     <div className={cn("pointer-events-none fixed inset-0 -z-10", scanlines && "scanlines")} aria-hidden>
       <div className="absolute inset-0" style={{ background: sky }} />
+      {bloodMoon && <div className="blood-moon-atmosphere absolute inset-0" />}
       <div
-        className="absolute right-[12%] top-[10%] h-24 w-24 rounded-full bg-moon/90 blur-[1px]"
-        style={{ boxShadow: "0 0 60px rgba(234,247,255,0.45)" }}
+        className={cn(
+          "absolute right-[12%] top-[10%] h-24 w-24 rounded-full blur-[1px]",
+          bloodMoon ? "blood-moon" : "bg-moon/90",
+          bloodMoon && !reducedMotion && "blood-moon-awakening",
+        )}
+        style={bloodMoon ? undefined : { boxShadow: "0 0 60px rgba(234,247,255,0.45)" }}
       />
       {[0, 1, 2].map((i) => (
         <div
@@ -52,6 +59,7 @@ export function WorldBackground({
         </g>
         <line x1="0" y1="299" x2="1200" y2="299" stroke="var(--color-magenta)" strokeWidth="2" />
       </svg>
+      {bloodMoon && <div className="blood-moon-horizon absolute inset-x-0 bottom-0 h-[30vh]" />}
       {!reducedMotion &&
         [0, 1].map((i) => (
           <div

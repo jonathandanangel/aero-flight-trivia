@@ -28,6 +28,8 @@ export interface Progress {
   lightCycleMilestone: number;
   /** Highest 50-question intermission checkpoint completed (150, 200, 250, or 300). */
   intermissionQuestionCheckpoint: number;
+  /** Permanently activated after the first evolved Electric Recall reveal. */
+  bloodMoonAwakened: boolean;
   gameOver: boolean;
   completed: boolean;
 }
@@ -64,6 +66,7 @@ export const defaultProgress: Progress = {
   recallLosses: 0,
   lightCycleMilestone: 0,
   intermissionQuestionCheckpoint: 0,
+  bloodMoonAwakened: false,
   gameOver: false,
   completed: false,
 };

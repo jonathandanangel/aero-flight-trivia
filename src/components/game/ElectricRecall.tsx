@@ -44,11 +44,13 @@ export function ElectricRecall({
   length,
   questionNumber,
   reducedMotion,
+  onEvolved,
   onResult,
 }: {
   length: number;
   questionNumber: number;
   reducedMotion: boolean;
+  onEvolved: () => void;
   onResult: (won: boolean) => void;
 }) {
   const evolved = questionNumber >= 150;
@@ -69,9 +71,13 @@ export function ElectricRecall({
 
   React.useEffect(() => {
     if (phase !== "splash") return;
-    const timer = window.setTimeout(() => setPhase("watch"), reducedMotion ? 650 : 1250);
+    audio.play("recall-evolved");
+    const timer = window.setTimeout(() => {
+      onEvolved();
+      setPhase("watch");
+    }, reducedMotion ? 650 : 1250);
     return () => window.clearTimeout(timer);
-  }, [phase, reducedMotion]);
+  }, [phase, reducedMotion, onEvolved]);
 
   React.useEffect(() => {
     if (phase !== "watch") return;

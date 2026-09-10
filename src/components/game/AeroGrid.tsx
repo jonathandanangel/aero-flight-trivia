@@ -101,6 +101,10 @@ export function AeroGrid() {
   const [sceneFading, setSceneFading] = React.useState(false);
   const [reviewIds, setReviewIds] = React.useState<string[]>([]);
 
+  const awakenBloodMoon = React.useCallback(() => {
+    setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
+  }, [setProgress]);
+
   const list = React.useMemo<Question[]>(() => {
     switch (mode) {
       case "campaign":
@@ -299,6 +303,7 @@ export function AeroGrid() {
         progress={worldProgress}
         scanlines={settings.scanlines}
         reducedMotion={settings.reducedMotion}
+        bloodMoon={progress.bloodMoonAwakened}
       />
 
       <BrainCelebration burst={celebrationBurst} reducedMotion={settings.reducedMotion} />
@@ -430,6 +435,7 @@ export function AeroGrid() {
               length={progress.recoveryLength}
               questionNumber={question.globalNumber}
               reducedMotion={settings.reducedMotion}
+              onEvolved={awakenBloodMoon}
               onResult={recallResult}
             />
           )}
