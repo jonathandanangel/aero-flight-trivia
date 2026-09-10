@@ -34,7 +34,8 @@ export type AudioGenre =
   | "chiptune"
   | "ambient-space"
   | "breakbeat"
-  | "retro-funk";
+  | "retro-funk"
+  | "supersonic";
 
 export interface DiagramTarget {
   /** Stable id for the hotspot / label slot. */

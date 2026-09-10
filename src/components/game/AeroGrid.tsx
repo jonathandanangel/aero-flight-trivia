@@ -141,9 +141,18 @@ export function AeroGrid() {
   const question = list[Math.min(index, list.length - 1)];
 
   React.useEffect(() => {
-    if (!question) return;
+    if (mode === "extreme") {
+      audio.setGenre("supersonic", 1);
+      audio.setTempoMultiplier(1.5);
+      return () => {
+        audio.setTempoMultiplier(1);
+      };
+    }
+    if (!question) return undefined;
     audio.setGenre(question.audioGenre, 0.5 + Math.min(0.4, progress.streak * 0.05));
-  }, [question, progress.streak]);
+    return undefined;
+  }, [question, progress.streak, mode]);
+
 
   const startAudio = () => {
     audio.init();
