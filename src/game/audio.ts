@@ -24,6 +24,12 @@ export type SoundName =
   | "maze-hit"
   | "maze-win"
   | "maze-lose"
+  | "path-link"
+  | "path-clear"
+  | "stage-clear"
+  | "stage-fail"
+  | "gauntlet-start"
+  | "brain-overload"
   | "launch";
 
 export interface AudioSettings {
@@ -287,6 +293,27 @@ class AudioManager {
       case "maze-lose":
         this.noiseBurst(0.6, 360, 0.16, this.fxGain!);
         this.blip([247, 165, 110], 0.26, "sawtooth", 0.15);
+        break;
+      case "path-link":
+        this.blip([1560 - extra * 40, 980 - extra * 30], 0.11, "sawtooth", 0.13);
+        this.noiseBurst(0.14, 3200, 0.05, this.fxGain!);
+        break;
+      case "path-clear":
+        this.blip([523, 784, 1046, 1568, 2093], 0.13, "square", 0.17);
+        break;
+      case "stage-clear":
+        this.blip([440, 660, 880, 1320], 0.16, "triangle", 0.17);
+        break;
+      case "stage-fail":
+        this.blip([392, 262, 175, 110], 0.24, "sawtooth", 0.16);
+        this.noiseBurst(0.5, 480, 0.12, this.fxGain!);
+        break;
+      case "gauntlet-start":
+        this.blip([98, 147, 220, 330, 494], 0.2, "sawtooth", 0.18);
+        break;
+      case "brain-overload":
+        this.blip([196, 294, 440, 659, 988, 1319], 0.22, "square", 0.19);
+        this.noiseBurst(1.6, 340, 0.2, this.fxGain!);
         break;
       case "launch":
         this.noiseBurst(2.4, 260, 0.22, this.fxGain!);

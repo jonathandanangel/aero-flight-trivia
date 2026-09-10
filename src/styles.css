@@ -534,3 +534,206 @@
     opacity: 1;
   }
 }
+
+/* ---------- Shared memory-recall HP bar ---------- */
+.hp-bar {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--neon-cyan) 40%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--midnight) 78%, transparent);
+}
+
+.hp-cell {
+  width: 6px;
+  height: 12px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--moon) 12%, transparent);
+}
+
+.hp-cell-on {
+  background: var(--mint);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--mint) 75%, transparent);
+}
+
+.hp-cell-critical {
+  background: var(--warm-orange);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--warm-orange) 80%, transparent);
+}
+
+.hp-cell-over {
+  background: var(--magenta);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--magenta) 85%, transparent);
+}
+
+/* ---------- Aerodynamics Extreme ---------- */
+.extreme-menu-item {
+  border-color: color-mix(in srgb, var(--magenta) 62%, transparent);
+  color: var(--magenta);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--magenta) 55%, transparent);
+}
+
+.extreme-shell {
+  filter: drop-shadow(0 0 26px color-mix(in srgb, var(--magenta) 22%, transparent));
+}
+
+.gauntlet-field {
+  position: relative;
+  min-height: clamp(20rem, 54vw, 26rem);
+  border: 1px solid color-mix(in srgb, var(--magenta) 36%, transparent);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(color-mix(in srgb, var(--neon-cyan) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--magenta) 6%, transparent) 1px, transparent 1px),
+    color-mix(in srgb, var(--midnight) 80%, transparent);
+  background-size: 30px 30px;
+}
+
+.gauntlet-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.gauntlet-laser {
+  stroke: #ff2f3d;
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px #ff2f3d) drop-shadow(0 0 12px #ff6a4d);
+}
+
+.gauntlet-laser-traced {
+  stroke: var(--mint);
+  filter: drop-shadow(0 0 6px var(--mint));
+}
+
+.gauntlet-rainbow .gauntlet-laser {
+  animation: gauntlet-rainbow-stroke 1.5s linear infinite;
+}
+
+.gauntlet-node {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: clamp(2.6rem, 9vw, 3.6rem);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px solid color-mix(in srgb, var(--neon-cyan) 55%, transparent);
+  background: color-mix(in srgb, var(--deepblue) 82%, transparent);
+  color: color-mix(in srgb, var(--neon-cyan) 85%, transparent);
+  z-index: 2;
+  transition: background-color 140ms ease;
+}
+
+.gauntlet-node-square {
+  border-radius: var(--radius-md);
+}
+
+.gauntlet-node-round {
+  border-radius: 999px;
+}
+
+.gauntlet-node:not(:disabled):hover {
+  background: color-mix(in srgb, var(--neon-cyan) 24%, transparent);
+}
+
+.gauntlet-node-live {
+  border-color: var(--mint);
+  background: color-mix(in srgb, var(--mint) 65%, var(--deepblue));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--mint) 70%, transparent);
+}
+
+.gauntlet-node-rainbow {
+  animation: gauntlet-rainbow-node 1.5s linear var(--node-delay) infinite;
+}
+
+@keyframes gauntlet-rainbow-node {
+  0% {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--neon-cyan) 70%, transparent);
+  }
+  33% {
+    border-color: var(--magenta);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--magenta) 70%, transparent);
+  }
+  66% {
+    border-color: var(--amber);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--amber) 70%, transparent);
+  }
+  100% {
+    border-color: var(--mint);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--mint) 70%, transparent);
+  }
+}
+
+@keyframes gauntlet-rainbow-stroke {
+  0% { stroke: #ff2f3d; }
+  25% { stroke: var(--amber); }
+  50% { stroke: var(--mint); }
+  75% { stroke: var(--neon-cyan); }
+  100% { stroke: var(--magenta); }
+}
+
+/* ---------- Brain overload ---------- */
+.brain-overload {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--magenta) 22%, transparent), transparent 62%);
+  animation: brain-overload-fade 2.3s ease-out both;
+}
+
+.brain-overload-img {
+  grid-area: 1 / 1;
+  width: min(70vw, 620px);
+  filter: drop-shadow(0 0 30px var(--magenta)) drop-shadow(0 0 60px var(--neon-cyan));
+  animation: brain-overload-grow 2.3s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+}
+
+.brain-overload-label {
+  grid-area: 1 / 1;
+  align-self: end;
+  margin-bottom: 8vh;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 6vw, 3.2rem);
+  color: var(--mint);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 12px var(--mint), 0 0 30px var(--neon-cyan);
+}
+
+.brain-overload-blast {
+  grid-area: 1 / 1;
+  width: min(70vw, 620px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  border: 3px solid color-mix(in srgb, var(--magenta) 80%, transparent);
+  opacity: 0;
+  animation: brain-overload-blast 700ms ease-out 1.5s both;
+}
+
+@keyframes brain-overload-grow {
+  0% { transform: scale(0.25); opacity: 0; }
+  25% { transform: scale(1); opacity: 1; }
+  62% { transform: scale(1.16); opacity: 1; }
+  70% { transform: scale(1.34); opacity: 0.85; }
+  74% { transform: scale(0.1); opacity: 0; }
+  100% { transform: scale(0.1); opacity: 0; }
+}
+
+@keyframes brain-overload-blast {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+@keyframes brain-overload-fade {
+  0%, 82% { opacity: 1; }
+  100% { opacity: 0; }
+}

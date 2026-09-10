@@ -6,7 +6,11 @@ import { setTitle } from "@/game/curriculum";
 import { nextRecoveryLength, useGame } from "@/game/store";
 import type { Question } from "@/game/types";
 import { cn } from "@/lib/utils";
+import { extremeQuestions } from "@/game/extreme";
 import { BrainCelebration } from "./BrainCelebration";
+import { BrainOverload } from "./BrainOverload";
+import { HealthBar, MAX_HP } from "./HealthBar";
+import { MemoryGauntlet } from "./MemoryGauntlet";
 import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
 import { Finale } from "./Finale";
@@ -18,8 +22,17 @@ import { TitleScreen } from "./TitleScreen";
 import { ValidationPanel } from "./ValidationPanel";
 import { WorldBackground } from "./WorldBackground";
 
-type Screen = "title" | "play" | "settings" | "validate" | "finale" | "gameover" | "lightcycle" | "maze";
-type Mode = "campaign" | "practice" | "high-speed" | "review" | "mastery";
+type Screen =
+  | "title"
+  | "play"
+  | "settings"
+  | "validate"
+  | "finale"
+  | "gameover"
+  | "lightcycle"
+  | "maze"
+  | "gauntlet";
+type Mode = "campaign" | "practice" | "high-speed" | "review" | "mastery" | "extreme";
 type Phase = "answering" | "revealed" | "recall";
 type IntermissionGame = "lightcycle" | "maze";
 
@@ -69,15 +82,7 @@ function Hud({
       <span className="text-amber">Score {score}</span>
       <span className="text-mint">Streak {streak}</span>
       <span className="text-magenta">{question.audioGenre}</span>
-      <span className="flex items-center gap-1 text-muted-foreground">
-        Recall {recoveryLength}
-        {recoveryLength <= 2 && (
-          <span className="flex gap-1" aria-label="Two bio-energy plants remaining">
-            <span className="size-2 rounded-full bg-mint glow-mint" />
-            <span className="size-2 rounded-full bg-mint glow-mint" />
-          </span>
-        )}
-      </span>
+      <HealthBar hp={recoveryLength} />
       <button type="button" onClick={onPause} className="ml-auto rounded-md border border-border px-3 py-1 text-[10px]">
         Pause
       </button>
@@ -100,6 +105,8 @@ export function AeroGrid() {
   const [pendingIntermission, setPendingIntermission] = React.useState<PendingIntermission | null>(null);
   const [sceneFading, setSceneFading] = React.useState(false);
   const [reviewIds, setReviewIds] = React.useState<string[]>([]);
+  const [extremeScore, setExtremeScore] = React.useState(0);
+  const [overloadBurst, setOverloadBurst] = React.useState(0);
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
@@ -113,6 +120,8 @@ export function AeroGrid() {
         return stableShuffle(aeroQuestions, "practice");
       case "high-speed":
         return highSpeedQuestionsOnly;
+      case "extreme":
+        return extremeQuestions;
       case "mastery":
         return stableShuffle(allQuestions, "mastery");
       case "review":
@@ -176,6 +185,10 @@ export function AeroGrid() {
     if (ok && settings.interstitials !== "off") {
       setWipe(true);
       window.setTimeout(() => setWipe(false), settings.interstitials === "full" ? 2000 : 800);
+    }
+    if (mode === "extreme") {
+      setExtremeScore((value) => value + (ok ? question.points : 0));
+      return;
     }
     if (mode !== "campaign") return;
     const nextCorrectCount = progress.correctCount + (ok ? 1 : 0);
@@ -243,12 +256,27 @@ export function AeroGrid() {
       enterPendingIntermission();
       return;
     }
-    if (wasCorrect || mode !== "campaign") {
+    if (wasCorrect || (mode !== "campaign" && mode !== "extreme")) {
       advance();
       return;
     }
     setPhase("recall");
   };
+
+  const gainRecall = React.useCallback(() => {
+    setProgress((p) => {
+      const next = Math.min(MAX_HP, p.recoveryLength + 3);
+      if (next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
+      return { recoveryLength: next, recallWins: p.recallWins + 1 };
+    });
+  }, [setProgress]);
+
+  const damageRecall = React.useCallback(() => {
+    setProgress((p) => ({
+      recoveryLength: Math.max(2, p.recoveryLength - 3),
+      recallLosses: p.recallLosses + 1,
+    }));
+  }, [setProgress]);
 
   const recallResult = (won: boolean) => {
     const current = progress.recoveryLength;
@@ -257,11 +285,15 @@ export function AeroGrid() {
       setScreen("gameover");
       return;
     }
-    setProgress((p) => ({
-      recoveryLength: nextRecoveryLength(p.recoveryLength, won),
+    setProgress((p) => {
+      const next = nextRecoveryLength(p.recoveryLength, won);
+      if (next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
+      return {
+      recoveryLength: next,
       recallWins: p.recallWins + (won ? 1 : 0),
       recallLosses: p.recallLosses + (won ? 0 : 1),
-    }));
+      };
+    });
     if (pendingIntermission) {
       enterPendingIntermission();
       return;
@@ -307,6 +339,11 @@ export function AeroGrid() {
       />
 
       <BrainCelebration burst={celebrationBurst} reducedMotion={settings.reducedMotion} />
+      <BrainOverload
+        burst={overloadBurst}
+        reducedMotion={settings.reducedMotion}
+        onDone={() => setOverloadBurst(0)}
+      />
 
       {screen === "title" && (
         <TitleScreen
@@ -318,6 +355,18 @@ export function AeroGrid() {
           onResume={() => beginRun("campaign", [], true)}
           onPractice={() => beginRun("practice")}
           onHighSpeed={() => beginRun("high-speed")}
+          onExtreme={() => {
+            startAudio();
+            setMode("extreme");
+            setReviewIds([]);
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setPendingIntermission(null);
+            setScreen("gauntlet");
+          }}
           onSettings={() => setScreen("settings")}
           onValidate={() => setScreen("validate")}
         />
@@ -400,13 +449,35 @@ export function AeroGrid() {
         />
       )}
 
+      {screen === "gauntlet" && (
+        <div className="extreme-shell mx-auto w-full max-w-3xl">
+          <MemoryGauntlet
+            reducedMotion={settings.reducedMotion}
+            hp={progress.recoveryLength}
+            onOvercharge={gainRecall}
+            onDamage={damageRecall}
+            onComplete={(score) => {
+              setExtremeScore(score);
+              setScreen("play");
+            }}
+            onAbort={() => setScreen("title")}
+          />
+        </div>
+      )}
+
+      {(screen === "lightcycle" || screen === "maze") && (
+        <div className="mx-auto mt-4 w-full max-w-3xl">
+          <HealthBar hp={progress.recoveryLength} className="justify-center" />
+        </div>
+      )}
+
       {screen === "play" && question && (
         <div className="mx-auto w-full max-w-4xl space-y-4">
           <Hud
             question={question}
             number={mode === "campaign" ? question.globalNumber : index + 1}
             total={mode === "campaign" ? TOTAL_QUESTIONS : list.length}
-            score={progress.score}
+            score={mode === "extreme" ? extremeScore : progress.score}
             streak={progress.streak}
             recoveryLength={progress.recoveryLength}
             onPause={() => setPaused(true)}

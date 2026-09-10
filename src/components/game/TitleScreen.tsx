@@ -6,6 +6,7 @@ export interface TitleScreenProps {
   onResume: () => void;
   onPractice: () => void;
   onHighSpeed: () => void;
+  onExtreme: () => void;
   onSettings: () => void;
   onValidate: () => void;
 }
@@ -38,6 +39,13 @@ export function TitleScreen(p: TitleScreenProps) {
         </button>
         <button type="button" className={item} onClick={p.onHighSpeed}>
           High-Speed Lab
+        </button>
+        <button
+          type="button"
+          className={`${item} extreme-menu-item`}
+          onClick={p.onExtreme}
+        >
+          Aerodynamics Extreme
         </button>
         <button type="button" className={item} onClick={p.onSettings}>
           Settings
