@@ -81,7 +81,8 @@ export function MemoryGauntlet({
   const [attempt, setAttempt] = React.useState(0);
   const [lives, setLives] = React.useState(3);
   const [score, setScore] = React.useState(0);
-  const [length, setLength] = React.useState(4);
+  // Sequence length tracks current recall HP: 14 HP means 14 links to remember.
+  const [length, setLength] = React.useState(() => Math.max(3, hp));
   const [phase, setPhase] = React.useState<Phase>("brief");
   const [step, setStep] = React.useState(0);
   const [flash, setFlash] = React.useState<number | null>(null);
