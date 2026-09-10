@@ -11,12 +11,13 @@ import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
 import { Finale } from "./Finale";
 import { Interaction } from "./Interactions";
+import { LightCycleGame } from "./LightCycleGame";
 import { SettingsPanel } from "./SettingsPanel";
 import { TitleScreen } from "./TitleScreen";
 import { ValidationPanel } from "./ValidationPanel";
 import { WorldBackground } from "./WorldBackground";
 
-type Screen = "title" | "play" | "settings" | "validate" | "finale" | "gameover";
+type Screen = "title" | "play" | "settings" | "validate" | "finale" | "gameover" | "lightcycle";
 type Mode = "campaign" | "practice" | "archive" | "review" | "mastery";
 type Phase = "answering" | "revealed" | "recall";
 
@@ -76,6 +77,8 @@ export function AeroGrid() {
   const [paused, setPaused] = React.useState(false);
   const [wipe, setWipe] = React.useState(false);
   const [celebrationBurst, setCelebrationBurst] = React.useState(0);
+  const [pendingMilestone, setPendingMilestone] = React.useState(0);
+  const [sceneFading, setSceneFading] = React.useState(false);
   const [reviewIds, setReviewIds] = React.useState<string[]>([]);
 
   const list = React.useMemo<Question[]>(() => {
@@ -134,11 +137,14 @@ export function AeroGrid() {
     if (mode !== "campaign") return;
     setProgress((p) => {
       const streak = ok ? p.streak + 1 : 0;
+      const nextCorrectCount = p.correctCount + (ok ? 1 : 0);
+      const milestone = Math.floor(nextCorrectCount / 15);
+      if (ok && milestone > p.lightCycleMilestone) setPendingMilestone(milestone);
       return {
         score: p.score + (ok ? question.points + Math.min(50, streak * 5) : 0),
         streak,
         bestStreak: Math.max(p.bestStreak, streak),
-        correctCount: p.correctCount + (ok ? 1 : 0),
+        correctCount: nextCorrectCount,
         answeredCount: p.answeredCount + 1,
         answeredIds: [...new Set([...p.answeredIds, question.id])],
         missedIds: ok ? p.missedIds : [...new Set([...p.missedIds, question.id])],
@@ -168,6 +174,18 @@ export function AeroGrid() {
   };
 
   const afterReveal = () => {
+    if (wasCorrect && mode === "campaign" && pendingMilestone > progress.lightCycleMilestone) {
+      if (settings.reducedMotion) {
+        setScreen("lightcycle");
+      } else {
+        setSceneFading(true);
+        window.setTimeout(() => {
+          setScreen("lightcycle");
+          window.setTimeout(() => setSceneFading(false), 40);
+        }, 420);
+      }
+      return;
+    }
     if (wasCorrect || mode !== "campaign") {
       advance();
       return;
@@ -188,6 +206,26 @@ export function AeroGrid() {
       recallLosses: p.recallLosses + (won ? 0 : 1),
     }));
     advance();
+  };
+
+  const finishLightCycle = () => {
+    setProgress({ lightCycleMilestone: pendingMilestone });
+    const returnToTrivia = () => {
+      advance();
+      setPendingMilestone(0);
+      setScreen("play");
+      audio.setTempoMultiplier(1);
+      if (question) audio.setGenre(question.audioGenre, 0.5 + Math.min(0.4, progress.streak * 0.05));
+    };
+    if (settings.reducedMotion) {
+      returnToTrivia();
+      return;
+    }
+    setSceneFading(true);
+    window.setTimeout(() => {
+      returnToTrivia();
+      window.setTimeout(() => setSceneFading(false), 40);
+    }, 420);
   };
 
   if (!hydrated) return null;
@@ -276,6 +314,15 @@ export function AeroGrid() {
             </button>
           </div>
         </div>
+      )}
+
+      {screen === "lightcycle" && (
+        <LightCycleGame
+          key={pendingMilestone}
+          milestone={Math.max(1, pendingMilestone)}
+          reducedMotion={settings.reducedMotion}
+          onComplete={finishLightCycle}
+        />
       )}
 
       {screen === "play" && question && (
@@ -403,6 +450,8 @@ export function AeroGrid() {
           aria-hidden
         />
       )}
+
+      {sceneFading && <div className="scene-fade" aria-hidden />}
     </div>
   );
 }
