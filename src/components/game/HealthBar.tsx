@@ -23,11 +23,11 @@ export function HealthBar({ hp, className, glow }: { hp: number; className?: str
         className="hp-bar"
         role="meter"
         aria-valuemin={0}
-        aria-valuemax={MAX_HP}
+        aria-valuemax={cells}
         aria-valuenow={clamped}
-        aria-label={`Memory recall health ${clamped} of ${MAX_HP}`}
+        aria-label={`Memory recall health ${clamped} of ${cells}`}
       >
-        {Array.from({ length: MAX_HP }).map((_, i) => (
+        {Array.from({ length: cells }).map((_, i) => (
           <span
             key={i}
             className={cn(
@@ -43,7 +43,7 @@ export function HealthBar({ hp, className, glow }: { hp: number; className?: str
           critical ? "text-orange" : overcharged ? "text-magenta" : "text-mint",
         )}
       >
-        {clamped}/{MAX_HP}
+        {clamped}/{cells}
       </span>
     </div>
   );
