@@ -52,6 +52,22 @@ const GENRE_PRESETS: Record<
   supersonic: { bpm: 178, root: 73, scale: [0, 1, 5, 6, 8, 11], wave: "sawtooth", pulse: 0.11 },
 };
 
+/** Five escalating turbulent tracks used by Aerodynamics Extreme. */
+const SUPERSONIC_TRACKS: {
+  bpm: number;
+  root: number;
+  scale: number[];
+  wave: OscillatorType;
+  pulse: number;
+  turbulence: number;
+}[] = [
+  { bpm: 168, root: 73, scale: [0, 3, 5, 7, 10], wave: "sawtooth", pulse: 0.13, turbulence: 0.8 },
+  { bpm: 182, root: 78, scale: [0, 1, 5, 6, 8], wave: "sawtooth", pulse: 0.115, turbulence: 1.05 },
+  { bpm: 196, root: 82, scale: [0, 2, 3, 7, 9, 11], wave: "square", pulse: 0.1, turbulence: 1.35 },
+  { bpm: 212, root: 87, scale: [0, 1, 4, 6, 7, 10], wave: "sawtooth", pulse: 0.088, turbulence: 1.7 },
+  { bpm: 230, root: 92, scale: [0, 1, 3, 6, 8, 11], wave: "square", pulse: 0.075, turbulence: 2.1 },
+];
+
 const semitone = (root: number, steps: number) => root * Math.pow(2, steps / 12);
 
 class AudioManager {
@@ -64,6 +80,7 @@ class AudioManager {
   private genre: AudioGenre = "synthwave";
   private intensity = 0.6;
   private tempoMultiplier = 1;
+  private extremeTrack = 0;
   settings: AudioSettings = { master: 0.7, music: 0.5, effects: 0.8, muted: false };
 
   get ready() {
@@ -113,7 +130,30 @@ class AudioManager {
   }
 
   setTempoMultiplier(multiplier: number) {
-    this.tempoMultiplier = Math.min(2, Math.max(0.75, multiplier));
+    this.tempoMultiplier = Math.min(3, Math.max(0.75, multiplier));
+  }
+
+  /** Select one of the five escalating Aerodynamics Extreme turbulence tracks (0-4). */
+  setExtremeTrack(index: number) {
+    const next = Math.min(SUPERSONIC_TRACKS.length - 1, Math.max(0, Math.round(index)));
+    if (next === this.extremeTrack) return;
+    this.extremeTrack = next;
+    this.step = 0;
+    if (!this.ctx || !this.musicGain) return;
+    const t = this.ctx.currentTime;
+    this.musicGain.gain.setTargetAtTime(0.02, t, 0.12);
+    window.setTimeout(() => {
+      if (!this.ctx || !this.musicGain) return;
+      this.musicGain.gain.setTargetAtTime(this.settings.music * 0.35, this.ctx.currentTime, 0.25);
+    }, 260);
+  }
+
+  private get activePreset() {
+    if (this.genre === "supersonic") {
+      const track = SUPERSONIC_TRACKS[this.extremeTrack]!;
+      return { bpm: track.bpm, root: track.root, scale: track.scale, wave: track.wave, pulse: track.pulse };
+    }
+    return GENRE_PRESETS[this.genre];
   }
 
   startMusic() {
@@ -121,7 +161,7 @@ class AudioManager {
     if (!this.ctx || this.loopTimer !== null) return;
     this.resume();
     const tick = () => {
-      const preset = GENRE_PRESETS[this.genre];
+      const preset = this.activePreset;
       const beat = 60000 / (preset.bpm * this.tempoMultiplier) / 2;
       this.playStep();
       this.loopTimer = window.setTimeout(tick, beat);
@@ -140,7 +180,8 @@ class AudioManager {
     const ctx = this.ctx;
     const bus = this.musicGain;
     if (!ctx || !bus) return;
-    const preset = GENRE_PRESETS[this.genre];
+    const preset = this.activePreset;
+    const turbulence = this.genre === "supersonic" ? SUPERSONIC_TRACKS[this.extremeTrack]!.turbulence : 1;
     const now = ctx.currentTime;
     const degree = preset.scale[this.step % preset.scale.length] ?? 0;
     const octave = this.step % 8 === 0 ? 12 : this.step % 5 === 0 ? 7 : 0;
@@ -190,21 +231,27 @@ class AudioManager {
         kick.start(now);
         kick.stop(now + 0.2);
       } else {
-        this.noiseBurst(0.045, 7200, 0.08 * this.intensity, bus);
+        this.noiseBurst(0.045, 7200 + turbulence * 900, 0.08 * this.intensity * turbulence, bus);
       }
-      // turbulent air rush sweeping every bar
-      if (this.step % 8 === 0) {
-        this.noiseBurst(1.1, 420 + Math.random() * 900, 0.16 * this.intensity, bus);
+      // turbulent air rush sweeping every bar — faster and wilder on later tracks
+      const rushEvery = turbulence > 1.5 ? 4 : turbulence > 1.1 ? 6 : 8;
+      if (this.step % rushEvery === 0) {
+        this.noiseBurst(
+          Math.max(0.35, 1.1 / turbulence),
+          420 + Math.random() * 900 * turbulence,
+          Math.min(0.4, 0.16 * this.intensity * turbulence),
+          bus,
+        );
       }
       // shock-wave shriek
-      if (this.step % 16 === 7) {
+      if (this.step % (turbulence > 1.6 ? 8 : 16) === 7) {
         const shriek = ctx.createOscillator();
         const sg = ctx.createGain();
         shriek.type = "sawtooth";
         shriek.frequency.setValueAtTime(900, now);
-        shriek.frequency.exponentialRampToValueAtTime(2600, now + 0.5);
+        shriek.frequency.exponentialRampToValueAtTime(2600 * Math.min(1.6, turbulence), now + 0.5);
         sg.gain.setValueAtTime(0, now);
-        sg.gain.linearRampToValueAtTime(0.05 * this.intensity, now + 0.08);
+        sg.gain.linearRampToValueAtTime(0.05 * this.intensity * turbulence, now + 0.08);
         sg.gain.exponentialRampToValueAtTime(0.0006, now + 0.6);
         shriek.connect(sg).connect(bus);
         shriek.start(now);
