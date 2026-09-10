@@ -155,6 +155,13 @@ export function MemoryGauntlet({
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [phase, sequence, stage, reducedMotion]);
 
+  // Smoothly fade preview lines before recall begins.
+  React.useEffect(() => {
+    if (phase !== "fadeout") return;
+    const timer = window.setTimeout(() => setPhase("input"), reducedMotion ? 200 : 520);
+    return () => window.clearTimeout(timer);
+  }, [phase, reducedMotion]);
+
   const finishStage = (success: boolean) => {
     setPhase("result");
     setWon(success);
