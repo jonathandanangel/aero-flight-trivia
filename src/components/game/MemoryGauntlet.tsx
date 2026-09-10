@@ -88,6 +88,7 @@ export function MemoryGauntlet({
   const [drawn, setDrawn] = React.useState(0);
   const [won, setWon] = React.useState(false);
   const [message, setMessage] = React.useState("");
+  const [salt] = React.useState(() => Math.floor(Math.random() * 1_000_000));
 
   const nodeCount = stage === 3 ? 7 : GRID_PADS;
   const seed = stage * 7919 + attempt * 613 + length * 31;
