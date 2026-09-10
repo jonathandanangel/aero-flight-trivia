@@ -231,21 +231,27 @@ class AudioManager {
         kick.start(now);
         kick.stop(now + 0.2);
       } else {
-        this.noiseBurst(0.045, 7200, 0.08 * this.intensity, bus);
+        this.noiseBurst(0.045, 7200 + turbulence * 900, 0.08 * this.intensity * turbulence, bus);
       }
-      // turbulent air rush sweeping every bar
-      if (this.step % 8 === 0) {
-        this.noiseBurst(1.1, 420 + Math.random() * 900, 0.16 * this.intensity, bus);
+      // turbulent air rush sweeping every bar — faster and wilder on later tracks
+      const rushEvery = turbulence > 1.5 ? 4 : turbulence > 1.1 ? 6 : 8;
+      if (this.step % rushEvery === 0) {
+        this.noiseBurst(
+          Math.max(0.35, 1.1 / turbulence),
+          420 + Math.random() * 900 * turbulence,
+          Math.min(0.4, 0.16 * this.intensity * turbulence),
+          bus,
+        );
       }
       // shock-wave shriek
-      if (this.step % 16 === 7) {
+      if (this.step % (turbulence > 1.6 ? 8 : 16) === 7) {
         const shriek = ctx.createOscillator();
         const sg = ctx.createGain();
         shriek.type = "sawtooth";
         shriek.frequency.setValueAtTime(900, now);
-        shriek.frequency.exponentialRampToValueAtTime(2600, now + 0.5);
+        shriek.frequency.exponentialRampToValueAtTime(2600 * Math.min(1.6, turbulence), now + 0.5);
         sg.gain.setValueAtTime(0, now);
-        sg.gain.linearRampToValueAtTime(0.05 * this.intensity, now + 0.08);
+        sg.gain.linearRampToValueAtTime(0.05 * this.intensity * turbulence, now + 0.08);
         sg.gain.exponentialRampToValueAtTime(0.0006, now + 0.6);
         shriek.connect(sg).connect(bus);
         shriek.start(now);
