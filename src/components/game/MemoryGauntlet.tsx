@@ -249,7 +249,7 @@ export function MemoryGauntlet({
           <h2 className="font-display text-2xl text-cyan text-glow">{STAGE_TITLES[stage]}</h2>
           <p className="font-mono text-sm text-muted-foreground">{STAGE_BLURBS[stage]}</p>
           <p className="font-mono text-xs text-amber">
-            Sequence length {length} · clear for +3, fail for -3 and one life
+            Sequence length {length} (matches your HP) · clear for +3 HP, fail for -3 HP and one life
           </p>
           <button
             type="button"
