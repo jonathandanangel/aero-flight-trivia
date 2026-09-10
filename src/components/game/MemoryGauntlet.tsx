@@ -218,7 +218,8 @@ export function MemoryGauntlet({
   const linkPoints = (count: number) =>
     sequence.slice(0, Math.max(0, count)).map((n) => positions[n] ?? { left: 50, top: 50 });
 
-  const playbackLinks = linkPoints(phase === "input" ? sequence.length : drawn);
+  // Preview lines draw during watch, then vanish so the player must recall the path.
+  const playbackLinks = phase === "watch" ? linkPoints(drawn) : [];
   const tracedLinks = phase === "input" ? linkPoints(step + 1) : [];
   const rainbow = stage === 3 && phase === "input" && !reducedMotion;
 

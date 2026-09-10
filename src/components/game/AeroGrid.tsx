@@ -64,6 +64,7 @@ function Hud({
   score,
   streak,
   recoveryLength,
+  glow,
   onPause,
 }: {
   question: Question;
@@ -72,6 +73,7 @@ function Hud({
   score: number;
   streak: number;
   recoveryLength: number;
+  glow?: boolean;
   onPause: () => void;
 }) {
   return (
@@ -82,7 +84,7 @@ function Hud({
       <span className="text-amber">Score {score}</span>
       <span className="text-mint">Streak {streak}</span>
       <span className="text-magenta">{question.audioGenre}</span>
-      <HealthBar hp={recoveryLength} />
+      <HealthBar hp={recoveryLength} glow={glow} />
       <button type="button" onClick={onPause} className="ml-auto rounded-md border border-border px-3 py-1 text-[10px]">
         Pause
       </button>
@@ -107,6 +109,7 @@ export function AeroGrid() {
   const [reviewIds, setReviewIds] = React.useState<string[]>([]);
   const [extremeScore, setExtremeScore] = React.useState(0);
   const [overloadBurst, setOverloadBurst] = React.useState(0);
+  const [psychedelicActive, setPsychedelicActive] = React.useState(false);
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
@@ -287,11 +290,11 @@ export function AeroGrid() {
     }
     setProgress((p) => {
       const next = nextRecoveryLength(p.recoveryLength, won);
-      if (next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
+      if (mode === "extreme" && next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
       return {
-      recoveryLength: next,
-      recallWins: p.recallWins + (won ? 1 : 0),
-      recallLosses: p.recallLosses + (won ? 0 : 1),
+        recoveryLength: next,
+        recallWins: p.recallWins + (won ? 1 : 0),
+        recallLosses: p.recallLosses + (won ? 0 : 1),
       };
     });
     if (pendingIntermission) {
@@ -336,13 +339,17 @@ export function AeroGrid() {
         scanlines={settings.scanlines}
         reducedMotion={settings.reducedMotion}
         bloodMoon={progress.bloodMoonAwakened}
+        psychedelic={psychedelicActive}
       />
 
       <BrainCelebration burst={celebrationBurst} reducedMotion={settings.reducedMotion} />
       <BrainOverload
         burst={overloadBurst}
         reducedMotion={settings.reducedMotion}
-        onDone={() => setOverloadBurst(0)}
+        onDone={() => {
+          setOverloadBurst(0);
+          if (mode === "extreme") setPsychedelicActive(true);
+        }}
       />
 
       {screen === "title" && (
