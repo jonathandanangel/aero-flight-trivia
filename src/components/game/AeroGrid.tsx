@@ -428,6 +428,7 @@ export function AeroGrid() {
             <ElectricRecall
               key={`${question.id}-recall`}
               length={progress.recoveryLength}
+              questionNumber={question.globalNumber}
               reducedMotion={settings.reducedMotion}
               onResult={recallResult}
             />
