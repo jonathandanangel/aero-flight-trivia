@@ -61,7 +61,7 @@ Deviate when a topic does not suit a format.
 `airfoil-pressure`, `airfoil-forces`, `airfoil-shear`, `boundary-layer`,
 `center-of-pressure`, `aerodynamic-center`, `wing-3d`, `cylinder-flow`,
 `cylinder-separation`, `aircraft-forces`, `stream-tube`, `velocity-profile`,
-`mach-cone`, `impact-archive`.
+`mach-cone`.
 
 Coordinate hints (percent of stage, all diagrams draw the body centred):
 - airfoil-*: leading edge ~ (18,52), trailing edge ~ (82,55), upper surface ~ (45,40),

@@ -19,7 +19,7 @@ function interactionDataOk(q: Question): boolean {
         !!q.sentenceParts &&
         !!q.draggableTokens &&
         q.sentenceParts.length === q.correctAnswer.length + 1 &&
-        q.correctAnswer.every((a) => q.draggableTokens!.includes(a))
+        q.correctAnswer.every((a) => q.draggableTokens?.includes(a))
       );
     case "multiple-choice":
       return (
@@ -45,7 +45,7 @@ function interactionDataOk(q: Question): boolean {
         !!q.targets &&
         !!q.draggableTokens &&
         q.targets.length === q.correctAnswer.length &&
-        q.correctAnswer.every((a) => q.draggableTokens!.includes(a))
+        q.correctAnswer.every((a) => q.draggableTokens?.includes(a))
       );
     case "sequencing":
       return !!q.steps && q.steps.length === q.correctAnswer.length && q.steps.length >= 3;
