@@ -506,7 +506,7 @@ export function AeroGrid() {
 
       {(screen === "lightcycle" || screen === "maze") && (
         <div className="mx-auto mt-4 w-full max-w-3xl">
-          <HealthBar hp={progress.recoveryLength} className="justify-center" />
+          <HealthBar hp={progress.recoveryLength} className="justify-center" glow={mode === "extreme"} />
         </div>
       )}
 
