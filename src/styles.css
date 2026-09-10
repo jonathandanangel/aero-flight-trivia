@@ -235,17 +235,37 @@
   --brain-duration: 1900ms;
   --brain-delay: 0ms;
   --brain-rotation: 8deg;
-  --brain-hue: 0deg;
+  --brain-glow-primary: var(--color-magenta);
+  --brain-glow-secondary: var(--color-cyan);
   position: absolute;
   top: var(--brain-y);
   left: 0;
   width: clamp(96px, var(--brain-size), 208px);
   height: auto;
   opacity: 0;
-  filter: hue-rotate(var(--brain-hue)) drop-shadow(0 0 13px var(--color-magenta))
-    drop-shadow(0 0 24px var(--color-cyan));
+  filter: drop-shadow(0 0 13px var(--brain-glow-primary))
+    drop-shadow(0 0 24px var(--brain-glow-secondary));
   animation: brain-swoop var(--brain-duration) cubic-bezier(0.2, 0.66, 0.32, 1) var(--brain-delay) both;
   will-change: transform, opacity;
+}
+
+.brain-theme-cyan {
+  --brain-glow-primary: var(--color-cyan);
+  --brain-glow-secondary: var(--color-mint);
+}
+
+.brain-theme-solar {
+  --brain-glow-primary: var(--color-orange);
+  --brain-glow-secondary: var(--color-amber);
+}
+
+.brain-theme-volt {
+  --brain-glow-primary: var(--color-mint);
+  --brain-glow-secondary: var(--color-magenta);
+}
+
+.brain-flyer-flipped {
+  transform-origin: center;
 }
 
 .brain-celebration-static {
@@ -256,7 +276,7 @@
 
 .brain-celebration-static img {
   width: min(34vw, 180px);
-  filter: drop-shadow(0 0 16px var(--color-magenta)) drop-shadow(0 0 28px var(--color-cyan));
+  filter: drop-shadow(0 0 16px var(--brain-glow-primary)) drop-shadow(0 0 28px var(--brain-glow-secondary));
 }
 
 @keyframes brain-swoop {
