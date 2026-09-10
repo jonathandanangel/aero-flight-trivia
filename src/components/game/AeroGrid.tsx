@@ -310,6 +310,18 @@ export function AeroGrid() {
     advance();
   };
 
+  const exitRecoveryGauntlet = (cleared: boolean) => {
+    if (!cleared && progress.recoveryLength <= 2) {
+      setProgress((p) => ({ recallLosses: p.recallLosses + 1, gameOver: true }));
+      setScreen("gameover");
+      return;
+    }
+    setScreen("play");
+    setPhase("answering");
+    setAnswer([]);
+    setShowHint(false);
+  };
+
   const finishIntermission = () => {
     if (!pendingIntermission) return;
     setProgress((p) => ({
