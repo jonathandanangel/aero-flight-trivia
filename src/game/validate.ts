@@ -85,6 +85,15 @@ export function runValidation(): ValidationRule[] {
   const question188Targets = Object.fromEntries(
     (question188?.targets ?? []).map((target) => [target.id, target]),
   );
+  const question188IsLeftFacing =
+    question188?.id === "AERO-188" &&
+    question188.diagramType === "aircraft-forces" &&
+    question188.correctAnswer.join("|") === "Lift|Weight|Thrust|Drag" &&
+    (question188Targets["top"]?.y ?? 100) < 50 &&
+    (question188Targets["bottom"]?.y ?? 0) > 50 &&
+    (question188Targets["left"]?.x ?? 100) < 50 &&
+    (question188Targets["right"]?.x ?? 0) > 50 &&
+    /travelling to the left/i.test(question188.prompt);
   const promptCounts = new Map<string, string[]>();
   for (const q of allQuestions) {
     const key = q.prompt.trim().toLowerCase();
@@ -163,16 +172,8 @@ export function runValidation(): ValidationRule[] {
     },
     {
       name: "Question 188 uses left-facing aircraft force orientation",
-      passed:
-        question188?.id === "AERO-188" &&
-        question188.diagramType === "aircraft-forces" &&
-        question188.correctAnswer.join("|") === "Lift|Weight|Thrust|Drag" &&
-        (question188Targets.top?.y ?? 100) < 50 &&
-        (question188Targets.bottom?.y ?? 0) > 50 &&
-        (question188Targets.left?.x ?? 100) < 50 &&
-        (question188Targets.right?.x ?? 0) > 50 &&
-        /travelling to the left/i.test(question188.prompt),
-      failingIds: question188 ? [question188.id] : ["AERO-188"],
+      passed: question188IsLeftFacing,
+      failingIds: question188IsLeftFacing ? [] : [question188?.id ?? "AERO-188"],
       detail: "lift up, weight down, thrust left toward nose, drag right toward tail",
     },
     {
