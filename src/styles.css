@@ -220,6 +220,83 @@
   }
 }
 
+.brain-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.brain-flyer {
+  --brain-size: 160px;
+  --brain-y: 35vh;
+  --brain-arc: -50px;
+  --brain-duration: 1900ms;
+  --brain-delay: 0ms;
+  --brain-rotation: 8deg;
+  --brain-hue: 0deg;
+  position: absolute;
+  top: var(--brain-y);
+  left: 0;
+  width: clamp(96px, var(--brain-size), 208px);
+  height: auto;
+  opacity: 0;
+  filter: hue-rotate(var(--brain-hue)) drop-shadow(0 0 13px var(--color-magenta))
+    drop-shadow(0 0 24px var(--color-cyan));
+  animation: brain-swoop var(--brain-duration) cubic-bezier(0.2, 0.66, 0.32, 1) var(--brain-delay) both;
+  will-change: transform, opacity;
+}
+
+.brain-celebration-static {
+  display: grid;
+  place-items: center;
+  animation: brain-pop 700ms ease-out both;
+}
+
+.brain-celebration-static img {
+  width: min(34vw, 180px);
+  filter: drop-shadow(0 0 16px var(--color-magenta)) drop-shadow(0 0 28px var(--color-cyan));
+}
+
+@keyframes brain-swoop {
+  0% {
+    transform: translate3d(calc(-1 * var(--brain-size)), 45px, 0) rotate(calc(-1 * var(--brain-rotation))) scale(0.7);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  48% {
+    transform: translate3d(50vw, var(--brain-arc), 0) rotate(var(--brain-rotation)) scale(1.08);
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(calc(100vw + var(--brain-size)), 25px, 0)
+      rotate(calc(var(--brain-rotation) * -0.6)) scale(0.82);
+    opacity: 0;
+  }
+}
+
+@keyframes brain-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  30%,
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

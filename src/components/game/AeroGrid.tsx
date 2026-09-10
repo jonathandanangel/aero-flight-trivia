@@ -6,6 +6,7 @@ import { setTitle } from "@/game/curriculum";
 import { nextRecoveryLength, useGame } from "@/game/store";
 import type { Question } from "@/game/types";
 import { cn } from "@/lib/utils";
+import { BrainCelebration } from "./BrainCelebration";
 import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
 import { Finale } from "./Finale";
@@ -74,6 +75,7 @@ export function AeroGrid() {
   const [showHint, setShowHint] = React.useState(false);
   const [paused, setPaused] = React.useState(false);
   const [wipe, setWipe] = React.useState(false);
+  const [celebrationBurst, setCelebrationBurst] = React.useState(0);
   const [reviewIds, setReviewIds] = React.useState<string[]>([]);
 
   const list = React.useMemo<Question[]>(() => {
@@ -124,6 +126,7 @@ export function AeroGrid() {
     setWasCorrect(ok);
     setPhase("revealed");
     audio.play(ok ? "correct" : "wrong");
+    if (ok) setCelebrationBurst((burst) => burst + 1);
     if (ok && settings.interstitials !== "off") {
       setWipe(true);
       window.setTimeout(() => setWipe(false), settings.interstitials === "full" ? 2000 : 800);
@@ -198,6 +201,8 @@ export function AeroGrid() {
         scanlines={settings.scanlines}
         reducedMotion={settings.reducedMotion}
       />
+
+      <BrainCelebration burst={celebrationBurst} reducedMotion={settings.reducedMotion} />
 
       {screen === "title" && (
         <TitleScreen
