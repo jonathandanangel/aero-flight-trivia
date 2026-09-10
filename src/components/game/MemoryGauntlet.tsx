@@ -7,7 +7,7 @@ const GRID_PADS = 11;
 
 type Pos = { left: number; top: number };
 type Stage = 1 | 2 | 3;
-type Phase = "brief" | "watch" | "input" | "result";
+type Phase = "brief" | "watch" | "fadeout" | "input" | "result";
 
 function seeded(seed: number) {
   let state = (seed || 1) >>> 0;
