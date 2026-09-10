@@ -91,7 +91,7 @@ export function MemoryGauntlet({
   const [salt] = React.useState(() => Math.floor(Math.random() * 1_000_000));
 
   const nodeCount = stage === 3 ? 7 : GRID_PADS;
-  const seed = stage * 7919 + attempt * 613 + length * 31;
+  const seed = stage * 7919 + attempt * 613 + length * 31 + salt;
 
   const positions = React.useMemo(
     () => (stage === 1 ? gridPositions(GRID_PADS) : scatter(nodeCount, seed)),
