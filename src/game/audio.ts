@@ -49,6 +49,7 @@ const GENRE_PRESETS: Record<
   "ambient-space": { bpm: 66, root: 98, scale: [0, 5, 7, 12], wave: "sine", pulse: 1.4 },
   breakbeat: { bpm: 150, root: 82, scale: [0, 3, 7, 10], wave: "triangle", pulse: 0.2 },
   "retro-funk": { bpm: 116, root: 123, scale: [0, 3, 5, 6, 7, 10], wave: "sawtooth", pulse: 0.24 },
+  supersonic: { bpm: 178, root: 73, scale: [0, 1, 5, 6, 8, 11], wave: "sawtooth", pulse: 0.11 },
 };
 
 const semitone = (root: number, steps: number) => root * Math.pow(2, steps / 12);
