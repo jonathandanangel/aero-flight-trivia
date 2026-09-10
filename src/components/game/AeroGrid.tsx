@@ -11,6 +11,7 @@ import { BrainCelebration } from "./BrainCelebration";
 import { BrainOverload } from "./BrainOverload";
 import { HealthBar } from "./HealthBar";
 import { MemoryGauntlet } from "./MemoryGauntlet";
+import { ExtremeBriefing } from "./ExtremeBriefing";
 import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
 import { Finale } from "./Finale";
@@ -31,7 +32,8 @@ type Screen =
   | "gameover"
   | "lightcycle"
   | "maze"
-  | "gauntlet";
+  | "gauntlet"
+  | "briefing";
 type Mode = "campaign" | "practice" | "high-speed" | "review" | "mastery" | "extreme";
 type Phase = "answering" | "revealed" | "recall";
 type IntermissionGame = "lightcycle" | "maze";
@@ -397,7 +399,7 @@ export function AeroGrid() {
             setGauntletRecovery(false);
             setOverloadBurst(0);
             setPsychedelicActive(false);
-            setScreen("gauntlet");
+            setScreen("briefing");
           }}
           onSettings={() => setScreen("settings")}
           onValidate={() => setScreen("validate")}
@@ -478,6 +480,13 @@ export function AeroGrid() {
           milestone={Math.max(1, pendingIntermission?.correctMilestone ?? Math.floor(progress.correctCount / 15))}
           reducedMotion={settings.reducedMotion}
           onComplete={finishIntermission}
+        />
+      )}
+
+      {screen === "briefing" && (
+        <ExtremeBriefing
+          reducedMotion={settings.reducedMotion}
+          onComplete={() => setScreen("gauntlet")}
         />
       )}
 
