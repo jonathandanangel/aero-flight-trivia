@@ -25,6 +25,7 @@ const SLIDES = [
   { url: notes4.url, title: "Notes 4 — Center of Pressure", alt: "Lecture notes: pressure distribution, aerodynamic moment and center of pressure" },
   { url: notes5.url, title: "Notes 5 — Aerodynamic Center", alt: "Lecture notes: center of pressure versus aerodynamic center at quarter chord" },
   { url: notes6.url, title: "Notes 6 — Moment About the AC", alt: "Lecture notes: aerodynamic moment about the aerodynamic center stays constant" },
+  { url: rudderSheet.url, title: "Vertical Stabilizer — Rudder", alt: "NASA reference sheet: vertical stabilizer and rudder, side force, distance from center of gravity and yawing motion" },
 ];
 
 const SECONDS = 30;
