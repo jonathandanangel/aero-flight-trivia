@@ -137,7 +137,7 @@ function Shape({ type }: { type: DiagramType }) {
     case "aircraft-forces":
       return (
         <g>
-          <g fill="var(--color-secondary)" stroke={stroke} strokeWidth="2">
+          <g transform="translate(400 0) scale(-1 1)" fill="var(--color-secondary)" stroke={stroke} strokeWidth="2">
             <ellipse cx="200" cy="120" rx="96" ry="16" />
             <path d="M 180 118 L 210 60 L 226 60 L 214 118 Z" />
             <path d="M 170 122 L 150 172 L 168 172 L 200 126 Z" />
