@@ -142,16 +142,16 @@ export function AeroGrid() {
       window.setTimeout(() => setWipe(false), settings.interstitials === "full" ? 2000 : 800);
     }
     if (mode !== "campaign") return;
+    const nextCorrectCount = progress.correctCount + (ok ? 1 : 0);
+    const milestone = Math.floor(nextCorrectCount / 15);
+    if (ok && milestone > progress.lightCycleMilestone) setPendingMilestone(milestone);
     setProgress((p) => {
       const streak = ok ? p.streak + 1 : 0;
-      const nextCorrectCount = p.correctCount + (ok ? 1 : 0);
-      const milestone = Math.floor(nextCorrectCount / 15);
-      if (ok && milestone > p.lightCycleMilestone) setPendingMilestone(milestone);
       return {
         score: p.score + (ok ? question.points + Math.min(50, streak * 5) : 0),
         streak,
         bestStreak: Math.max(p.bestStreak, streak),
-        correctCount: nextCorrectCount,
+        correctCount: p.correctCount + (ok ? 1 : 0),
         answeredCount: p.answeredCount + 1,
         answeredIds: [...new Set([...p.answeredIds, question.id])],
         missedIds: ok ? p.missedIds : [...new Set([...p.missedIds, question.id])],
