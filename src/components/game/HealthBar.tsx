@@ -2,13 +2,17 @@ import { cn } from "@/lib/utils";
 
 export const MAX_HP = 14;
 
+/** HP can overcharge past the base ceiling, so the meter grows with it. */
+const cellsFor = (hp: number) => Math.max(MAX_HP, Math.ceil(hp / 3) * 3);
+
 /**
  * Shared memory-recall health bar. The same recall value drives every mode,
  * so the player reads one HP gauge across trivia, intermissions and the
  * Aerodynamics Extreme gauntlet.
  */
 export function HealthBar({ hp, className, glow }: { hp: number; className?: string | undefined; glow?: boolean | undefined }) {
-  const clamped = Math.max(0, Math.min(MAX_HP, hp));
+  const clamped = Math.max(0, hp);
+  const cells = cellsFor(clamped);
   const critical = clamped <= 2;
   const overcharged = glow && clamped > 11;
 

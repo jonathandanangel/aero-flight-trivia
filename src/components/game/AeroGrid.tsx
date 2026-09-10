@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { extremeQuestions } from "@/game/extreme";
 import { BrainCelebration } from "./BrainCelebration";
 import { BrainOverload } from "./BrainOverload";
-import { HealthBar, MAX_HP } from "./HealthBar";
+import { HealthBar } from "./HealthBar";
 import { MemoryGauntlet } from "./MemoryGauntlet";
 import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
