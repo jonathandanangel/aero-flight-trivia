@@ -24,8 +24,10 @@ function makeEvolvedPositions(seed: number): PadPosition[] {
   for (let i = slots.length - 1; i > 0; i -= 1) {
     const swapIndex = Math.floor(random() * (i + 1));
     const current = slots[i];
-    slots[i] = slots[swapIndex] ?? slots[i];
-    slots[swapIndex] = current ?? slots[swapIndex];
+    const replacement = slots[swapIndex];
+    if (!current || !replacement) continue;
+    slots[i] = replacement;
+    slots[swapIndex] = current;
   }
 
   return slots.slice(0, PADS).map(({ column, row }) => ({
