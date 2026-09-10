@@ -1,7 +1,7 @@
 import * as React from "react";
 import { audio, type AudioSettings } from "./audio";
 
-export type Mode = "campaign" | "practice" | "archive";
+export type Mode = "campaign" | "practice" | "high-speed";
 
 export interface Settings extends AudioSettings {
   scanlines: boolean;

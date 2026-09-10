@@ -1,5 +1,5 @@
 import * as React from "react";
-import { allQuestions, aeroQuestions, impactArchive, TOTAL_QUESTIONS } from "@/data/questions";
+import { allQuestions, aeroQuestions, highSpeedQuestionsOnly, TOTAL_QUESTIONS } from "@/data/questions";
 import { audio } from "@/game/audio";
 import { isComplete, isCorrect, misconceptionFor, stableShuffle } from "@/game/answer";
 import { setTitle } from "@/game/curriculum";
@@ -19,7 +19,7 @@ import { ValidationPanel } from "./ValidationPanel";
 import { WorldBackground } from "./WorldBackground";
 
 type Screen = "title" | "play" | "settings" | "validate" | "finale" | "gameover" | "lightcycle" | "maze";
-type Mode = "campaign" | "practice" | "archive" | "review" | "mastery";
+type Mode = "campaign" | "practice" | "high-speed" | "review" | "mastery";
 type Phase = "answering" | "revealed" | "recall";
 type IntermissionGame = "lightcycle" | "maze";
 
@@ -107,8 +107,8 @@ export function AeroGrid() {
         return allQuestions;
       case "practice":
         return stableShuffle(aeroQuestions, "practice");
-      case "archive":
-        return impactArchive;
+      case "high-speed":
+        return highSpeedQuestionsOnly;
       case "mastery":
         return stableShuffle(allQuestions, "mastery");
       case "review":
@@ -312,7 +312,7 @@ export function AeroGrid() {
           }}
           onResume={() => beginRun("campaign", [], true)}
           onPractice={() => beginRun("practice")}
-          onArchive={() => beginRun("archive")}
+          onHighSpeed={() => beginRun("high-speed")}
           onSettings={() => setScreen("settings")}
           onValidate={() => setScreen("validate")}
         />

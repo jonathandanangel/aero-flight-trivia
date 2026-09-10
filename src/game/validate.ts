@@ -1,4 +1,4 @@
-import { allQuestions, AERO_TOTAL, IMPACT_TOTAL, TOTAL_QUESTIONS } from "@/data/questions";
+import { allQuestions, AERO_TOTAL, highSpeedQuestionsOnly, TOTAL_QUESTIONS } from "@/data/questions";
 import type { Question } from "./types";
 
 export interface ValidationRule {
@@ -84,16 +84,22 @@ export function runValidation(): ValidationRule[] {
       detail: `${TOTAL_QUESTIONS} found`,
     },
     {
-      name: "Aerodynamics count equals 300",
-      passed: AERO_TOTAL === 300,
+      name: "Aerodynamics count equals 333",
+      passed: AERO_TOTAL === 333,
       failingIds: [],
       detail: `${AERO_TOTAL} found`,
     },
     {
-      name: "Legacy Impact count equals 33",
-      passed: IMPACT_TOTAL === 33,
+      name: "High-speed aerodynamics chapter count equals 33",
+      passed: highSpeedQuestionsOnly.length === 33,
       failingIds: [],
-      detail: `${IMPACT_TOTAL} found`,
+      detail: `${highSpeedQuestionsOnly.length} found`,
+    },
+    {
+      name: "Every question is aerodynamics science",
+      passed: allQuestions.every((q) => q.chapterId !== "impact" && q.category !== "Legacy Impact"),
+      failingIds: collect((q) => q.chapterId === "impact" || q.category === "Legacy Impact"),
+      detail: "no legacy non-science content",
     },
     {
       name: "Every question has a correct answer",

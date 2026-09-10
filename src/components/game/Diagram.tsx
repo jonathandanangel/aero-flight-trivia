@@ -197,7 +197,6 @@ function Shape({ type }: { type: DiagramType }) {
           </g>
         </g>
       );
-    case "impact-archive":
     default:
       return (
         <g>

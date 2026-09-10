@@ -27,8 +27,7 @@ export type DiagramType =
   | "aircraft-forces"
   | "stream-tube"
   | "velocity-profile"
-  | "mach-cone"
-  | "impact-archive";
+  | "mach-cone";
 
 export type AudioGenre =
   | "synthwave"
