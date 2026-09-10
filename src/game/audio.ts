@@ -15,6 +15,13 @@ export type SoundName =
   | "cycle-turn"
   | "cycle-crash"
   | "cycle-win"
+  | "maze-start"
+  | "maze-pellet"
+  | "maze-power"
+  | "maze-ghost"
+  | "maze-hit"
+  | "maze-win"
+  | "maze-lose"
   | "launch";
 
 export interface AudioSettings {
@@ -249,6 +256,28 @@ class AudioManager {
         break;
       case "cycle-win":
         this.blip([392, 523, 659, 784, 1046], 0.15, "square", 0.16);
+        break;
+      case "maze-start":
+        this.blip([147, 220, 294, 440], 0.18, "square", 0.16);
+        break;
+      case "maze-pellet":
+        this.blip([740 + (extra % 4) * 55], 0.035, "square", 0.055);
+        break;
+      case "maze-power":
+        this.blip([220, 330, 494, 659], 0.14, "sawtooth", 0.15);
+        break;
+      case "maze-ghost":
+        this.blip([988, 784, 1175], 0.12, "square", 0.14);
+        break;
+      case "maze-hit":
+        this.blip([294, 220, 147], 0.2, "triangle", 0.15);
+        break;
+      case "maze-win":
+        this.blip([523, 659, 784, 1046, 1319], 0.15, "square", 0.17);
+        break;
+      case "maze-lose":
+        this.noiseBurst(0.6, 360, 0.16, this.fxGain!);
+        this.blip([247, 165, 110], 0.26, "sawtooth", 0.15);
         break;
       case "launch":
         this.noiseBurst(2.4, 260, 0.22, this.fxGain!);

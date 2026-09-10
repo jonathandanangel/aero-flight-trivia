@@ -5,7 +5,7 @@ export interface TitleScreenProps {
   onStart: () => void;
   onResume: () => void;
   onPractice: () => void;
-  onArchive: () => void;
+  onHighSpeed: () => void;
   onSettings: () => void;
   onValidate: () => void;
 }
@@ -20,7 +20,7 @@ export function TitleScreen(p: TitleScreenProps) {
         <p className="font-mono text-xs uppercase tracking-[0.4em] text-magenta">Flight Dynamics Trivia</p>
         <h1 className="mt-2 font-display text-4xl text-cyan text-glow sm:text-6xl">AEROGRID 99</h1>
         <p className="mt-3 font-mono text-sm text-muted-foreground">
-          333 questions · 60 learning sets · Impact Archive
+          333 aerodynamics questions · 67 learning sets
         </p>
         <p className="mt-1 font-mono text-xs text-amber">Press START to enable sound</p>
       </div>
@@ -36,8 +36,8 @@ export function TitleScreen(p: TitleScreenProps) {
         <button type="button" className={item} onClick={p.onPractice}>
           Practice mode
         </button>
-        <button type="button" className={item} onClick={p.onArchive}>
-          Impact Archive
+        <button type="button" className={item} onClick={p.onHighSpeed}>
+          High-Speed Lab
         </button>
         <button type="button" className={item} onClick={p.onSettings}>
           Settings

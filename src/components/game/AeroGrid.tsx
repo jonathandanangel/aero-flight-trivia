@@ -1,5 +1,5 @@
 import * as React from "react";
-import { allQuestions, aeroQuestions, impactArchive, TOTAL_QUESTIONS } from "@/data/questions";
+import { allQuestions, aeroQuestions, highSpeedQuestionsOnly, TOTAL_QUESTIONS } from "@/data/questions";
 import { audio } from "@/game/audio";
 import { isComplete, isCorrect, misconceptionFor, stableShuffle } from "@/game/answer";
 import { setTitle } from "@/game/curriculum";
@@ -12,14 +12,34 @@ import { ElectricRecall } from "./ElectricRecall";
 import { Finale } from "./Finale";
 import { Interaction } from "./Interactions";
 import { LightCycleGame } from "./LightCycleGame";
+import { NeonMazeGame } from "./NeonMazeGame";
 import { SettingsPanel } from "./SettingsPanel";
 import { TitleScreen } from "./TitleScreen";
 import { ValidationPanel } from "./ValidationPanel";
 import { WorldBackground } from "./WorldBackground";
 
-type Screen = "title" | "play" | "settings" | "validate" | "finale" | "gameover" | "lightcycle";
-type Mode = "campaign" | "practice" | "archive" | "review" | "mastery";
+type Screen = "title" | "play" | "settings" | "validate" | "finale" | "gameover" | "lightcycle" | "maze";
+type Mode = "campaign" | "practice" | "high-speed" | "review" | "mastery";
 type Phase = "answering" | "revealed" | "recall";
+type IntermissionGame = "lightcycle" | "maze";
+
+interface PendingIntermission {
+  correctMilestone: number;
+  questionCheckpoint: number;
+  game: IntermissionGame;
+}
+
+const checkpointForQuestion = (number: number) =>
+  number >= 150 && number <= 300 && number % 50 === 0 ? number : 0;
+
+const selectIntermission = (correctMilestone: number, questionCheckpoint: number, questionNumber: number): IntermissionGame => {
+  if (questionNumber < 150) return "lightcycle";
+  let seed = 2166136261;
+  [correctMilestone, questionCheckpoint, questionNumber].forEach((value) => {
+    seed = Math.imul(seed ^ value, 16777619);
+  });
+  return (seed >>> 0) % 2 === 0 ? "lightcycle" : "maze";
+};
 
 const btn =
   "rounded-lg border border-cyan/50 bg-deepblue/70 px-4 py-2 font-display text-xs uppercase tracking-[0.2em] text-cyan transition-colors hover:bg-cyan/20 disabled:opacity-40";
@@ -77,7 +97,7 @@ export function AeroGrid() {
   const [paused, setPaused] = React.useState(false);
   const [wipe, setWipe] = React.useState(false);
   const [celebrationBurst, setCelebrationBurst] = React.useState(0);
-  const [pendingMilestone, setPendingMilestone] = React.useState(0);
+  const [pendingIntermission, setPendingIntermission] = React.useState<PendingIntermission | null>(null);
   const [sceneFading, setSceneFading] = React.useState(false);
   const [reviewIds, setReviewIds] = React.useState<string[]>([]);
 
@@ -87,8 +107,8 @@ export function AeroGrid() {
         return allQuestions;
       case "practice":
         return stableShuffle(aeroQuestions, "practice");
-      case "archive":
-        return impactArchive;
+      case "high-speed":
+        return highSpeedQuestionsOnly;
       case "mastery":
         return stableShuffle(allQuestions, "mastery");
       case "review":
@@ -120,12 +140,24 @@ export function AeroGrid() {
     setAnswer([]);
     setPhase("answering");
     setShowHint(false);
+    const currentQuestion = allQuestions[Math.min(progress.index, allQuestions.length - 1)];
+    const completedQuestionNumber = currentQuestion && progress.answeredIds.includes(currentQuestion.id)
+      ? currentQuestion.globalNumber
+      : Math.max(0, (currentQuestion?.globalNumber ?? 1) - 1);
     const dueMilestone = Math.floor(progress.correctCount / 15);
-    if (nextMode === "campaign" && resumeMilestone && dueMilestone > progress.lightCycleMilestone) {
-      setPendingMilestone(dueMilestone);
-      setScreen("lightcycle");
+    const dueCheckpoint = [150, 200, 250, 300].filter(
+      (value) => value <= completedQuestionNumber && value > progress.intermissionQuestionCheckpoint,
+    ).at(-1) ?? 0;
+    if (nextMode === "campaign" && resumeMilestone && (dueMilestone > progress.lightCycleMilestone || dueCheckpoint > 0)) {
+      const pending = {
+        correctMilestone: dueMilestone > progress.lightCycleMilestone ? dueMilestone : 0,
+        questionCheckpoint: dueCheckpoint,
+        game: selectIntermission(dueMilestone, dueCheckpoint, completedQuestionNumber),
+      } satisfies PendingIntermission;
+      setPendingIntermission(pending);
+      setScreen(pending.game);
     } else {
-      setPendingMilestone(0);
+      setPendingIntermission(null);
       setScreen("play");
     }
   };
@@ -144,7 +176,16 @@ export function AeroGrid() {
     if (mode !== "campaign") return;
     const nextCorrectCount = progress.correctCount + (ok ? 1 : 0);
     const milestone = Math.floor(nextCorrectCount / 15);
-    if (ok && milestone > progress.lightCycleMilestone) setPendingMilestone(milestone);
+    const correctMilestone = ok && milestone > progress.lightCycleMilestone ? milestone : 0;
+    const checkpoint = checkpointForQuestion(question.globalNumber);
+    const questionCheckpoint = checkpoint > progress.intermissionQuestionCheckpoint ? checkpoint : 0;
+    if (correctMilestone > 0 || questionCheckpoint > 0) {
+      setPendingIntermission({
+        correctMilestone,
+        questionCheckpoint,
+        game: selectIntermission(correctMilestone, questionCheckpoint, question.globalNumber),
+      });
+    }
     setProgress((p) => {
       const streak = ok ? p.streak + 1 : 0;
       return {
@@ -180,17 +221,22 @@ export function AeroGrid() {
     }
   };
 
+  const enterPendingIntermission = () => {
+    if (!pendingIntermission) return;
+    if (settings.reducedMotion) {
+      setScreen(pendingIntermission.game);
+      return;
+    }
+    setSceneFading(true);
+    window.setTimeout(() => {
+      setScreen(pendingIntermission.game);
+      window.setTimeout(() => setSceneFading(false), 40);
+    }, 420);
+  };
+
   const afterReveal = () => {
-    if (wasCorrect && mode === "campaign" && pendingMilestone > progress.lightCycleMilestone) {
-      if (settings.reducedMotion) {
-        setScreen("lightcycle");
-      } else {
-        setSceneFading(true);
-        window.setTimeout(() => {
-          setScreen("lightcycle");
-          window.setTimeout(() => setSceneFading(false), 40);
-        }, 420);
-      }
+    if (wasCorrect && mode === "campaign" && pendingIntermission) {
+      enterPendingIntermission();
       return;
     }
     if (wasCorrect || mode !== "campaign") {
@@ -212,14 +258,22 @@ export function AeroGrid() {
       recallWins: p.recallWins + (won ? 1 : 0),
       recallLosses: p.recallLosses + (won ? 0 : 1),
     }));
+    if (pendingIntermission) {
+      enterPendingIntermission();
+      return;
+    }
     advance();
   };
 
-  const finishLightCycle = () => {
-    setProgress({ lightCycleMilestone: pendingMilestone });
+  const finishIntermission = () => {
+    if (!pendingIntermission) return;
+    setProgress((p) => ({
+      lightCycleMilestone: Math.max(p.lightCycleMilestone, pendingIntermission.correctMilestone),
+      intermissionQuestionCheckpoint: Math.max(p.intermissionQuestionCheckpoint, pendingIntermission.questionCheckpoint),
+    }));
     const returnToTrivia = () => {
       advance();
-      setPendingMilestone(0);
+      setPendingIntermission(null);
       setScreen("play");
       audio.setTempoMultiplier(1);
       if (question) audio.setGenre(question.audioGenre, 0.5 + Math.min(0.4, progress.streak * 0.05));
@@ -258,7 +312,7 @@ export function AeroGrid() {
           }}
           onResume={() => beginRun("campaign", [], true)}
           onPractice={() => beginRun("practice")}
-          onArchive={() => beginRun("archive")}
+          onHighSpeed={() => beginRun("high-speed")}
           onSettings={() => setScreen("settings")}
           onValidate={() => setScreen("validate")}
         />
@@ -325,10 +379,19 @@ export function AeroGrid() {
 
       {screen === "lightcycle" && (
         <LightCycleGame
-          key={pendingMilestone}
-          milestone={Math.max(1, pendingMilestone)}
+          key={`cycle-${pendingIntermission?.correctMilestone ?? 0}-${pendingIntermission?.questionCheckpoint ?? 0}`}
+          milestone={Math.max(1, pendingIntermission?.correctMilestone ?? Math.floor(progress.correctCount / 15))}
           reducedMotion={settings.reducedMotion}
-          onComplete={finishLightCycle}
+          onComplete={finishIntermission}
+        />
+      )}
+
+      {screen === "maze" && (
+        <NeonMazeGame
+          key={`maze-${pendingIntermission?.correctMilestone ?? 0}-${pendingIntermission?.questionCheckpoint ?? 0}`}
+          milestone={Math.max(1, pendingIntermission?.correctMilestone ?? Math.floor(progress.correctCount / 15))}
+          reducedMotion={settings.reducedMotion}
+          onComplete={finishIntermission}
         />
       )}
 

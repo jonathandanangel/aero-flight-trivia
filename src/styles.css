@@ -345,7 +345,19 @@
     inset 0 0 35px color-mix(in srgb, var(--flight-blue) 10%, transparent);
 }
 
-.lightcycle-shell canvas {
+.maze-shell {
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--deepblue) 92%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--midnight) 80%, transparent),
+    0 0 48px color-mix(in srgb, var(--magenta) 20%, transparent),
+    inset 0 0 35px color-mix(in srgb, var(--neon-cyan) 9%, transparent);
+}
+
+.lightcycle-shell canvas,
+.maze-shell canvas {
   image-rendering: pixelated;
   touch-action: none;
 }

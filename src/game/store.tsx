@@ -1,7 +1,7 @@
 import * as React from "react";
 import { audio, type AudioSettings } from "./audio";
 
-export type Mode = "campaign" | "practice" | "archive";
+export type Mode = "campaign" | "practice" | "high-speed";
 
 export interface Settings extends AudioSettings {
   scanlines: boolean;
@@ -26,6 +26,8 @@ export interface Progress {
   recallLosses: number;
   /** Highest 15-correct Grid Run milestone completed. */
   lightCycleMilestone: number;
+  /** Highest 50-question intermission checkpoint completed (150, 200, 250, or 300). */
+  intermissionQuestionCheckpoint: number;
   gameOver: boolean;
   completed: boolean;
 }
@@ -61,6 +63,7 @@ export const defaultProgress: Progress = {
   recallWins: 0,
   recallLosses: 0,
   lightCycleMilestone: 0,
+  intermissionQuestionCheckpoint: 0,
   gameOver: false,
   completed: false,
 };

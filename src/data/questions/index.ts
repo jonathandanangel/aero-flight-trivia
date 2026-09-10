@@ -10,7 +10,7 @@ import { chapterGQuestions } from "./g-forces";
 import { chapterHQuestions } from "./h-drag";
 import { chapterIQuestions } from "./i-coefficients";
 import { chapterJQuestions } from "./j-mach";
-import { impactQuestions } from "./impact";
+import { highSpeedQuestions } from "./k-high-speed";
 
 const pad = (n: number, width: number) => String(n).padStart(width, "0");
 
@@ -25,9 +25,8 @@ const aeroSeeds: QuestionSeed[] = [
   ...chapterHQuestions,
   ...chapterIQuestions,
   ...chapterJQuestions,
+  ...highSpeedQuestions,
 ];
-
-const impactSeeds: QuestionSeed[] = impactQuestions;
 
 const aero: Question[] = aeroSeeds.map((seed, i) => ({
   ...seed,
@@ -35,19 +34,12 @@ const aero: Question[] = aeroSeeds.map((seed, i) => ({
   globalNumber: i + 1,
 }));
 
-const impact: Question[] = impactSeeds.map((seed, i) => ({
-  ...seed,
-  id: `IMPACT-${pad(i + 1, 3)}`,
-  globalNumber: aero.length + i + 1,
-}));
-
 export const aeroQuestions = aero;
-export const impactArchive = impact;
-export const allQuestions: Question[] = [...aero, ...impact];
+export const highSpeedQuestionsOnly = aero.filter((q) => q.chapterId === "high-speed");
+export const allQuestions: Question[] = aero;
 
 export const TOTAL_QUESTIONS = allQuestions.length;
 export const AERO_TOTAL = aero.length;
-export const IMPACT_TOTAL = impact.length;
 
 export const questionsByChapter = (chapterId: string) =>
   allQuestions.filter((q) => q.chapterId === chapterId);

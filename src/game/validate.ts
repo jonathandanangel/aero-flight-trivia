@@ -1,4 +1,4 @@
-import { allQuestions, AERO_TOTAL, IMPACT_TOTAL, TOTAL_QUESTIONS } from "@/data/questions";
+import { allQuestions, AERO_TOTAL, highSpeedQuestionsOnly, TOTAL_QUESTIONS } from "@/data/questions";
 import type { Question } from "./types";
 
 export interface ValidationRule {
@@ -11,6 +11,20 @@ export interface ValidationRule {
 const hasDupes = (values: string[]) =>
   new Set(values.map((v) => v.trim().toLowerCase())).size !== values.length;
 
+const scienceChapterIds = new Set([
+  "foundations",
+  "streamlines",
+  "momentum",
+  "viscosity",
+  "boundary-layer",
+  "airfoil",
+  "forces",
+  "drag",
+  "coefficients",
+  "mach",
+  "high-speed",
+]);
+
 function interactionDataOk(q: Question): boolean {
   switch (q.interactionType) {
     case "drag-drop":
@@ -19,7 +33,7 @@ function interactionDataOk(q: Question): boolean {
         !!q.sentenceParts &&
         !!q.draggableTokens &&
         q.sentenceParts.length === q.correctAnswer.length + 1 &&
-        q.correctAnswer.every((a) => q.draggableTokens!.includes(a))
+        q.correctAnswer.every((a) => q.draggableTokens?.includes(a))
       );
     case "multiple-choice":
       return (
@@ -45,7 +59,7 @@ function interactionDataOk(q: Question): boolean {
         !!q.targets &&
         !!q.draggableTokens &&
         q.targets.length === q.correctAnswer.length &&
-        q.correctAnswer.every((a) => q.draggableTokens!.includes(a))
+        q.correctAnswer.every((a) => q.draggableTokens?.includes(a))
       );
     case "sequencing":
       return !!q.steps && q.steps.length === q.correctAnswer.length && q.steps.length >= 3;
@@ -84,16 +98,22 @@ export function runValidation(): ValidationRule[] {
       detail: `${TOTAL_QUESTIONS} found`,
     },
     {
-      name: "Aerodynamics count equals 300",
-      passed: AERO_TOTAL === 300,
+      name: "Aerodynamics count equals 333",
+      passed: AERO_TOTAL === 333,
       failingIds: [],
       detail: `${AERO_TOTAL} found`,
     },
     {
-      name: "Legacy Impact count equals 33",
-      passed: IMPACT_TOTAL === 33,
+      name: "High-speed aerodynamics chapter count equals 33",
+      passed: highSpeedQuestionsOnly.length === 33,
       failingIds: [],
-      detail: `${IMPACT_TOTAL} found`,
+      detail: `${highSpeedQuestionsOnly.length} found`,
+    },
+    {
+      name: "Every question is aerodynamics science",
+      passed: allQuestions.every((q) => scienceChapterIds.has(q.chapterId)),
+      failingIds: collect((q) => !scienceChapterIds.has(q.chapterId)),
+      detail: "approved science chapter metadata",
     },
     {
       name: "Every question has a correct answer",
