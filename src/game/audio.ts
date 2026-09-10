@@ -80,6 +80,7 @@ class AudioManager {
   private genre: AudioGenre = "synthwave";
   private intensity = 0.6;
   private tempoMultiplier = 1;
+  private extremeTrack = 0;
   settings: AudioSettings = { master: 0.7, music: 0.5, effects: 0.8, muted: false };
 
   get ready() {
