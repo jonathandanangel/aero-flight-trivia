@@ -52,6 +52,22 @@ const GENRE_PRESETS: Record<
   supersonic: { bpm: 178, root: 73, scale: [0, 1, 5, 6, 8, 11], wave: "sawtooth", pulse: 0.11 },
 };
 
+/** Five escalating turbulent tracks used by Aerodynamics Extreme. */
+const SUPERSONIC_TRACKS: {
+  bpm: number;
+  root: number;
+  scale: number[];
+  wave: OscillatorType;
+  pulse: number;
+  turbulence: number;
+}[] = [
+  { bpm: 168, root: 73, scale: [0, 3, 5, 7, 10], wave: "sawtooth", pulse: 0.13, turbulence: 0.8 },
+  { bpm: 182, root: 78, scale: [0, 1, 5, 6, 8], wave: "sawtooth", pulse: 0.115, turbulence: 1.05 },
+  { bpm: 196, root: 82, scale: [0, 2, 3, 7, 9, 11], wave: "square", pulse: 0.1, turbulence: 1.35 },
+  { bpm: 212, root: 87, scale: [0, 1, 4, 6, 7, 10], wave: "sawtooth", pulse: 0.088, turbulence: 1.7 },
+  { bpm: 230, root: 92, scale: [0, 1, 3, 6, 8, 11], wave: "square", pulse: 0.075, turbulence: 2.1 },
+];
+
 const semitone = (root: number, steps: number) => root * Math.pow(2, steps / 12);
 
 class AudioManager {
