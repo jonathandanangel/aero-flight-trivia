@@ -19,3 +19,4 @@
 - [ ] Show “+3 RECALL!” text during the Extreme brain overload expansion.
 - [ ] After Extreme overload, morph the moon into a glancing eyeball and activate a psychedelic, vertigo-inducing background distortion while keeping UI legible.
 - [ ] In Aerodynamics Extreme, trigger Path Memory on missed questions with a fully randomized line sequence each attempt.
+- [ ] Animate Path Memory preview lines with laser sound effects, then smoothly fade them out completely before the recall phase.
