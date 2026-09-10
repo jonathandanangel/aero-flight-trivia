@@ -159,7 +159,7 @@ export function AeroGrid() {
     setShowHint(false);
     setGauntletRecovery(false);
     setOverloadBurst(0);
-    setPsychedelicActive(nextMode === "extreme" ? psychedelicActive : false);
+    setPsychedelicActive(false);
     const currentQuestion = allQuestions[Math.min(progress.index, allQuestions.length - 1)];
     const completedQuestionNumber = currentQuestion && progress.answeredIds.includes(currentQuestion.id)
       ? currentQuestion.globalNumber
