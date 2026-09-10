@@ -264,10 +264,6 @@
   --brain-glow-secondary: var(--color-magenta);
 }
 
-.brain-flyer-flipped {
-  transform-origin: center;
-}
-
 .brain-celebration-static {
   display: grid;
   place-items: center;

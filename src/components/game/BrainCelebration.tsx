@@ -4,8 +4,9 @@ import cyanBrainAsset from "@/assets/winged-brain-cyan.png.asset.json";
 import solarBrainAsset from "@/assets/winged-brain-solar.png.asset.json";
 import voltBrainAsset from "@/assets/winged-brain-volt.png.asset.json";
 
+const originalVariant = { src: brainAsset.url, theme: "magenta" } as const;
 const variants = [
-  { src: brainAsset.url, theme: "magenta" },
+  originalVariant,
   { src: cyanBrainAsset.url, theme: "cyan" },
   { src: solarBrainAsset.url, theme: "solar" },
   { src: voltBrainAsset.url, theme: "volt" },
@@ -20,8 +21,11 @@ type Flyer = {
   delay: number;
   rotation: number;
   variant: (typeof variants)[number];
-  flip: boolean;
 };
+
+function selectVariant(index: number): (typeof variants)[number] {
+  return variants[index % variants.length] ?? originalVariant;
+}
 
 function createFlyers(seed: number): Flyer[] {
   const count = 1 + (seed % 3);
@@ -36,8 +40,7 @@ function createFlyers(seed: number): Flyer[] {
       duration: 1500 + ((n * 13) % 1050),
       delay: index * 170,
       rotation: -14 + ((n * 17) % 29),
-      variant: variants[(n + seed + index) % variants.length],
-      flip: (n + index) % 4 === 0,
+      variant: selectVariant(n + seed + index),
     };
   });
 }
@@ -48,7 +51,7 @@ export function BrainCelebration({ burst, reducedMotion }: { burst: number; redu
   if (burst === 0) return null;
 
   if (reducedMotion) {
-    const variant = variants[burst % variants.length];
+    const variant = selectVariant(burst);
     return (
       <div key={burst} className={`brain-celebration brain-celebration-static brain-theme-${variant.theme}`} aria-hidden>
         <img src={variant.src} alt="" />
@@ -63,7 +66,7 @@ export function BrainCelebration({ burst, reducedMotion }: { burst: number; redu
           key={flyer.id}
           src={flyer.variant.src}
           alt=""
-          className={`brain-flyer brain-theme-${flyer.variant.theme}${flyer.flip ? " brain-flyer-flipped" : ""}`}
+          className={`brain-flyer brain-theme-${flyer.variant.theme}`}
           style={
             {
               "--brain-size": `${flyer.size}px`,
