@@ -480,15 +480,26 @@ export function AeroGrid() {
       {screen === "gauntlet" && (
         <div className="extreme-shell mx-auto w-full max-w-3xl">
           <MemoryGauntlet
+            key={`gauntlet-${gauntletRecovery ? "recovery" : "entry"}-${localIndex}`}
             reducedMotion={settings.reducedMotion}
             hp={progress.recoveryLength}
             onOvercharge={gainRecall}
             onDamage={damageRecall}
             onComplete={(score) => {
               setExtremeScore(score);
-              setScreen("play");
+              if (gauntletRecovery) {
+                exitRecoveryGauntlet(true);
+              } else {
+                setScreen("play");
+              }
             }}
-            onAbort={() => setScreen("title")}
+            onAbort={() => {
+              if (gauntletRecovery) {
+                exitRecoveryGauntlet(false);
+              } else {
+                setScreen("title");
+              }
+            }}
           />
         </div>
       )}
