@@ -298,7 +298,7 @@ export function AeroGrid() {
   const worldProgress = progress.index / TOTAL_QUESTIONS;
 
   return (
-    <div className="min-h-screen px-4 py-6">
+    <div className={cn("min-h-screen px-4 py-6", progress.bloodMoonAwakened && "blood-moon-active")}>
       <WorldBackground
         progress={worldProgress}
         scanlines={settings.scanlines}

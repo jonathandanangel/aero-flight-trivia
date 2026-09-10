@@ -25,12 +25,15 @@ export function WorldBackground({
         : "linear-gradient(180deg, #12203f 0%, #33224a 45%, #071225 100%)";
 
   return (
-    <div className={cn("pointer-events-none fixed inset-0 -z-10", scanlines && "scanlines")} aria-hidden>
+    <div
+      className={cn("pointer-events-none fixed inset-0 -z-10", bloodMoon && "blood-moon-scene", scanlines && "scanlines")}
+      aria-hidden
+    >
       <div className="absolute inset-0" style={{ background: sky }} />
       {bloodMoon && <div className="blood-moon-atmosphere absolute inset-0" />}
       <div
         className={cn(
-          "absolute right-[12%] top-[10%] h-24 w-24 rounded-full blur-[1px]",
+          "absolute right-[12%] top-[10%] h-24 w-24 rounded-full blur-[0.5px] sm:h-28 sm:w-28",
           bloodMoon ? "blood-moon" : "bg-moon/90",
           bloodMoon && !reducedMotion && "blood-moon-awakening",
         )}
@@ -48,7 +51,7 @@ export function WorldBackground({
           }}
         />
       ))}
-      <svg viewBox="0 0 1200 300" preserveAspectRatio="none" className="absolute bottom-0 h-[38vh] w-full">
+      <svg viewBox="0 0 1200 300" preserveAspectRatio="none" className="absolute bottom-0 z-[3] h-[38vh] w-full">
         <g fill="#071225" stroke="var(--color-cyan)" strokeWidth="1.4" opacity="0.85">
           {Array.from({ length: 26 }).map((_, i) => {
             const w = 30 + ((i * 37) % 44);
@@ -59,7 +62,7 @@ export function WorldBackground({
         </g>
         <line x1="0" y1="299" x2="1200" y2="299" stroke="var(--color-magenta)" strokeWidth="2" />
       </svg>
-      {bloodMoon && <div className="blood-moon-horizon absolute inset-x-0 bottom-0 h-[30vh]" />}
+      {bloodMoon && <div className="blood-moon-horizon absolute inset-x-0 bottom-0 z-[2] h-[30vh]" />}
       {!reducedMotion &&
         [0, 1].map((i) => (
           <div
