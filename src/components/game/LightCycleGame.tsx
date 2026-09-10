@@ -177,6 +177,7 @@ export function LightCycleGame({
   const opponentRef = React.useRef<Racer>({ head: { x: 39, y: 13 }, direction: "left", trail: [{ x: 39, y: 13 }] });
   const requestedDirection = React.useRef<Direction>("right");
   const tickRef = React.useRef(0);
+  const skyPhaseRef = React.useRef(0.08);
   const [phase, setPhase] = React.useState<"ready" | "running" | "done">("ready");
   const [outcome, setOutcome] = React.useState<Outcome | null>(null);
   const [skyPhase, setSkyPhase] = React.useState(0.08);
@@ -250,12 +251,13 @@ export function LightCycleGame({
       opponent.head = opponentNext;
       player.trail = [...player.trail, playerNext];
       opponent.trail = [...opponent.trail, opponentNext];
-      setSkyPhase((value) => (value + 0.0025 * Math.min(3, 1 + milestone * 0.12)) % 1);
+      skyPhaseRef.current = (skyPhaseRef.current + 0.0025 * Math.min(3, 1 + milestone * 0.12)) % 1;
+      setSkyPhase(skyPhaseRef.current);
       const canvas = canvasRef.current;
-      if (canvas) drawScene(canvas, player, opponent, skyPhase, reducedMotion);
+      if (canvas) drawScene(canvas, player, opponent, skyPhaseRef.current, reducedMotion);
     }, tickMs);
     return () => window.clearInterval(timer);
-  }, [milestone, phase, reducedMotion, skyPhase, tickMs]);
+  }, [milestone, phase, reducedMotion, tickMs]);
 
   const start = () => {
     audio.play("cycle-start");

@@ -112,7 +112,7 @@ export function AeroGrid() {
     audio.startMusic();
   };
 
-  const beginRun = (nextMode: Mode, ids: string[] = []) => {
+  const beginRun = (nextMode: Mode, ids: string[] = [], resumeMilestone = false) => {
     startAudio();
     setMode(nextMode);
     setReviewIds(ids);
@@ -120,7 +120,14 @@ export function AeroGrid() {
     setAnswer([]);
     setPhase("answering");
     setShowHint(false);
-    setScreen("play");
+    const dueMilestone = Math.floor(progress.correctCount / 15);
+    if (nextMode === "campaign" && resumeMilestone && dueMilestone > progress.lightCycleMilestone) {
+      setPendingMilestone(dueMilestone);
+      setScreen("lightcycle");
+    } else {
+      setPendingMilestone(0);
+      setScreen("play");
+    }
   };
 
   const submit = () => {
@@ -249,7 +256,7 @@ export function AeroGrid() {
             resetCampaign();
             beginRun("campaign");
           }}
-          onResume={() => beginRun("campaign")}
+          onResume={() => beginRun("campaign", [], true)}
           onPractice={() => beginRun("practice")}
           onArchive={() => beginRun("archive")}
           onSettings={() => setScreen("settings")}
