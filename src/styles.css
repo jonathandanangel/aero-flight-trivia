@@ -49,6 +49,8 @@
   --color-magenta: var(--magenta);
   --color-moon: var(--moon);
   --color-amber: var(--amber);
+  --color-blood-moon: var(--blood-moon);
+  --color-crimson-glow: var(--crimson-glow);
   --color-panel: var(--panel);
   --color-panel-border: var(--panel-border);
 
@@ -73,6 +75,10 @@
   --sky-day: #185b88;
   --sky-sunset: #b34776;
   --cycle-red: #ff633d;
+  --blood-moon: #ff253f;
+  --blood-moon-core: #ff6475;
+  --crimson-glow: #d80f32;
+  --crimson-horizon: #7d071d;
   --panel: rgba(7, 18, 37, 0.82);
   --panel-border: rgba(37, 217, 255, 0.35);
 
@@ -220,6 +226,56 @@
   }
   100% {
     transform: translateX(110%);
+  }
+}
+
+.blood-moon-atmosphere {
+  z-index: 1;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--crimson-glow) 26%, transparent), transparent 55%),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--blood-moon) 30%, transparent), transparent 34%);
+  mix-blend-mode: screen;
+}
+
+.blood-moon {
+  z-index: 2;
+  background:
+    radial-gradient(circle at 38% 34%, var(--blood-moon-core) 0 8%, transparent 9%),
+    radial-gradient(circle at 66% 61%, color-mix(in srgb, var(--crimson-horizon) 55%, transparent) 0 10%, transparent 11%),
+    radial-gradient(circle at 50% 50%, var(--blood-moon-core), var(--blood-moon) 46%, var(--crimson-glow) 78%);
+  box-shadow:
+    0 0 18px var(--blood-moon-core),
+    0 0 55px var(--blood-moon),
+    0 0 120px color-mix(in srgb, var(--crimson-glow) 86%, transparent),
+    0 0 220px color-mix(in srgb, var(--crimson-horizon) 64%, transparent);
+}
+
+.blood-moon-awakening {
+  animation: blood-moon-awaken 1.4s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+
+.blood-moon-horizon {
+  z-index: 1;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--crimson-horizon) 48%, transparent), transparent 78%);
+  filter: blur(10px);
+  mix-blend-mode: screen;
+}
+
+@keyframes blood-moon-awaken {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.82);
+    filter: saturate(0.4) brightness(2.2);
+  }
+  38% {
+    opacity: 1;
+    transform: scale(1.16);
+    filter: saturate(1.8) brightness(1.35);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: saturate(1.25) brightness(1.08);
   }
 }
 
