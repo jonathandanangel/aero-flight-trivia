@@ -20,3 +20,4 @@
 - [ ] After Extreme overload, morph the moon into a glancing eyeball and activate a psychedelic, vertigo-inducing background distortion while keeping UI legible.
 - [ ] In Aerodynamics Extreme, trigger Path Memory on missed questions with a fully randomized line sequence each attempt.
 - [ ] Animate Path Memory preview lines with laser sound effects, then smoothly fade them out completely before the recall phase.
+- [x] Show four aerodynamics reference diagrams with gunshot cue and 30s countdown before Aerodynamics Extreme.

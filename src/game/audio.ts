@@ -30,6 +30,7 @@ export type SoundName =
   | "stage-fail"
   | "gauntlet-start"
   | "brain-overload"
+  | "gunshot"
   | "launch";
 
 export interface AudioSettings {
@@ -314,6 +315,11 @@ class AudioManager {
       case "brain-overload":
         this.blip([196, 294, 440, 659, 988, 1319], 0.22, "square", 0.19);
         this.noiseBurst(1.6, 340, 0.2, this.fxGain!);
+        break;
+      case "gunshot":
+        this.noiseBurst(0.09, 2400, 0.32, this.fxGain!);
+        this.noiseBurst(0.32, 220, 0.24, this.fxGain!);
+        this.blip([180, 90], 0.14, "square", 0.2);
         break;
       case "launch":
         this.noiseBurst(2.4, 260, 0.22, this.fxGain!);
