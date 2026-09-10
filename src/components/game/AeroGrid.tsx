@@ -221,17 +221,22 @@ export function AeroGrid() {
     }
   };
 
+  const enterPendingIntermission = () => {
+    if (!pendingIntermission) return;
+    if (settings.reducedMotion) {
+      setScreen(pendingIntermission.game);
+      return;
+    }
+    setSceneFading(true);
+    window.setTimeout(() => {
+      setScreen(pendingIntermission.game);
+      window.setTimeout(() => setSceneFading(false), 40);
+    }, 420);
+  };
+
   const afterReveal = () => {
-    if (mode === "campaign" && pendingIntermission) {
-      if (settings.reducedMotion) {
-        setScreen(pendingIntermission.game);
-      } else {
-        setSceneFading(true);
-        window.setTimeout(() => {
-          setScreen(pendingIntermission.game);
-          window.setTimeout(() => setSceneFading(false), 40);
-        }, 420);
-      }
+    if (wasCorrect && mode === "campaign" && pendingIntermission) {
+      enterPendingIntermission();
       return;
     }
     if (wasCorrect || mode !== "campaign") {
@@ -253,6 +258,10 @@ export function AeroGrid() {
       recallWins: p.recallWins + (won ? 1 : 0),
       recallLosses: p.recallLosses + (won ? 0 : 1),
     }));
+    if (pendingIntermission) {
+      enterPendingIntermission();
+      return;
+    }
     advance();
   };
 
