@@ -7,7 +7,7 @@ const GRID_PADS = 11;
 
 type Pos = { left: number; top: number };
 type Stage = 1 | 2 | 3;
-type Phase = "brief" | "watch" | "input" | "result";
+type Phase = "brief" | "watch" | "fadeout" | "input" | "result";
 
 function seeded(seed: number) {
   let state = (seed || 1) >>> 0;
@@ -88,9 +88,10 @@ export function MemoryGauntlet({
   const [drawn, setDrawn] = React.useState(0);
   const [won, setWon] = React.useState(false);
   const [message, setMessage] = React.useState("");
+  const [salt] = React.useState(() => Math.floor(Math.random() * 1_000_000));
 
   const nodeCount = stage === 3 ? 7 : GRID_PADS;
-  const seed = stage * 7919 + attempt * 613 + length * 31;
+  const seed = stage * 7919 + attempt * 613 + length * 31 + salt;
 
   const positions = React.useMemo(
     () => (stage === 1 ? gridPositions(GRID_PADS) : scatter(nodeCount, seed)),
@@ -129,7 +130,7 @@ export function MemoryGauntlet({
           window.setTimeout(() => {
             if (stage === 3) audio.play("path-clear");
             setFlash(null);
-            setPhase("input");
+            setPhase(stage === 3 ? "fadeout" : "input");
           }, gap),
         );
         return;
@@ -153,6 +154,13 @@ export function MemoryGauntlet({
     timers.push(window.setTimeout(run, reducedMotion ? 250 : 520));
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [phase, sequence, stage, reducedMotion]);
+
+  // Smoothly fade preview lines before recall begins.
+  React.useEffect(() => {
+    if (phase !== "fadeout") return;
+    const timer = window.setTimeout(() => setPhase("input"), reducedMotion ? 200 : 520);
+    return () => window.clearTimeout(timer);
+  }, [phase, reducedMotion]);
 
   const finishStage = (success: boolean) => {
     setPhase("result");
@@ -218,9 +226,11 @@ export function MemoryGauntlet({
   const linkPoints = (count: number) =>
     sequence.slice(0, Math.max(0, count)).map((n) => positions[n] ?? { left: 50, top: 50 });
 
-  const playbackLinks = linkPoints(phase === "input" ? sequence.length : drawn);
+  // Preview lines draw during watch, fade during fadeout, then vanish for recall.
+  const playbackLinks = phase === "watch" || phase === "fadeout" ? linkPoints(drawn) : [];
   const tracedLinks = phase === "input" ? linkPoints(step + 1) : [];
   const rainbow = stage === 3 && phase === "input" && !reducedMotion;
+  const fading = phase === "fadeout";
 
   return (
     <div className="panel mx-auto w-full max-w-3xl space-y-4 p-5">
@@ -254,11 +264,13 @@ export function MemoryGauntlet({
               ? stage === 3
                 ? "Laser path drawing"
                 : "Watch the sequence"
-              : phase === "input"
-                ? `Reproduce it (${step}/${sequence.length})`
-                : won
-                  ? "Trial cleared"
-                  : "Trial failed"}
+              : phase === "fadeout"
+                ? "Memorize the path"
+                : phase === "input"
+                  ? `Reproduce it (${step}/${sequence.length})`
+                  : won
+                    ? "Trial cleared"
+                    : "Trial failed"}
           </p>
 
           <div className={cn("gauntlet-field", stage === 3 && "gauntlet-field-path", rainbow && "gauntlet-rainbow")}>
@@ -273,7 +285,7 @@ export function MemoryGauntlet({
                       y1={from.top}
                       x2={point.left}
                       y2={point.top}
-                      className="gauntlet-laser"
+                      className={cn("gauntlet-laser", fading && "gauntlet-laser-fade")}
                     />
                   );
                 })}

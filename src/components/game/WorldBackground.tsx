@@ -4,17 +4,21 @@ import { cn } from "@/lib/utils";
 /**
  * Sky that shifts from late afternoon -> night -> sunrise as the campaign
  * progresses, with a neon skyline, moon, drifting clouds and light riders.
+ * In Aerodynamics Extreme overload the moon becomes a glancing eyeball and the
+ * whole scene pulses with psychedelic distortion.
  */
 export function WorldBackground({
   progress,
   scanlines,
   reducedMotion,
   bloodMoon,
+  psychedelic,
 }: {
   progress: number;
   scanlines: boolean;
   reducedMotion: boolean;
   bloodMoon: boolean;
+  psychedelic?: boolean;
 }) {
   const phase = Math.min(1, Math.max(0, progress));
   const sky =
@@ -26,23 +30,46 @@ export function WorldBackground({
 
   return (
     <div
-      className={cn("pointer-events-none fixed inset-0 -z-10", bloodMoon && "blood-moon-scene", scanlines && "scanlines")}
+      className={cn(
+        "pointer-events-none fixed inset-0 -z-10",
+        bloodMoon && "blood-moon-scene",
+        scanlines && "scanlines",
+        psychedelic && !reducedMotion && "psychedelic-scene",
+      )}
       aria-hidden
     >
       <div className="absolute inset-0" style={{ background: sky }} />
       {bloodMoon && <div className="blood-moon-atmosphere absolute inset-0" />}
+      {psychedelic && !reducedMotion && (
+        <>
+          <div className="psychedelic-hue absolute inset-0" />
+          <div className="psychedelic-warp absolute inset-0" />
+          <div className="psychedelic-trails absolute inset-0" />
+        </>
+      )}
       <div
         className={cn(
-          "absolute right-[12%] top-[10%] h-24 w-24 rounded-full blur-[0.5px] sm:h-28 sm:w-28",
+          "moon absolute right-[12%] top-[10%] h-24 w-24 rounded-full blur-[0.5px] sm:h-28 sm:w-28",
           bloodMoon ? "blood-moon" : "bg-moon/90",
           bloodMoon && !reducedMotion && "blood-moon-awakening",
+          psychedelic && !reducedMotion && "eyeball-moon",
         )}
         style={bloodMoon ? undefined : { boxShadow: "0 0 60px rgba(234,247,255,0.45)" }}
-      />
+      >
+        {psychedelic && (
+          <div className="eyeball-socket">
+            <div className={cn("eyeball", !reducedMotion && "eyeball-glance")}>
+              <div className="eyeball-iris" />
+              <div className="eyeball-pupil" />
+              <div className="eyeball-shine" />
+            </div>
+          </div>
+        )}
+      </div>
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="absolute h-8 rounded-full bg-moon/10 blur-md"
+          className={cn("absolute h-8 rounded-full bg-moon/10 blur-md", psychedelic && !reducedMotion && "cloud-shift")}
           style={{
             width: `${140 + i * 60}px`,
             top: `${18 + i * 9}%`,
@@ -67,7 +94,7 @@ export function WorldBackground({
         [0, 1].map((i) => (
           <div
             key={i}
-            className="absolute h-[2px] w-40 bg-cyan/70"
+            className={cn("absolute h-[2px] w-40 bg-cyan/70", psychedelic && "rider-trail")}
             style={{
               bottom: `${8 + i * 5}%`,
               animation: `aerogrid-pass ${9 + i * 5}s linear infinite`,

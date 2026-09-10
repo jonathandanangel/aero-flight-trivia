@@ -7,10 +7,10 @@ export const MAX_HP = 14;
  * so the player reads one HP gauge across trivia, intermissions and the
  * Aerodynamics Extreme gauntlet.
  */
-export function HealthBar({ hp, className }: { hp: number; className?: string }) {
+export function HealthBar({ hp, className, glow }: { hp: number; className?: string | undefined; glow?: boolean | undefined }) {
   const clamped = Math.max(0, Math.min(MAX_HP, hp));
   const critical = clamped <= 2;
-  const overcharged = clamped > 11;
+  const overcharged = glow && clamped > 11;
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
@@ -28,7 +28,7 @@ export function HealthBar({ hp, className }: { hp: number; className?: string })
             key={i}
             className={cn(
               "hp-cell",
-              i < clamped && (critical ? "hp-cell-critical" : i > 10 ? "hp-cell-over" : "hp-cell-on"),
+              i < clamped && (critical ? "hp-cell-critical" : overcharged ? "hp-cell-over" : "hp-cell-on"),
             )}
           />
         ))}

@@ -1,10 +1,11 @@
 import * as React from "react";
-import brainAsset from "@/assets/winged-brain.png.asset.json";
+import brainAsset from "@/assets/brainpic-2.png.asset.json";
 import { audio } from "@/game/audio";
 
 /**
- * Memory overcharge flourish: once recall HP passes 11 the winged brain
- * fills the screen, announces "+3 MEMORY RECALL" and detonates.
+ * Memory overcharge flourish: once recall HP passes 11 inside Aerodynamics
+ * Extreme the winged brain fills the screen, announces "+3 RECALL!" and
+ * detonates, leaving the background permanently psychedelic.
  */
 export function BrainOverload({
   burst,
@@ -27,7 +28,7 @@ export function BrainOverload({
   return (
     <div key={burst} className="brain-overload" role="status" aria-live="polite">
       <img src={brainAsset.url} alt="" className="brain-overload-img" />
-      <p className="brain-overload-label">+3 MEMORY RECALL</p>
+      <p className="brain-overload-label">+3 RECALL!</p>
       <span className="brain-overload-blast" aria-hidden />
     </div>
   );

@@ -64,6 +64,7 @@ function Hud({
   score,
   streak,
   recoveryLength,
+  glow,
   onPause,
 }: {
   question: Question;
@@ -72,6 +73,7 @@ function Hud({
   score: number;
   streak: number;
   recoveryLength: number;
+  glow?: boolean;
   onPause: () => void;
 }) {
   return (
@@ -82,7 +84,7 @@ function Hud({
       <span className="text-amber">Score {score}</span>
       <span className="text-mint">Streak {streak}</span>
       <span className="text-magenta">{question.audioGenre}</span>
-      <HealthBar hp={recoveryLength} />
+      <HealthBar hp={recoveryLength} glow={glow} />
       <button type="button" onClick={onPause} className="ml-auto rounded-md border border-border px-3 py-1 text-[10px]">
         Pause
       </button>
@@ -107,6 +109,8 @@ export function AeroGrid() {
   const [reviewIds, setReviewIds] = React.useState<string[]>([]);
   const [extremeScore, setExtremeScore] = React.useState(0);
   const [overloadBurst, setOverloadBurst] = React.useState(0);
+  const [psychedelicActive, setPsychedelicActive] = React.useState(false);
+  const [gauntletRecovery, setGauntletRecovery] = React.useState(false);
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
@@ -153,6 +157,9 @@ export function AeroGrid() {
     setAnswer([]);
     setPhase("answering");
     setShowHint(false);
+    setGauntletRecovery(false);
+    setOverloadBurst(0);
+    setPsychedelicActive(false);
     const currentQuestion = allQuestions[Math.min(progress.index, allQuestions.length - 1)];
     const completedQuestionNumber = currentQuestion && progress.answeredIds.includes(currentQuestion.id)
       ? currentQuestion.globalNumber
@@ -260,6 +267,11 @@ export function AeroGrid() {
       advance();
       return;
     }
+    if (mode === "extreme") {
+      setGauntletRecovery(true);
+      setScreen("gauntlet");
+      return;
+    }
     setPhase("recall");
   };
 
@@ -287,11 +299,11 @@ export function AeroGrid() {
     }
     setProgress((p) => {
       const next = nextRecoveryLength(p.recoveryLength, won);
-      if (next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
+      if (mode === "extreme" && next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
       return {
-      recoveryLength: next,
-      recallWins: p.recallWins + (won ? 1 : 0),
-      recallLosses: p.recallLosses + (won ? 0 : 1),
+        recoveryLength: next,
+        recallWins: p.recallWins + (won ? 1 : 0),
+        recallLosses: p.recallLosses + (won ? 0 : 1),
       };
     });
     if (pendingIntermission) {
@@ -299,6 +311,18 @@ export function AeroGrid() {
       return;
     }
     advance();
+  };
+
+  const exitRecoveryGauntlet = (cleared: boolean) => {
+    if (!cleared && progress.recoveryLength <= 2) {
+      setProgress((p) => ({ recallLosses: p.recallLosses + 1, gameOver: true }));
+      setScreen("gameover");
+      return;
+    }
+    setScreen("play");
+    setPhase("answering");
+    setAnswer([]);
+    setShowHint(false);
   };
 
   const finishIntermission = () => {
@@ -336,13 +360,17 @@ export function AeroGrid() {
         scanlines={settings.scanlines}
         reducedMotion={settings.reducedMotion}
         bloodMoon={progress.bloodMoonAwakened}
+        psychedelic={psychedelicActive}
       />
 
       <BrainCelebration burst={celebrationBurst} reducedMotion={settings.reducedMotion} />
       <BrainOverload
         burst={overloadBurst}
         reducedMotion={settings.reducedMotion}
-        onDone={() => setOverloadBurst(0)}
+        onDone={() => {
+          setOverloadBurst(0);
+          if (mode === "extreme") setPsychedelicActive(true);
+        }}
       />
 
       {screen === "title" && (
@@ -365,6 +393,9 @@ export function AeroGrid() {
             setShowHint(false);
             setExtremeScore(0);
             setPendingIntermission(null);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
             setScreen("gauntlet");
           }}
           onSettings={() => setScreen("settings")}
@@ -452,22 +483,33 @@ export function AeroGrid() {
       {screen === "gauntlet" && (
         <div className="extreme-shell mx-auto w-full max-w-3xl">
           <MemoryGauntlet
+            key={`gauntlet-${gauntletRecovery ? "recovery" : "entry"}-${localIndex}`}
             reducedMotion={settings.reducedMotion}
             hp={progress.recoveryLength}
             onOvercharge={gainRecall}
             onDamage={damageRecall}
             onComplete={(score) => {
               setExtremeScore(score);
-              setScreen("play");
+              if (gauntletRecovery) {
+                exitRecoveryGauntlet(true);
+              } else {
+                setScreen("play");
+              }
             }}
-            onAbort={() => setScreen("title")}
+            onAbort={() => {
+              if (gauntletRecovery) {
+                exitRecoveryGauntlet(false);
+              } else {
+                setScreen("title");
+              }
+            }}
           />
         </div>
       )}
 
       {(screen === "lightcycle" || screen === "maze") && (
         <div className="mx-auto mt-4 w-full max-w-3xl">
-          <HealthBar hp={progress.recoveryLength} className="justify-center" />
+          <HealthBar hp={progress.recoveryLength} className="justify-center" glow={mode === "extreme"} />
         </div>
       )}
 
@@ -480,6 +522,7 @@ export function AeroGrid() {
             score={mode === "extreme" ? extremeScore : progress.score}
             streak={progress.streak}
             recoveryLength={progress.recoveryLength}
+            glow={mode === "extreme"}
             onPause={() => setPaused(true)}
           />
 

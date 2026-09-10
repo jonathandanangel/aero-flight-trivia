@@ -290,6 +290,137 @@
   }
 }
 
+/* ---------- Psychedelic eyeball moon (Aerodynamics Extreme overload) ---------- */
+.psychedelic-scene .moon {
+  z-index: 1;
+}
+
+.psychedelic-hue {
+  pointer-events: none;
+  background: radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--magenta) 16%, transparent) 0 8%, transparent 28%),
+    radial-gradient(circle at 20% 80%, color-mix(in srgb, var(--neon-cyan) 12%, transparent) 0 10%, transparent 30%);
+  animation: psychedelic-hue-shift 2.6s linear infinite;
+  mix-blend-mode: screen;
+  opacity: 0.55;
+}
+
+.psychedelic-warp {
+  pointer-events: none;
+  background: repeating-radial-gradient(circle at 50% 50%, transparent 0 18px, color-mix(in srgb, var(--magenta) 8%, transparent) 20px 22px);
+  animation: psychedelic-warp-pulse 3.4s ease-in-out infinite;
+  mix-blend-mode: overlay;
+  opacity: 0.35;
+}
+
+.psychedelic-trails {
+  pointer-events: none;
+  background: conic-gradient(from 0deg, color-mix(in srgb, var(--neon-cyan) 10%, transparent), color-mix(in srgb, var(--magenta) 10%, transparent), color-mix(in srgb, var(--amber) 10%, transparent), color-mix(in srgb, var(--neon-cyan) 10%, transparent));
+  animation: psychedelic-trails-rotate 8s linear infinite;
+  mix-blend-mode: screen;
+  opacity: 0.12;
+}
+
+.eyeball-moon {
+  background:
+    radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--blood-moon-core) 60%, var(--blood-moon)) 0 8%, transparent 12%),
+    radial-gradient(circle at 67% 62%, color-mix(in srgb, var(--crimson-horizon) 58%, transparent) 0 10%, transparent 14%),
+    radial-gradient(circle at 31% 69%, color-mix(in srgb, var(--crimson-horizon) 48%, transparent) 0 7%, transparent 10%),
+    radial-gradient(circle at 44% 38%, var(--blood-moon-core), var(--blood-moon) 48%, var(--crimson-glow) 78%, var(--crimson-horizon) 100%);
+  box-shadow:
+    0 0 10px var(--blood-moon-core),
+    0 0 34px color-mix(in srgb, var(--blood-moon) 86%, transparent),
+    0 0 76px color-mix(in srgb, var(--crimson-glow) 48%, transparent),
+    inset -8px -10px 20px color-mix(in srgb, var(--crimson-horizon) 72%, transparent);
+  filter: saturate(1.35) brightness(1.1);
+}
+
+.eyeball-socket {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.eyeball {
+  position: relative;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, #fff 0 18%, #e8e8f0 22%, #b0b8d0 100%);
+  box-shadow: inset 0 0 10px color-mix(in srgb, var(--magenta) 30%, transparent);
+}
+
+.eyeball-glance {
+  animation: eyeball-glance 3.2s ease-in-out infinite alternate;
+}
+
+.eyeball-iris {
+  position: absolute;
+  inset: 22%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 40% 40%, var(--neon-cyan), var(--magenta) 70%);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--neon-cyan) 60%, transparent);
+}
+
+.eyeball-pupil {
+  position: absolute;
+  top: 38%;
+  left: 38%;
+  width: 24%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: #050816;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--magenta) 60%, transparent);
+}
+
+.eyeball-shine {
+  position: absolute;
+  top: 26%;
+  left: 28%;
+  width: 12%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.cloud-shift {
+  animation: cloud-shift 5s ease-in-out infinite alternate;
+}
+
+.rider-trail {
+  filter: drop-shadow(0 0 10px var(--neon-cyan));
+}
+
+@keyframes psychedelic-hue-shift {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes psychedelic-warp-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.08); opacity: 0.5; }
+}
+
+@keyframes psychedelic-trails-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes eyeball-glance {
+  0% { transform: translate(-12%, -4%); }
+  28% { transform: translate(10%, 6%); }
+  56% { transform: translate(-6%, 8%); }
+  84% { transform: translate(8%, -6%); }
+  100% { transform: translate(-12%, -4%); }
+}
+
+@keyframes cloud-shift {
+  0% { transform: translateX(-4px); }
+  100% { transform: translateX(4px); }
+}
+
 .recall-evolved-field {
   position: relative;
   min-height: clamp(20rem, 52vw, 25rem);
@@ -610,6 +741,11 @@
 .gauntlet-laser-traced {
   stroke: var(--mint);
   filter: drop-shadow(0 0 6px var(--mint));
+}
+
+.gauntlet-laser-fade {
+  opacity: 0;
+  transition: opacity 420ms ease-out;
 }
 
 .gauntlet-rainbow .gauntlet-laser {
