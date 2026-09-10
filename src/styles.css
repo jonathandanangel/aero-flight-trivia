@@ -230,24 +230,27 @@
 }
 
 .blood-moon-atmosphere {
-  z-index: 1;
+  z-index: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--crimson-glow) 26%, transparent), transparent 55%),
-    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--blood-moon) 30%, transparent), transparent 34%);
+    linear-gradient(180deg, color-mix(in srgb, var(--crimson-horizon) 13%, transparent), transparent 42%),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--blood-moon) 20%, transparent) 0 6%, transparent 25%);
   mix-blend-mode: screen;
 }
 
 .blood-moon {
-  z-index: 2;
+  z-index: 1;
   background:
-    radial-gradient(circle at 38% 34%, var(--blood-moon-core) 0 8%, transparent 9%),
-    radial-gradient(circle at 66% 61%, color-mix(in srgb, var(--crimson-horizon) 55%, transparent) 0 10%, transparent 11%),
-    radial-gradient(circle at 50% 50%, var(--blood-moon-core), var(--blood-moon) 46%, var(--crimson-glow) 78%);
+    radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--moon) 38%, var(--blood-moon-core)) 0 5%, transparent 7%),
+    radial-gradient(circle at 67% 62%, color-mix(in srgb, var(--crimson-horizon) 68%, transparent) 0 9%, transparent 11%),
+    radial-gradient(circle at 31% 69%, color-mix(in srgb, var(--crimson-horizon) 52%, transparent) 0 6%, transparent 8%),
+    radial-gradient(circle at 44% 38%, var(--blood-moon-core), var(--blood-moon) 45%, var(--crimson-glow) 74%, var(--crimson-horizon) 100%);
   box-shadow:
-    0 0 18px var(--blood-moon-core),
-    0 0 55px var(--blood-moon),
-    0 0 120px color-mix(in srgb, var(--crimson-glow) 86%, transparent),
-    0 0 220px color-mix(in srgb, var(--crimson-horizon) 64%, transparent);
+    inset -8px -10px 20px color-mix(in srgb, var(--crimson-horizon) 72%, transparent),
+    inset 5px 4px 13px color-mix(in srgb, var(--moon) 24%, transparent),
+    0 0 10px var(--blood-moon-core),
+    0 0 34px color-mix(in srgb, var(--blood-moon) 86%, transparent),
+    0 0 76px color-mix(in srgb, var(--crimson-glow) 48%, transparent);
+  filter: saturate(1.24) brightness(1.08);
 }
 
 .blood-moon-awakening {
@@ -255,10 +258,18 @@
 }
 
 .blood-moon-horizon {
-  z-index: 1;
-  background: linear-gradient(0deg, color-mix(in srgb, var(--crimson-horizon) 48%, transparent), transparent 78%);
-  filter: blur(10px);
+  background: linear-gradient(0deg, color-mix(in srgb, var(--crimson-glow) 22%, transparent), transparent 54%);
+  filter: blur(5px);
   mix-blend-mode: screen;
+}
+
+.blood-moon-active .panel {
+  background: color-mix(in srgb, var(--deepblue) 92%, transparent);
+  border-color: color-mix(in srgb, var(--neon-cyan) 42%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--midnight) 88%, transparent),
+    0 18px 40px -24px color-mix(in srgb, var(--neon-cyan) 54%, transparent);
+  backdrop-filter: blur(10px) saturate(0.82);
 }
 
 @keyframes blood-moon-awaken {

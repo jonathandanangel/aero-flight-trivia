@@ -7,3 +7,4 @@
 - [x] Replace all 33 Legacy Impact questions with high-speed aerodynamics science questions.
 - [x] Remove Impact Archive references and update chapter navigation and validation for 333 aerodynamics questions.
 - [x] Transform and persist the blood moon after the evolved Electric Recall announcement at question 150+.
+- [x] Calibrate blood-moon bloom and atmospheric spill while preserving crisp HUD, question panels, and skyline contrast.
