@@ -40,7 +40,7 @@ function createFlyers(seed: number): Flyer[] {
       duration: 1500 + ((n * 13) % 1050),
       delay: index * 170,
       rotation: -14 + ((n * 17) % 29),
-      variant: selectVariant(n + seed + index),
+      variant: selectVariant(seed * 3 + index * 5),
     };
   });
 }
