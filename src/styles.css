@@ -612,6 +612,11 @@
   filter: drop-shadow(0 0 6px var(--mint));
 }
 
+.gauntlet-laser-fade {
+  opacity: 0;
+  transition: opacity 420ms ease-out;
+}
+
 .gauntlet-rainbow .gauntlet-laser {
   animation: gauntlet-rainbow-stroke 1.5s linear infinite;
 }
