@@ -12,6 +12,7 @@ import notes5 from "@/assets/notes-123014.png.asset.json";
 import notes6 from "@/assets/notes-123020.png.asset.json";
 import lectureVideo from "@/assets/briefing-lecture.mp4.asset.json";
 import nerdBrain from "@/assets/nerd-brain.png.asset.json";
+import rudderSheet from "@/assets/vertical-stabilizer-rudder.png.asset.json";
 
 const SLIDES = [
   { url: wingGeometry.url, title: "Wing Geometry Definitions", alt: "NASA wing geometry definitions: chord, span, wing area, camber, dihedral" },
