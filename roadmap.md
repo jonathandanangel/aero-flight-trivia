@@ -22,3 +22,4 @@
 - [ ] Animate Path Memory preview lines with laser sound effects, then smoothly fade them out completely before the recall phase.
 - [x] Show four aerodynamics reference diagrams with gunshot cue and 30s countdown before Aerodynamics Extreme.
 - [x] Extend the Extreme study briefing with 6 lecture note sheets, lecture video, and nerd-brain fly-away outro.
+- [ ] Add the Basic Aerodynamics opening sheet and 10 sequential lecture notes before the final video and nerd-brain outro.
