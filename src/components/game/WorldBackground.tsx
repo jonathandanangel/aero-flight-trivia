@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import moonPortrait from "@/assets/seus-moon.png.asset.json";
+import enochRaMoon from "@/assets/enoch-ra-moon.png.asset.json";
 
 
 /**
