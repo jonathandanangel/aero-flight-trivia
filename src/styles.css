@@ -884,3 +884,41 @@
   animation: nerd-brain-flyaway 2.4s ease-in-out forwards;
   filter: drop-shadow(0 0 18px color-mix(in srgb, var(--magenta) 70%, transparent));
 }
+
+/* ---------- Portrait moon (image-based) ---------- */
+.moon-portrait {
+  display: block;
+  transition: filter 900ms ease;
+}
+
+.moon-portrait--blood {
+  filter: grayscale(0.35) sepia(0.7) saturate(5) hue-rotate(-24deg) contrast(1.12) brightness(0.92);
+}
+
+.moon-portrait--psycho {
+  filter: grayscale(0.2) sepia(0.6) saturate(6) hue-rotate(232deg) contrast(1.15) brightness(1.12);
+  animation: psycho-moon-shift 2.6s linear infinite;
+}
+
+.psycho-moon {
+  box-shadow:
+    0 0 12px #d17bff,
+    0 0 38px rgba(178, 84, 255, 0.85),
+    0 0 82px rgba(126, 34, 206, 0.55);
+}
+
+@keyframes psycho-moon-shift {
+  0%,
+  100% {
+    filter: grayscale(0.2) sepia(0.6) saturate(6) hue-rotate(224deg) contrast(1.15) brightness(1.1);
+  }
+  50% {
+    filter: grayscale(0.2) sepia(0.6) saturate(7) hue-rotate(252deg) contrast(1.2) brightness(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moon-portrait--psycho {
+    animation: none;
+  }
+}
