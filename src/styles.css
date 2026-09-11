@@ -946,3 +946,96 @@
     animation: none;
   }
 }
+
+/* ---------- Futuristic neon jet flybys ---------- */
+.neon-jet {
+  display: block;
+  width: 190px;
+  height: auto;
+  filter: drop-shadow(0 0 8px rgba(125, 211, 252, 0.95)) drop-shadow(0 0 22px rgba(56, 189, 248, 0.6));
+}
+
+.neon-jet--flip {
+  transform: scaleX(-1);
+}
+
+.jet-trail {
+  stroke-dasharray: 12 10;
+  animation: jet-trail-flow 0.9s linear infinite;
+}
+
+@keyframes jet-trail-flow {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+.jet {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* left -> right: crosses mid-sky, climbs 45 degrees near the end */
+.jet--lr {
+  animation: jet-fly-lr 34s linear infinite;
+}
+
+/* right -> left: sweeps back across the middle section */
+.jet--rl {
+  animation: jet-fly-rl 34s linear infinite;
+}
+
+@keyframes jet-fly-lr {
+  0% {
+    transform: translate(-18vw, 52vh);
+    opacity: 0;
+  }
+  3% {
+    opacity: 1;
+  }
+  14% {
+    transform: translate(18vw, 47vh);
+  }
+  26% {
+    transform: translate(46vw, 44vh);
+  }
+  /* rare, sharp 45-degree climb */
+  36% {
+    transform: translate(64vw, 22vh);
+  }
+  42% {
+    transform: translate(80vw, 14vh);
+    opacity: 1;
+  }
+  47%,
+  100% {
+    transform: translate(118vw, 8vh);
+    opacity: 0;
+  }
+}
+
+@keyframes jet-fly-rl {
+  0%,
+  50% {
+    transform: translate(118vw, 38vh);
+    opacity: 0;
+  }
+  53% {
+    opacity: 1;
+  }
+  64% {
+    transform: translate(78vw, 40vh);
+  }
+  76% {
+    transform: translate(42vw, 45vh);
+  }
+  88% {
+    transform: translate(8vw, 49vh);
+    opacity: 1;
+  }
+  94%,
+  100% {
+    transform: translate(-20vw, 52vh);
+    opacity: 0;
+  }
+}
