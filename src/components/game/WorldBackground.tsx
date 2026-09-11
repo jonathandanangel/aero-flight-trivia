@@ -1,5 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import moonPortrait from "@/assets/seus-moon.png.asset.json";
+
 
 /**
  * Sky that shifts from late afternoon -> night -> sunrise as the campaign
