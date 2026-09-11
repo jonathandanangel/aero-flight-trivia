@@ -13,29 +13,29 @@ function NeonJet({ flip = false }: { flip?: boolean }) {
     >
       <defs>
         <linearGradient id="jet-trail-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#7dd3fc" stopOpacity="0.95" />
-          <stop offset="0.5" stopColor="#38bdf8" stopOpacity="0.5" />
-          <stop offset="1" stopColor="#38bdf8" stopOpacity="0" />
+          <stop offset="0" stopColor="#38bdf8" stopOpacity="0" />
+          <stop offset="0.55" stopColor="#38bdf8" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#7dd3fc" stopOpacity="0.95" />
         </linearGradient>
       </defs>
-      {/* fluid trailing light lines */}
+      {/* fluid trailing light lines streaming behind the jet */}
       <g fill="none" strokeLinecap="round">
         <path
           className="jet-trail"
-          d="M96 26 C 140 22, 180 32, 258 26"
+          d="M160 26 C 120 22, 80 32, 2 26"
           stroke="url(#jet-trail-grad)"
           strokeWidth="6"
           opacity="0.35"
         />
         <path
           className="jet-trail"
-          d="M96 30 C 145 28, 185 34, 258 30"
+          d="M160 30 C 115 28, 75 34, 2 30"
           stroke="url(#jet-trail-grad)"
           strokeWidth="3"
         />
         <path
           className="jet-trail"
-          d="M96 34 C 140 38, 180 28, 258 34"
+          d="M160 34 C 120 38, 80 28, 2 34"
           stroke="url(#jet-trail-grad)"
           strokeWidth="2"
           opacity="0.7"
@@ -43,10 +43,10 @@ function NeonJet({ flip = false }: { flip?: boolean }) {
       </g>
       {/* sleek futuristic jet, nose pointing right */}
       <g fill="#9fe6ff" stroke="#e0f6ff" strokeWidth="1">
-        <path d="M4 30 L58 24 L100 27 L100 33 L58 36 Z" />
-        <path d="M52 28 L80 6 L92 9 L74 28 Z" />
-        <path d="M52 32 L80 54 L92 51 L74 32 Z" />
-        <path d="M88 27 L100 16 L104 19 L98 27 Z" opacity="0.85" />
+        <path d="M256 30 L202 24 L160 27 L160 33 L202 36 Z" />
+        <path d="M208 28 L180 6 L168 9 L186 28 Z" />
+        <path d="M208 32 L180 54 L168 51 L186 32 Z" />
+        <path d="M172 27 L160 16 L156 19 L162 27 Z" opacity="0.85" />
       </g>
     </svg>
   );
