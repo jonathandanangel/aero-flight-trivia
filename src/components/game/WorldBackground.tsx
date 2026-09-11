@@ -7,8 +7,10 @@ import enochRaMoon from "@/assets/enoch-ra-moon.png.asset.json";
 /**
  * Sky that shifts from late afternoon -> night -> sunrise as the campaign
  * progresses, with a neon skyline, moon, drifting clouds and light riders.
- * In Aerodynamics Extreme overload the moon becomes a glancing eyeball and the
- * whole scene pulses with psychedelic distortion.
+ * A futuristic neon jet loops across the sky with fluid light trails,
+ * occasionally climbing at 45 degrees. In Aerodynamics Extreme overload the
+ * moon becomes the purple Enoch-Ra visage and the scene pulses with
+ * psychedelic distortion.
  */
 export function WorldBackground({
   progress,
