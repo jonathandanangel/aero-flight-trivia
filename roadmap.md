@@ -25,3 +25,4 @@
 - [x] Add the Basic Aerodynamics opening sheet and 10 sequential lecture notes before the final video and nerd-brain outro.
 - [x] Swap the Aerodynamics Extreme psychedelic moon to the Enoch-Ra image, bright purple with slight shake (no eyeball).
 - [x] Add a futuristic light-blue neon jet with fluid light trails looping across the background (left↔right, occasional 45° climb).
+- [x] Add 150 wing-aerodynamics cards to Aerodynamics Extreme and trigger a red lava skyline in their second half.
