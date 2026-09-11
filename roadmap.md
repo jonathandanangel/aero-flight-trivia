@@ -23,3 +23,5 @@
 - [x] Show four aerodynamics reference diagrams with gunshot cue and 30s countdown before Aerodynamics Extreme.
 - [x] Extend the Extreme study briefing with 6 lecture note sheets, lecture video, and nerd-brain fly-away outro.
 - [x] Add the Basic Aerodynamics opening sheet and 10 sequential lecture notes before the final video and nerd-brain outro.
+- [x] Swap the Aerodynamics Extreme psychedelic moon to the Enoch-Ra image, bright purple with slight shake (no eyeball).
+- [ ] Add a futuristic light-blue neon jet with fluid light trails looping across the background (left↔right, occasional 45° climb).
