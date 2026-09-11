@@ -1,13 +1,65 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import moonPortrait from "@/assets/seus-moon.png.asset.json";
+import enochRaMoon from "@/assets/enoch-ra-moon.png.asset.json";
+
+/** Futuristic delta-wing jet silhouette with fluid neon light trails. */
+function NeonJet({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 260 60"
+      className={cn("neon-jet", flip && "neon-jet--flip")}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id="jet-trail-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#38bdf8" stopOpacity="0" />
+          <stop offset="0.55" stopColor="#38bdf8" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#7dd3fc" stopOpacity="0.95" />
+        </linearGradient>
+      </defs>
+      {/* fluid trailing light lines streaming behind the jet */}
+      <g fill="none" strokeLinecap="round">
+        <path
+          className="jet-trail"
+          d="M160 26 C 120 22, 80 32, 2 26"
+          stroke="url(#jet-trail-grad)"
+          strokeWidth="6"
+          opacity="0.35"
+        />
+        <path
+          className="jet-trail"
+          d="M160 30 C 115 28, 75 34, 2 30"
+          stroke="url(#jet-trail-grad)"
+          strokeWidth="3"
+        />
+        <path
+          className="jet-trail"
+          d="M160 34 C 120 38, 80 28, 2 34"
+          stroke="url(#jet-trail-grad)"
+          strokeWidth="2"
+          opacity="0.7"
+        />
+      </g>
+      {/* sleek futuristic jet, nose pointing right */}
+      <g fill="#9fe6ff" stroke="#e0f6ff" strokeWidth="1">
+        <path d="M256 30 L202 24 L160 27 L160 33 L202 36 Z" />
+        <path d="M208 28 L180 6 L168 9 L186 28 Z" />
+        <path d="M208 32 L180 54 L168 51 L186 32 Z" />
+        <path d="M172 27 L160 16 L156 19 L162 27 Z" opacity="0.85" />
+      </g>
+    </svg>
+  );
+}
 
 
 /**
  * Sky that shifts from late afternoon -> night -> sunrise as the campaign
  * progresses, with a neon skyline, moon, drifting clouds and light riders.
- * In Aerodynamics Extreme overload the moon becomes a glancing eyeball and the
- * whole scene pulses with psychedelic distortion.
+ * A futuristic neon jet loops across the sky with fluid light trails,
+ * occasionally climbing at 45 degrees. In Aerodynamics Extreme overload the
+ * moon becomes the purple Enoch-Ra visage and the scene pulses with
+ * psychedelic distortion.
  */
 export function WorldBackground({
   progress,
@@ -55,6 +107,7 @@ export function WorldBackground({
           bloodMoon && "blood-moon",
           bloodMoon && !reducedMotion && "blood-moon-awakening",
           psychedelic && "psycho-moon",
+          psychedelic && !reducedMotion && "psycho-moon-shake",
         )}
         style={
           bloodMoon || psychedelic
@@ -63,7 +116,7 @@ export function WorldBackground({
         }
       >
         <img
-          src={moonPortrait.url}
+          src={psychedelic ? enochRaMoon.url : moonPortrait.url}
           alt=""
           className={cn(
             "moon-portrait h-full w-full object-cover",
@@ -97,6 +150,18 @@ export function WorldBackground({
         <line x1="0" y1="299" x2="1200" y2="299" stroke="var(--color-magenta)" strokeWidth="2" />
       </svg>
       {bloodMoon && <div className="blood-moon-horizon absolute inset-x-0 bottom-0 z-[2] h-[30vh]" />}
+      {!reducedMotion && (
+        <>
+          {/* Futuristic neon jet: left -> right with a 45-degree climb */}
+          <div className="jet jet--lr absolute left-0 top-0 z-[2]">
+            <NeonJet />
+          </div>
+          {/* Same jet returning right -> left */}
+          <div className="jet jet--rl absolute left-0 top-0 z-[2]">
+            <NeonJet flip />
+          </div>
+        </>
+      )}
       {!reducedMotion &&
         [0, 1].map((i) => (
           <div
