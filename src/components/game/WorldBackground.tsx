@@ -49,23 +49,28 @@ export function WorldBackground({
       )}
       <div
         className={cn(
-          "moon absolute right-[12%] top-[10%] h-24 w-24 rounded-full blur-[0.5px] sm:h-28 sm:w-28",
-          bloodMoon ? "blood-moon" : "bg-moon/90",
+          "moon absolute right-[12%] top-[10%] h-24 w-24 overflow-hidden rounded-full sm:h-28 sm:w-28",
+          bloodMoon && "blood-moon",
           bloodMoon && !reducedMotion && "blood-moon-awakening",
-          psychedelic && !reducedMotion && "eyeball-moon",
+          psychedelic && "psycho-moon",
         )}
-        style={bloodMoon ? undefined : { boxShadow: "0 0 60px rgba(234,247,255,0.45)" }}
+        style={
+          bloodMoon || psychedelic
+            ? undefined
+            : { boxShadow: "0 0 60px rgba(234,247,255,0.45)" }
+        }
       >
-        {psychedelic && (
-          <div className="eyeball-socket">
-            <div className={cn("eyeball", !reducedMotion && "eyeball-glance")}>
-              <div className="eyeball-iris" />
-              <div className="eyeball-pupil" />
-              <div className="eyeball-shine" />
-            </div>
-          </div>
-        )}
+        <img
+          src={moonPortrait.url}
+          alt=""
+          className={cn(
+            "moon-portrait h-full w-full object-cover",
+            bloodMoon && "moon-portrait--blood",
+            psychedelic && "moon-portrait--psycho",
+          )}
+        />
       </div>
+
       {[0, 1, 2].map((i) => (
         <div
           key={i}
