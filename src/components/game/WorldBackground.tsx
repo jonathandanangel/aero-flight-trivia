@@ -56,6 +56,7 @@ export function WorldBackground({
           bloodMoon && "blood-moon",
           bloodMoon && !reducedMotion && "blood-moon-awakening",
           psychedelic && "psycho-moon",
+          psychedelic && !reducedMotion && "psycho-moon-shake",
         )}
         style={
           bloodMoon || psychedelic
@@ -64,7 +65,7 @@ export function WorldBackground({
         }
       >
         <img
-          src={moonPortrait.url}
+          src={psychedelic ? enochRaMoon.url : moonPortrait.url}
           alt=""
           className={cn(
             "moon-portrait h-full w-full object-cover",
