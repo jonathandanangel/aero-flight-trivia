@@ -5,13 +5,13 @@ import { GameProvider } from "@/game/store";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AeroGrid 99: Flight Dynamics Trivia" },
+      { title: "ZEUS AMMON-RA 11: Flight Dynamics Trivia" },
       {
         name: "description",
         content:
           "A neon retro-arcade aerodynamics trivia game: 333 questions, interactive diagrams, drag-and-drop answers and the Electric Recall minigame.",
       },
-      { property: "og:title", content: "AeroGrid 99: Flight Dynamics Trivia" },
+      { property: "og:title", content: "ZEUS AMMON-RA 11: Flight Dynamics Trivia" },
       {
         property: "og:description",
         content:

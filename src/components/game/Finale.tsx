@@ -31,7 +31,7 @@ export function Finale({
 
   const exportSummary = () => {
     const text = [
-      "AeroGrid 99 — Mission Summary",
+      "ZEUS AMMON-RA 11 — Mission Summary",
       `Score: ${progress.score}`,
       `Answered: ${progress.answeredCount} / ${total}`,
       `Correct: ${progress.correctCount} (${accuracy}%)`,
@@ -42,7 +42,7 @@ export function Finale({
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "aerogrid99-summary.txt";
+    a.download = "zeus-ammon-ra-11-summary.txt";
     a.click();
     URL.revokeObjectURL(url);
   };
