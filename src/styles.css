@@ -950,7 +950,7 @@
 /* ---------- Futuristic neon jet flybys ---------- */
 .neon-jet {
   display: block;
-  width: 190px;
+  width: 230px;
   height: auto;
   filter: drop-shadow(0 0 8px rgba(125, 211, 252, 0.95)) drop-shadow(0 0 22px rgba(56, 189, 248, 0.6));
 }
