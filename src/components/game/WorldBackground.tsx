@@ -3,6 +3,55 @@ import { cn } from "@/lib/utils";
 import moonPortrait from "@/assets/seus-moon.png.asset.json";
 import enochRaMoon from "@/assets/enoch-ra-moon.png.asset.json";
 
+/** Futuristic delta-wing jet silhouette with fluid neon light trails. */
+function NeonJet({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 260 60"
+      className={cn("neon-jet", flip && "neon-jet--flip")}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id="jet-trail-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#7dd3fc" stopOpacity="0.95" />
+          <stop offset="0.5" stopColor="#38bdf8" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#38bdf8" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* fluid trailing light lines */}
+      <g fill="none" strokeLinecap="round">
+        <path
+          className="jet-trail"
+          d="M96 26 C 140 22, 180 32, 258 26"
+          stroke="url(#jet-trail-grad)"
+          strokeWidth="6"
+          opacity="0.35"
+        />
+        <path
+          className="jet-trail"
+          d="M96 30 C 145 28, 185 34, 258 30"
+          stroke="url(#jet-trail-grad)"
+          strokeWidth="3"
+        />
+        <path
+          className="jet-trail"
+          d="M96 34 C 140 38, 180 28, 258 34"
+          stroke="url(#jet-trail-grad)"
+          strokeWidth="2"
+          opacity="0.7"
+        />
+      </g>
+      {/* sleek futuristic jet, nose pointing right */}
+      <g fill="#9fe6ff" stroke="#e0f6ff" strokeWidth="1">
+        <path d="M4 30 L58 24 L100 27 L100 33 L58 36 Z" />
+        <path d="M52 28 L80 6 L92 9 L74 28 Z" />
+        <path d="M52 32 L80 54 L92 51 L74 32 Z" />
+        <path d="M88 27 L100 16 L104 19 L98 27 Z" opacity="0.85" />
+      </g>
+    </svg>
+  );
+}
+
 
 /**
  * Sky that shifts from late afternoon -> night -> sunrise as the campaign
