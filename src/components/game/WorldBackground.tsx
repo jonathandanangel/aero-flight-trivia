@@ -101,6 +101,18 @@ export function WorldBackground({
         <line x1="0" y1="299" x2="1200" y2="299" stroke="var(--color-magenta)" strokeWidth="2" />
       </svg>
       {bloodMoon && <div className="blood-moon-horizon absolute inset-x-0 bottom-0 z-[2] h-[30vh]" />}
+      {!reducedMotion && (
+        <>
+          {/* Futuristic neon jet: left -> right with a 45-degree climb */}
+          <div className="jet jet--lr absolute left-0 top-0 z-[2]">
+            <NeonJet />
+          </div>
+          {/* Same jet returning right -> left */}
+          <div className="jet jet--rl absolute left-0 top-0 z-[2]">
+            <NeonJet flip />
+          </div>
+        </>
+      )}
       {!reducedMotion &&
         [0, 1].map((i) => (
           <div
