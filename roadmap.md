@@ -26,3 +26,4 @@
 - [x] Swap the Aerodynamics Extreme psychedelic moon to the Enoch-Ra image, bright purple with slight shake (no eyeball).
 - [x] Add a futuristic light-blue neon jet with fluid light trails looping across the background (left↔right, occasional 45° climb).
 - [x] Add 150 wing-aerodynamics cards to Aerodynamics Extreme and trigger a red lava skyline in their second half.
+- [x] Add 150 Extreme expansion questions; inferno (red city/jet/moon + lava) now starts at the midpoint of the entire Extreme set (index 139 of 278).

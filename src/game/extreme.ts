@@ -19,7 +19,7 @@ export const extremeQuestions: Question[] = [
   ...extremeExpansionQuestions,
 ];
 
-/** The inferno begins halfway through the newly added 150-card flight block. */
-export const EXTREME_INFERNO_START_INDEX = originalExtremeQuestions.length + 75;
-
 export const EXTREME_TOTAL = extremeQuestions.length;
+
+/** The inferno begins halfway through the entire Aerodynamics Extreme set. */
+export const EXTREME_INFERNO_START_INDEX = Math.floor(EXTREME_TOTAL / 2);

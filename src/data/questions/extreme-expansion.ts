@@ -198,7 +198,7 @@ export const extremeExpansionQuestions: Question[] = cards.map((card, index) => 
   explanation: card[3],
   hint: card[2],
   misconceptionFeedback: {
-    [fallbackDistractors[0]]: "Recheck the aerodynamic definition and the quantities involved.",
+    [fallbackDistractors[0]!]: "Recheck the aerodynamic definition and the quantities involved.",
   },
   audioGenre: "supersonic",
   points: 125 + Math.min(100, Math.floor(index / 30) * 25),

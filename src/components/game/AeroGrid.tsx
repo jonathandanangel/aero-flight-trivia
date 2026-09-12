@@ -6,7 +6,7 @@ import { setTitle } from "@/game/curriculum";
 import { nextRecoveryLength, useGame } from "@/game/store";
 import type { Question } from "@/game/types";
 import { cn } from "@/lib/utils";
-import { extremeQuestions } from "@/game/extreme";
+import { extremeQuestions, EXTREME_INFERNO_START_INDEX } from "@/game/extreme";
 import { BrainCelebration } from "./BrainCelebration";
 import { BrainOverload } from "./BrainOverload";
 import { HealthBar } from "./HealthBar";
@@ -370,6 +370,7 @@ export function AeroGrid() {
   if (!hydrated) return null;
 
   const worldProgress = progress.index / TOTAL_QUESTIONS;
+  const infernoActive = mode === "extreme" && index >= EXTREME_INFERNO_START_INDEX;
 
   return (
     <div className={cn("min-h-screen px-4 py-6", progress.bloodMoonAwakened && "blood-moon-active")}>
@@ -379,6 +380,7 @@ export function AeroGrid() {
         reducedMotion={settings.reducedMotion}
         bloodMoon={progress.bloodMoonAwakened}
         psychedelic={psychedelicActive}
+        inferno={infernoActive}
       />
 
       <BrainCelebration burst={celebrationBurst} reducedMotion={settings.reducedMotion} />
