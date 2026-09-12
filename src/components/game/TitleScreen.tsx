@@ -9,6 +9,7 @@ export interface TitleScreenProps {
   onExtreme: () => void;
   onExtremeV2: () => void;
   onHeatTransferExtreme: () => void;
+  onHeatTransferIntro: () => void;
   onSettings: () => void;
   onValidate: () => void;
 }
@@ -60,6 +61,13 @@ export function TitleScreen(p: TitleScreenProps) {
           onClick={p.onExtremeV2}
         >
           Aerodynamics Extreme V2
+        </button>
+        <button
+          type="button"
+          className={`${item} ht-intro-menu-item`}
+          onClick={p.onHeatTransferIntro}
+        >
+          HEAT TRANSFER INTRO
         </button>
         <button
           type="button"

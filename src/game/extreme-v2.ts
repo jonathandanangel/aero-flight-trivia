@@ -17,8 +17,13 @@ export const EXTREME_V2_INFERNO_START_INDEX = Math.floor(EXTREME_V2_TOTAL / 2);
 
 export const EXTREME_V2_QUIZ_TOTAL = EXTREME_V2_CORE_TOTAL;
 
-export type ExtremeFamilyMode = "extreme" | "extreme-v2" | "ht-extreme";
+export type ExtremeFamilyMode = "extreme" | "extreme-v2" | "ht-extreme" | "ht-intro";
 
 export function isExtremeFamily(mode: string): mode is ExtremeFamilyMode {
-  return mode === "extreme" || mode === "extreme-v2" || mode === "ht-extreme";
+  return (
+    mode === "extreme" ||
+    mode === "extreme-v2" ||
+    mode === "ht-extreme" ||
+    mode === "ht-intro"
+  );
 }

@@ -27,7 +27,14 @@ export type DiagramType =
   | "aircraft-forces"
   | "stream-tube"
   | "velocity-profile"
-  | "mach-cone";
+  | "mach-cone"
+  | "ht-solid-contact"
+  | "ht-liquid-convection"
+  | "ht-air-multimode"
+  | "ht-vacuum-radiation"
+  | "ht-plane-wall"
+  | "ht-thermal-boundary"
+  | "ht-control-volume";
 
 export type AudioGenre =
   | "synthwave"

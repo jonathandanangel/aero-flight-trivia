@@ -16,6 +16,9 @@ import {
   HT_INFERNO_START_INDEX,
   heatTransferExtremeQuestions,
 } from "@/game/heat-transfer-extreme";
+import {
+  heatTransferIntroQuestions,
+} from "@/game/heat-transfer-intro";
 import { BrainCelebration } from "./BrainCelebration";
 import { BrainOverload } from "./BrainOverload";
 import { HealthBar } from "./HealthBar";
@@ -25,6 +28,8 @@ import { ExtremeV2Briefing } from "./ExtremeV2Briefing";
 import { ExtremeV2Review, type ExtremeV2LogEntry } from "./ExtremeV2Review";
 import { HeatTransferExtremeBriefing } from "./HeatTransferExtremeBriefing";
 import { HeatTransferExtremeReview, type HtLogEntry } from "./HeatTransferExtremeReview";
+import { HeatTransferIntroBriefing } from "./HeatTransferIntroBriefing";
+import { HeatTransferIntroReview, type HtIntroLogEntry } from "./HeatTransferIntroReview";
 import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
 import { Finale } from "./Finale";
@@ -48,7 +53,8 @@ type Screen =
   | "gauntlet"
   | "briefing"
   | "v2-review"
-  | "ht-review";
+  | "ht-review"
+  | "hti-review";
 type Mode =
   | "campaign"
   | "practice"
@@ -57,7 +63,8 @@ type Mode =
   | "mastery"
   | "extreme"
   | "extreme-v2"
-  | "ht-extreme";
+  | "ht-extreme"
+  | "ht-intro";
 type Phase = "answering" | "revealed" | "recall";
 type IntermissionGame = "lightcycle" | "maze";
 
@@ -138,6 +145,7 @@ export function AeroGrid() {
   const [gauntletRecovery, setGauntletRecovery] = React.useState(false);
   const [v2Log, setV2Log] = React.useState<ExtremeV2LogEntry[]>([]);
   const [htLog, setHtLog] = React.useState<HtLogEntry[]>([]);
+  const [htiLog, setHtiLog] = React.useState<HtIntroLogEntry[]>([]);
   const [extremeCorrectCount, setExtremeCorrectCount] = React.useState(0);
 
   const awakenBloodMoon = React.useCallback(() => {
@@ -158,6 +166,8 @@ export function AeroGrid() {
         return extremeV2Questions;
       case "ht-extreme":
         return heatTransferExtremeQuestions;
+      case "ht-intro":
+        return heatTransferIntroQuestions;
       case "mastery":
         return stableShuffle(allQuestions, "mastery");
       case "review":
@@ -171,6 +181,16 @@ export function AeroGrid() {
   const question = list[Math.min(index, list.length - 1)];
 
   React.useEffect(() => {
+    if (mode === "ht-intro") {
+      // Relaxed ambient bed — not Extreme's escalating supersonic tracks.
+      audio.setGenre("ambient-space", 0.45);
+      audio.setExtremeTrack(0);
+      audio.setTempoMultiplier(0.72);
+      return () => {
+        audio.setTempoMultiplier(1);
+        audio.setExtremeTrack(0);
+      };
+    }
     if (isExtremeFamily(mode)) {
       // Every 3 completed questions the turbulent track rotates and escalates.
       const stage = Math.floor(localIndex / 3);
@@ -253,6 +273,12 @@ export function AeroGrid() {
       }
       if (mode === "ht-extreme") {
         setHtLog((entries) => [
+          ...entries.filter((entry) => entry.id !== question.id),
+          { id: question.id, given: answer.join(" · "), ok },
+        ]);
+      }
+      if (mode === "ht-intro") {
+        setHtiLog((entries) => [
           ...entries.filter((entry) => entry.id !== question.id),
           { id: question.id, given: answer.join(" · "), ok },
         ]);
@@ -422,6 +448,7 @@ export function AeroGrid() {
     (mode === "extreme" && index >= EXTREME_INFERNO_START_INDEX) ||
     (mode === "extreme-v2" && index >= EXTREME_V2_INFERNO_START_INDEX) ||
     (mode === "ht-extreme" && index >= HT_INFERNO_START_INDEX);
+  // Heat Transfer Intro stays visually calm — no inferno escalation.
 
   return (
     <div className={cn("min-h-screen px-4 py-6", progress.bloodMoonAwakened && "blood-moon-active")}>
@@ -466,6 +493,7 @@ export function AeroGrid() {
             setExtremeCorrectCount(0);
             setV2Log([]);
             setHtLog([]);
+            setHtiLog([]);
             setPendingIntermission(null);
             setGauntletRecovery(false);
             setOverloadBurst(0);
@@ -484,6 +512,26 @@ export function AeroGrid() {
             setExtremeCorrectCount(0);
             setV2Log([]);
             setHtLog([]);
+            setHtiLog([]);
+            setPendingIntermission(null);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setScreen("briefing");
+          }}
+          onHeatTransferIntro={() => {
+            startAudio();
+            setMode("ht-intro");
+            setReviewIds([]);
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setExtremeCorrectCount(0);
+            setV2Log([]);
+            setHtLog([]);
+            setHtiLog([]);
             setPendingIntermission(null);
             setGauntletRecovery(false);
             setOverloadBurst(0);
@@ -502,6 +550,7 @@ export function AeroGrid() {
             setExtremeCorrectCount(0);
             setV2Log([]);
             setHtLog([]);
+            setHtiLog([]);
             setPendingIntermission(null);
             setGauntletRecovery(false);
             setOverloadBurst(0);
@@ -557,7 +606,18 @@ export function AeroGrid() {
                       onContinue: () => setScreen("ht-review"),
                     },
                   }
-                : {})}
+                : mode === "ht-intro"
+                  ? {
+                      extremeMission: {
+                        title: "Heat Transfer Intro",
+                        score: htiLog.filter((entry) => entry.ok).length,
+                        correct: htiLog.filter((entry) => entry.ok).length,
+                        total: list.length,
+                        continueLabel: "Open review",
+                        onContinue: () => setScreen("hti-review"),
+                      },
+                    }
+                  : {})}
         />
       )}
 
@@ -645,6 +705,13 @@ export function AeroGrid() {
         />
       )}
 
+      {screen === "briefing" && mode === "ht-intro" && (
+        <HeatTransferIntroBriefing
+          reducedMotion={settings.reducedMotion}
+          onComplete={() => setScreen("gauntlet")}
+        />
+      )}
+
       {screen === "v2-review" && (
         <ExtremeV2Review
           questions={extremeV2Questions}
@@ -693,11 +760,53 @@ export function AeroGrid() {
         />
       )}
 
+      {screen === "hti-review" && (
+        <HeatTransferIntroReview
+          questions={heatTransferIntroQuestions}
+          log={htiLog}
+          score={htiLog.filter((entry) => entry.ok).length}
+          onRestart={() => {
+            startAudio();
+            setMode("ht-intro");
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setExtremeCorrectCount(0);
+            setHtiLog([]);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setScreen("briefing");
+          }}
+          onContinueExtreme={() => {
+            startAudio();
+            setMode("ht-extreme");
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setExtremeCorrectCount(0);
+            setHtLog([]);
+            setHtiLog([]);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setScreen("briefing");
+          }}
+          onMenu={() => setScreen("title")}
+        />
+      )}
+
       {screen === "gauntlet" && (
         <div
           className={cn(
             "mx-auto w-full max-w-3xl",
-            mode === "ht-extreme"
+            mode === "ht-intro"
+              ? "ht-intro-shell"
+              : mode === "ht-extreme"
               ? "ht-extreme-shell"
               : mode === "extreme-v2"
                 ? "extreme-v2-shell"
@@ -719,7 +828,13 @@ export function AeroGrid() {
                       ? "Heat Transfer Recovery"
                       : "Heat Transfer Extreme Bananza",
                   }
-                : {})}
+                : mode === "ht-intro"
+                  ? {
+                      banner: gauntletRecovery
+                        ? "Heat Transfer Intro Recovery"
+                        : "Heat Transfer Intro",
+                    }
+                  : {})}
             onOvercharge={gainRecall}
             onDamage={damageRecall}
             onComplete={(score) => {
@@ -755,6 +870,7 @@ export function AeroGrid() {
             "mx-auto w-full max-w-4xl space-y-4",
             mode === "extreme-v2" && "extreme-v2-shell",
             mode === "ht-extreme" && "ht-extreme-shell",
+            mode === "ht-intro" && "ht-intro-shell",
           )}
         >
           <Hud

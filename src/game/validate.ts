@@ -21,6 +21,11 @@ import {
   HT_TOTAL,
   heatTransferExtremeQuestions,
 } from "./heat-transfer-extreme";
+import {
+  HTI_CORE_TOTAL,
+  HTI_TOTAL,
+  heatTransferIntroQuestions,
+} from "./heat-transfer-intro";
 import type { Question } from "./types";
 
 export interface ValidationRule {
@@ -427,6 +432,53 @@ function buildHeatTransferRules(): ValidationRule[] {
       passed: HT_INFERNO_START_INDEX === Math.floor(HT_TOTAL / 2),
       failingIds: [],
       detail: `HT Bananza question ${HT_INFERNO_START_INDEX + 1}`,
+    },
+    {
+      name: "Heat Transfer Intro contains exactly 50 canonical questions",
+      passed: HTI_CORE_TOTAL === 50 && HTI_TOTAL >= 50,
+      failingIds: [],
+      detail: `${HTI_CORE_TOTAL} core / ${HTI_TOTAL} total`,
+    },
+    {
+      name: "Heat Transfer Intro questions are playable",
+      passed: heatTransferIntroQuestions.every((question) => {
+        if (!question.hint || !question.explanation || !question.correctAnswer?.length) return false;
+        if (question.interactionType === "multiple-choice") {
+          return (
+            question.choices?.length === 4 &&
+            !hasDupes(question.choices) &&
+            question.choices.includes(question.correctAnswer[0] ?? "")
+          );
+        }
+        if (question.interactionType === "compare-select") {
+          return (
+            !!question.choices &&
+            question.choices.length >= 2 &&
+            question.choices.includes(question.correctAnswer[0] ?? "")
+          );
+        }
+        if (question.interactionType === "fill-in") {
+          return !!question.acceptedAnswers?.length;
+        }
+        if (question.interactionType === "hotspot") {
+          return !!question.targets?.length && !!question.diagramType;
+        }
+        return true;
+      }),
+      failingIds: heatTransferIntroQuestions
+        .filter((question) => {
+          if (!question.hint || !question.explanation || !question.correctAnswer?.length) return true;
+          if (question.interactionType === "multiple-choice") {
+            return (
+              question.choices?.length !== 4 ||
+              hasDupes(question.choices ?? []) ||
+              !question.choices?.includes(question.correctAnswer[0] ?? "")
+            );
+          }
+          return false;
+        })
+        .map((q) => q.id),
+      detail: "50 Chapter 1 intro questions with hints",
     },
   ];
 }

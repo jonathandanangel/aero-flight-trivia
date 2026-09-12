@@ -729,6 +729,16 @@
   filter: drop-shadow(0 0 30px color-mix(in srgb, #ff2a2a 40%, transparent));
 }
 
+.ht-intro-menu-item {
+  border-color: color-mix(in srgb, #ff8c1a 82%, transparent);
+  color: #ff8c1a;
+  text-shadow: 0 0 16px color-mix(in srgb, #ff8c1a 85%, transparent);
+}
+
+.ht-intro-shell {
+  filter: drop-shadow(0 0 28px color-mix(in srgb, #ff8c1a 38%, transparent));
+}
+
 .gauntlet-field {
   position: relative;
   min-height: clamp(20rem, 54vw, 26rem);

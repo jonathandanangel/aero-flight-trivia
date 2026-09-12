@@ -197,6 +197,119 @@ function Shape({ type }: { type: DiagramType }) {
           </g>
         </g>
       );
+    case "ht-solid-contact":
+      return (
+        <g>
+          <rect x="40" y="60" width="140" height="100" fill="color-mix(in srgb, var(--color-orange) 55%, transparent)" stroke={stroke} strokeWidth="2" />
+          <rect x="180" y="60" width="140" height="100" fill="color-mix(in srgb, var(--color-cyan) 45%, transparent)" stroke={stroke} strokeWidth="2" />
+          <text x="110" y="50" textAnchor="middle" fill="var(--color-amber)" fontSize="11">HOT</text>
+          <text x="250" y="50" textAnchor="middle" fill="var(--color-cyan)" fontSize="11">COOL</text>
+          <line x1="150" y1="110" x2="210" y2="110" stroke="var(--color-magenta)" strokeWidth="3" />
+          <polyline points="200,102 214,110 200,118" fill="none" stroke="var(--color-magenta)" strokeWidth="3" />
+        </g>
+      );
+    case "ht-liquid-convection":
+      return (
+        <g>
+          <rect x="40" y="50" width="320" height="120" fill="color-mix(in srgb, var(--color-cyan) 18%, transparent)" stroke={stroke} />
+          <rect x="150" y="80" width="80" height="60" fill="var(--color-secondary)" stroke="var(--color-orange)" strokeWidth="2" />
+          <text x="190" y="115" textAnchor="middle" fill="var(--color-amber)" fontSize="10">HOT</text>
+          {[70, 100, 130].map((y) => (
+            <g key={y} stroke="var(--color-mint)" strokeWidth="1.5">
+              <line x1="50" y1={y} x2="140" y2={y} />
+              <polyline points={`132,${y - 4} 142,${y} 132,${y + 4}`} fill="none" />
+              <line x1="240" y1={y} x2="340" y2={y} />
+              <polyline points={`330,${y - 4} 340,${y} 330,${y + 4}`} fill="none" />
+            </g>
+          ))}
+        </g>
+      );
+    case "ht-air-multimode":
+      return (
+        <g>
+          <rect x="40" y="40" width="320" height="140" fill="none" stroke={stroke} strokeDasharray="6 4" />
+          <rect x="160" y="90" width="70" height="50" fill="var(--color-secondary)" stroke="var(--color-orange)" strokeWidth="2" />
+          <text x="195" y="120" textAnchor="middle" fill="var(--color-amber)" fontSize="10">HOT</text>
+          <path d="M 195 85 Q 210 60 250 55" fill="none" stroke="var(--color-mint)" strokeWidth="2" />
+          <text x="258" y="52" fill="var(--color-mint)" fontSize="9">air</text>
+          <path d="M 235 100 Q 300 80 330 70" fill="none" stroke="var(--color-magenta)" strokeWidth="2" strokeDasharray="3 3" />
+          <text x="300" y="66" fill="var(--color-magenta)" fontSize="9">walls</text>
+        </g>
+      );
+    case "ht-vacuum-radiation":
+      return (
+        <g>
+          <rect x="50" y="40" width="300" height="140" fill="none" stroke={stroke} strokeWidth="2" />
+          <text x="200" y="58" textAnchor="middle" fill="var(--color-cyan)" fontSize="10">EVACUATED</text>
+          <circle cx="200" cy="115" r="28" fill="var(--color-secondary)" stroke="var(--color-orange)" strokeWidth="2" />
+          <text x="200" y="119" textAnchor="middle" fill="var(--color-amber)" fontSize="9">HOT</text>
+          {[0, 1, 2, 3].map((i) => {
+            const a = (i * Math.PI) / 2;
+            const x2 = 200 + Math.cos(a) * 90;
+            const y2 = 115 + Math.sin(a) * 55;
+            return (
+              <line
+                key={i}
+                x1={200 + Math.cos(a) * 34}
+                y1={115 + Math.sin(a) * 34}
+                x2={x2}
+                y2={y2}
+                stroke="var(--color-magenta)"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+            );
+          })}
+        </g>
+      );
+    case "ht-plane-wall":
+      return (
+        <g>
+          <defs>
+            <linearGradient id="htWallGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="var(--color-orange)" />
+              <stop offset="100%" stopColor="var(--color-cyan)" />
+            </linearGradient>
+          </defs>
+          <rect x="80" y="50" width="240" height="120" fill="url(#htWallGrad)" stroke={stroke} strokeWidth="2" />
+          <text x="100" y="40" fill="var(--color-amber)" fontSize="10">HIGH T</text>
+          <text x="280" y="40" fill="var(--color-cyan)" fontSize="10">LOW T</text>
+          <line x1="120" y1="110" x2="280" y2="110" stroke="var(--color-magenta)" strokeWidth="3" />
+          <polyline points="268,102 284,110 268,118" fill="none" stroke="var(--color-magenta)" strokeWidth="3" />
+          <line x1="280" y1="140" x2="120" y2="140" stroke="var(--color-flight)" strokeWidth="2" opacity={0.5} />
+          <line x1="200" y1="70" x2="200" y2="50" stroke="var(--color-mint)" strokeWidth="2" opacity={0.6} />
+        </g>
+      );
+    case "ht-thermal-boundary":
+      return (
+        <g>
+          <rect x="40" y="160" width="320" height="20" fill="var(--color-secondary)" stroke="var(--color-orange)" />
+          <text x="200" y="175" textAnchor="middle" fill="var(--color-amber)" fontSize="10">Ts</text>
+          <path d="M 40 160 Q 200 90 360 70" fill="none" stroke="var(--color-mint)" strokeWidth="2" />
+          <text x="340" y="64" fill="var(--color-cyan)" fontSize="10">T∞</text>
+          {[100, 180, 260].map((x) => (
+            <g key={x} stroke="var(--color-cyan)" strokeWidth="1.2">
+              <line x1={x} y1="150" x2={x + 40} y2="150" />
+              <polyline points={`${x + 32},146 ${x + 42},150 ${x + 32},154`} fill="none" />
+            </g>
+          ))}
+        </g>
+      );
+    case "ht-control-volume":
+      return (
+        <g>
+          <rect x="90" y="55" width="220" height="120" fill="none" stroke="var(--color-amber)" strokeWidth="2" strokeDasharray="7 5" />
+          <rect x="130" y="85" width="140" height="70" fill="var(--color-secondary)" stroke={stroke} strokeWidth="2" />
+          <text x="200" y="125" textAnchor="middle" fill="var(--color-moon)" fontSize="10">SOLID</text>
+          <line x1="50" y1="120" x2="130" y2="120" stroke="var(--color-mint)" strokeWidth="2" />
+          <text x="55" y="112" fill="var(--color-mint)" fontSize="9">P_elec</text>
+          <path d="M 270 100 Q 330 80 350 60" fill="none" stroke="var(--color-magenta)" strokeWidth="2" />
+          <text x="310" y="72" fill="var(--color-magenta)" fontSize="9">q_rad</text>
+          <path d="M 270 130 Q 330 140 350 150" fill="none" stroke="var(--color-cyan)" strokeWidth="2" />
+          <text x="310" y="158" fill="var(--color-cyan)" fontSize="9">q_conv</text>
+          <text x="200" y="48" textAnchor="middle" fill="var(--color-amber)" fontSize="9">T rising</text>
+        </g>
+      );
     default:
       return (
         <g>
