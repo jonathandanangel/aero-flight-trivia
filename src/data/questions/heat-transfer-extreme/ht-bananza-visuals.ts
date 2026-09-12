@@ -38,7 +38,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q''_x = k * (T1 - T2) / L",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-plane-wall" as Question["diagramType"],
+    diagramType: "ht-plane-wall",
   },
   {
     id: "HT-VIS-CH02-Q002",
@@ -61,7 +61,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-solid-contact" as Question["diagramType"],
+    diagramType: "ht-solid-contact",
   },
   {
     id: "HT-VIS-CH02-Q003",
@@ -84,7 +84,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q = k A DeltaT / L",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-conductivity-bars" as Question["diagramType"],
+    diagramType: "ht-conductivity-bars",
   },
   {
     id: "HT-VIS-CH02-Q004",
@@ -107,7 +107,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "R_cond = L/(k A)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-composite-wall" as Question["diagramType"],
+    diagramType: "ht-composite-wall",
   },
   {
     id: "HT-VIS-CH02-Q005",
@@ -130,7 +130,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "E_in - E_out + E_g = dE_st/dt",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-control-volume" as Question["diagramType"],
+    diagramType: "ht-control-volume",
   }
   ],
   "ht-ch04": [
@@ -155,7 +155,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q'' = -k grad T",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-isotherms-2d" as Question["diagramType"],
+    diagramType: "ht-isotherms-2d",
   },
   {
     id: "HT-VIS-CH04-Q002",
@@ -178,7 +178,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q''_n = 0",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-isotherms-2d" as Question["diagramType"],
+    diagramType: "ht-isotherms-2d",
   },
   {
     id: "HT-VIS-CH04-Q003",
@@ -201,7 +201,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-isotherms-2d" as Question["diagramType"],
+    diagramType: "ht-isotherms-2d",
   },
   {
     id: "HT-VIS-CH04-Q004",
@@ -224,7 +224,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q = k S DeltaT",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-buried-pipe" as Question["diagramType"],
+    diagramType: "ht-buried-pipe",
   }
   ],
   "ht-ch05": [
@@ -249,7 +249,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Bi = h L_c / k",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-lumped-sphere" as Question["diagramType"],
+    diagramType: "ht-lumped-sphere",
   },
   {
     id: "HT-VIS-CH05-Q002",
@@ -272,7 +272,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Bi = h L_c / k",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-biot-contrast" as Question["diagramType"],
+    diagramType: "ht-biot-contrast",
   },
   {
     id: "HT-VIS-CH05-Q003",
@@ -295,7 +295,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-transient-wall" as Question["diagramType"],
+    diagramType: "ht-transient-wall",
   },
   {
     id: "HT-VIS-CH05-Q004",
@@ -318,7 +318,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "eta = x / (2 sqrt(alpha t))",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-semi-infinite" as Question["diagramType"],
+    diagramType: "ht-semi-infinite",
   }
   ],
   "ht-ch06": [
@@ -343,7 +343,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q'' = h (Ts - T_inf)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-thermal-boundary" as Question["diagramType"],
+    diagramType: "ht-thermal-boundary",
   },
   {
     id: "HT-VIS-CH06-Q002",
@@ -366,7 +366,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Nu = h L / k_f",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-thermal-boundary" as Question["diagramType"],
+    diagramType: "ht-thermal-boundary",
   },
   {
     id: "HT-VIS-CH06-Q003",
@@ -389,7 +389,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-bl-dual" as Question["diagramType"],
+    diagramType: "ht-bl-dual",
   },
   {
     id: "HT-VIS-CH06-Q004",
@@ -412,7 +412,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q'' = h (Ts - T_inf)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-liquid-convection" as Question["diagramType"],
+    diagramType: "ht-liquid-convection",
   }
   ],
   "ht-ch07": [
@@ -437,7 +437,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Nu_x ~ Re_x^{1/2} Pr^{1/3}",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-flat-plate" as Question["diagramType"],
+    diagramType: "ht-flat-plate",
   },
   {
     id: "HT-VIS-CH07-Q002",
@@ -460,7 +460,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-flat-plate" as Question["diagramType"],
+    diagramType: "ht-flat-plate",
   },
   {
     id: "HT-VIS-CH07-Q003",
@@ -483,7 +483,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Nu_D = f(Re_D, Pr)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-cylinder-crossflow" as Question["diagramType"],
+    diagramType: "ht-cylinder-crossflow",
   },
   {
     id: "HT-VIS-CH07-Q004",
@@ -506,7 +506,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q_tot = h A (Ts-T_inf) + epsilon sigma A (Ts^4 - T_sur^4)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-air-multimode" as Question["diagramType"],
+    diagramType: "ht-air-multimode",
   }
   ],
   "ht-ch08": [
@@ -531,7 +531,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-pipe-flow" as Question["diagramType"],
+    diagramType: "ht-pipe-flow",
   },
   {
     id: "HT-VIS-CH08-Q002",
@@ -554,7 +554,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "D_h = 4 A_c / P",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-hydraulic-diameter" as Question["diagramType"],
+    diagramType: "ht-hydraulic-diameter",
   },
   {
     id: "HT-VIS-CH08-Q003",
@@ -577,7 +577,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-pipe-flow" as Question["diagramType"],
+    diagramType: "ht-pipe-flow",
   },
   {
     id: "HT-VIS-CH08-Q004",
@@ -600,7 +600,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Nu_D = 4.36",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-pipe-flow" as Question["diagramType"],
+    diagramType: "ht-pipe-flow",
   }
   ],
   "ht-ch09": [
@@ -625,7 +625,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Gr = g beta DeltaT L^3 / nu^2",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-free-plume" as Question["diagramType"],
+    diagramType: "ht-free-plume",
   },
   {
     id: "HT-VIS-CH09-Q002",
@@ -648,7 +648,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Ra = Gr Pr",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-free-plume" as Question["diagramType"],
+    diagramType: "ht-free-plume",
   },
   {
     id: "HT-VIS-CH09-Q003",
@@ -671,7 +671,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-cavity-free" as Question["diagramType"],
+    diagramType: "ht-cavity-free",
   },
   {
     id: "HT-VIS-CH09-Q004",
@@ -694,7 +694,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Ri = Gr / Re^2",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-free-plume" as Question["diagramType"],
+    diagramType: "ht-free-plume",
   }
   ],
   "ht-ch10": [
@@ -719,7 +719,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q'' = h (Ts - T_sat)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-boiling-nucleate" as Question["diagramType"],
+    diagramType: "ht-boiling-nucleate",
   },
   {
     id: "HT-VIS-CH10-Q002",
@@ -742,7 +742,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-boiling-curve" as Question["diagramType"],
+    diagramType: "ht-boiling-curve",
   },
   {
     id: "HT-VIS-CH10-Q003",
@@ -765,7 +765,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-boiling-film" as Question["diagramType"],
+    diagramType: "ht-boiling-film",
   },
   {
     id: "HT-VIS-CH10-Q004",
@@ -788,7 +788,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Nu ~ (rho g h_fg k_l^3 (T_sat-Ts) / (mu_l L))^{1/4}",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-condensation-film" as Question["diagramType"],
+    diagramType: "ht-condensation-film",
   }
   ],
   "ht-ch11": [
@@ -813,7 +813,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "epsilon = q / q_max",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-hx-counterflow" as Question["diagramType"],
+    diagramType: "ht-hx-counterflow",
   },
   {
     id: "HT-VIS-CH11-Q002",
@@ -836,7 +836,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "NTU = UA / C_min",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-hx-counterflow" as Question["diagramType"],
+    diagramType: "ht-hx-counterflow",
   },
   {
     id: "HT-VIS-CH11-Q003",
@@ -859,7 +859,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q_max = C_min (T_h,in - T_c,in)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-hx-counterflow" as Question["diagramType"],
+    diagramType: "ht-hx-counterflow",
   },
   {
     id: "HT-VIS-CH11-Q004",
@@ -882,7 +882,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "epsilon = f(NTU, C_r)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-hx-parallel" as Question["diagramType"],
+    diagramType: "ht-hx-parallel",
   }
   ],
   "ht-ch12": [
@@ -907,7 +907,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "E_b = sigma T^4",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-blackbody" as Question["diagramType"],
+    diagramType: "ht-blackbody",
   },
   {
     id: "HT-VIS-CH12-Q002",
@@ -930,7 +930,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "E = epsilon sigma T^4",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-blackbody" as Question["diagramType"],
+    diagramType: "ht-blackbody",
   },
   {
     id: "HT-VIS-CH12-Q003",
@@ -953,7 +953,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q_rad = epsilon sigma A (T1^4 - T2^4)",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-vacuum-radiation" as Question["diagramType"],
+    diagramType: "ht-vacuum-radiation",
   },
   {
     id: "HT-VIS-CH12-Q004",
@@ -976,7 +976,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "G = irradiation",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-irradiation" as Question["diagramType"],
+    diagramType: "ht-irradiation",
   }
   ],
   "ht-ch13": [
@@ -1001,7 +1001,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "F_ij",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-view-factor" as Question["diagramType"],
+    diagramType: "ht-view-factor",
   },
   {
     id: "HT-VIS-CH13-Q002",
@@ -1024,7 +1024,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "A_i F_ij = A_j F_ji",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-view-factor" as Question["diagramType"],
+    diagramType: "ht-view-factor",
   },
   {
     id: "HT-VIS-CH13-Q003",
@@ -1047,7 +1047,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "sum_j F_ij = 1",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-enclosure-tri" as Question["diagramType"],
+    diagramType: "ht-enclosure-tri",
   },
   {
     id: "HT-VIS-CH13-Q004",
@@ -1070,7 +1070,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q decreases when shields are added",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-radiation-shield" as Question["diagramType"],
+    diagramType: "ht-radiation-shield",
   }
   ],
   "ht-ch14": [
@@ -1095,7 +1095,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "j_A = -D_AB grad rho_A",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-fick-diffusion" as Question["diagramType"],
+    diagramType: "ht-fick-diffusion",
   },
   {
     id: "HT-VIS-CH14-Q002",
@@ -1118,7 +1118,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "Sh = h_m L / D_AB",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-heat-mass-analogy" as Question["diagramType"],
+    diagramType: "ht-heat-mass-analogy",
   },
   {
     id: "HT-VIS-CH14-Q003",
@@ -1141,7 +1141,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: null,
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-mass-fraction" as Question["diagramType"],
+    diagramType: "ht-mass-fraction",
   },
   {
     id: "HT-VIS-CH14-Q004",
@@ -1164,7 +1164,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "q''_evap = h_m rho (m_s - m_inf) h_fg",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-evaporation-bl" as Question["diagramType"],
+    diagramType: "ht-evaporation-bl",
   },
   {
     id: "HT-VIS-CH14-Q005",
@@ -1187,7 +1187,7 @@ export const htBananzaVisualsByChapter: Record<
     formula: "n · j_A = 0",
     audioGenre: "ambient-space",
     points: 1,
-    diagramType: "ht-fick-diffusion" as Question["diagramType"],
+    diagramType: "ht-fick-diffusion",
   }
   ],
 };
