@@ -239,13 +239,24 @@ class AudioManager {
    * Heat Transfer bed tracks.
    * Bananza: Armageddon (from 34:20) then Portal OST, looping between the two.
    * Intro: quieter Portal-bed background only.
+   * Calling again while the same bed is already playing does not restart it.
    */
   startHeatTransferBed(mode: "bananza" | "intro") {
     this.bedVolumeScale = mode === "bananza" ? 0.95 : 0.28;
     if (mode === "bananza") {
+      if (this.bedActive && this.bedPlaylist === BANANZA_PLAYLIST) {
+        this.syncBedGain();
+        void this.bedEl?.play().catch(() => undefined);
+        return;
+      }
       this.bedPlaylist = BANANZA_PLAYLIST;
       this.bedPlaylistIndex = 0;
       this.startBed(BANANZA_PLAYLIST[0]!, { loopSame: false });
+      return;
+    }
+    if (this.bedActive && this.bedPlaylist === null && this.bedUrl === HT_BED_URL.intro) {
+      this.syncBedGain();
+      void this.bedEl?.play().catch(() => undefined);
       return;
     }
     this.bedPlaylist = null;
@@ -254,6 +265,8 @@ class AudioManager {
   }
 
   stopHeatTransferBed() {
+    if (this.bedPlaylist === TITLE_PLAYLIST) return;
+    if (!this.bedActive && this.bedPlaylist == null) return;
     this.bedPlaylist = null;
     this.bedPlaylistIndex = 0;
     this.stopBed();
@@ -261,6 +274,12 @@ class AudioManager {
 
   /** Quiet title-screen playlist: Crystal Vista → Armageddon → Portal → repeat. */
   startTitlePlaylist() {
+    if (this.bedActive && this.bedPlaylist === TITLE_PLAYLIST) {
+      this.bedVolumeScale = 0.22;
+      this.syncBedGain();
+      void this.bedEl?.play().catch(() => undefined);
+      return;
+    }
     this.bedPlaylist = TITLE_PLAYLIST;
     this.bedPlaylistIndex = 0;
     this.bedVolumeScale = 0.22;
@@ -268,7 +287,7 @@ class AudioManager {
   }
 
   stopTitlePlaylist() {
-    if (!this.bedPlaylist && !this.bedActive) return;
+    if (this.bedPlaylist !== TITLE_PLAYLIST) return;
     this.bedPlaylist = null;
     this.bedPlaylistIndex = 0;
     this.stopBed();
@@ -317,8 +336,10 @@ class AudioManager {
     if (!el) return;
     // Truncated MP3s often break native loop; ended-handler restarts / advances.
     el.loop = opts.loopSame;
+    const wasPlaying = this.bedActive && !el.paused && !el.ended && this.bedUrl === url;
     this.bedActive = true;
     this.syncBedGain();
+    if (wasPlaying) return;
     if (el.ended || el.paused) {
       el.currentTime = 0;
     }

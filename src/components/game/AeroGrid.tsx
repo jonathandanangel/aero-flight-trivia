@@ -195,38 +195,48 @@ export function AeroGrid() {
     return undefined;
   }, [screen]);
 
+  // Keep HT Intro / Bananza beds continuous across questions, gauntlets, and briefings.
+  const htAudioSession =
+    (mode === "ht-intro" || mode === "ht-extreme") &&
+    screen !== "title" &&
+    screen !== "settings" &&
+    screen !== "validate"
+      ? mode
+      : null;
+
+  React.useEffect(() => {
+    if (!htAudioSession) return undefined;
+    audio.stopTitlePlaylist();
+    if (htAudioSession === "ht-intro") {
+      audio.startHeatTransferBed("intro");
+      audio.stopWindEscalation();
+      audio.stopThermalAmbience();
+    } else {
+      audio.startHeatTransferBed("bananza");
+      audio.startWindEscalation();
+      audio.startThermalAmbience();
+    }
+    return () => {
+      audio.stopHeatTransferBed();
+      audio.stopWindEscalation();
+      audio.stopThermalAmbience();
+      audio.setTempoMultiplier(1);
+    };
+  }, [htAudioSession]);
+
+  React.useEffect(() => {
+    if (htAudioSession !== "ht-extreme") return;
+    const windLevel = Math.min(9, Math.floor(localIndex / 10));
+    audio.setWindTrack(windLevel);
+    audio.setTempoMultiplier(1 + windLevel * 0.08);
+  }, [htAudioSession, localIndex]);
+
   React.useEffect(() => {
     if (screen === "title" || screen === "settings" || screen === "validate") {
       return undefined;
     }
-    if (mode === "ht-intro") {
-      audio.stopTitlePlaylist();
-      audio.startHeatTransferBed("intro");
-      audio.stopWindEscalation();
-      audio.stopThermalAmbience();
-      return () => {
-        audio.stopHeatTransferBed();
-        audio.stopWindEscalation();
-        audio.stopThermalAmbience();
-        audio.startMusic();
-      };
-    }
-    if (mode === "ht-extreme") {
-      audio.stopTitlePlaylist();
-      audio.startHeatTransferBed("bananza");
-      audio.startWindEscalation();
-      audio.startThermalAmbience();
-      // 10 wind-speed levels; advance about every 10 questions (holds at max after Q100).
-      const windLevel = Math.min(9, Math.floor(localIndex / 10));
-      audio.setWindTrack(windLevel);
-      audio.setTempoMultiplier(1 + windLevel * 0.08);
-      return () => {
-        audio.stopHeatTransferBed();
-        audio.stopWindEscalation();
-        audio.stopThermalAmbience();
-        audio.setTempoMultiplier(1);
-        audio.startMusic();
-      };
+    if (mode === "ht-intro" || mode === "ht-extreme") {
+      return undefined;
     }
     if (isExtremeFamily(mode)) {
       // Every 3 completed questions the turbulent track rotates and escalates.
