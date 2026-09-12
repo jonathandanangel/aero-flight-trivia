@@ -184,21 +184,26 @@ export function AeroGrid() {
     if (mode === "ht-intro") {
       audio.startHeatTransferBed("intro");
       audio.stopWindEscalation();
+      audio.stopThermalAmbience();
       return () => {
         audio.stopHeatTransferBed();
         audio.stopWindEscalation();
+        audio.stopThermalAmbience();
         audio.startMusic();
       };
     }
     if (mode === "ht-extreme") {
       audio.startHeatTransferBed("bananza");
       audio.startWindEscalation();
-      // 5 wind-speed levels; advance about every 10 questions (holds at max after Q50).
-      audio.setWindTrack(Math.min(4, Math.floor(localIndex / 10)));
-      audio.setTempoMultiplier(1 + Math.min(4, Math.floor(localIndex / 10)) * 0.12);
+      audio.startThermalAmbience();
+      // 10 wind-speed levels; advance about every 10 questions (holds at max after Q100).
+      const windLevel = Math.min(9, Math.floor(localIndex / 10));
+      audio.setWindTrack(windLevel);
+      audio.setTempoMultiplier(1 + windLevel * 0.08);
       return () => {
         audio.stopHeatTransferBed();
         audio.stopWindEscalation();
+        audio.stopThermalAmbience();
         audio.setTempoMultiplier(1);
         audio.startMusic();
       };

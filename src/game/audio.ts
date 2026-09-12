@@ -68,6 +68,25 @@ const SUPERSONIC_TRACKS: {
   { bpm: 230, root: 92, scale: [0, 1, 3, 6, 8, 11], wave: "square", pulse: 0.075, turbulence: 2.1 },
 ];
 
+/** Ten escalating wind/turbulence levels for Heat Transfer Extreme Bananza. */
+const BANANZA_WIND_LEVELS: { bpm: number; turbulence: number }[] = [
+  { bpm: 150, turbulence: 0.7 },
+  { bpm: 162, turbulence: 0.9 },
+  { bpm: 174, turbulence: 1.1 },
+  { bpm: 186, turbulence: 1.3 },
+  { bpm: 198, turbulence: 1.5 },
+  { bpm: 210, turbulence: 1.75 },
+  { bpm: 222, turbulence: 2.0 },
+  { bpm: 234, turbulence: 2.3 },
+  { bpm: 246, turbulence: 2.6 },
+  { bpm: 260, turbulence: 3.0 },
+];
+
+const HT_BED_URL = {
+  bananza: "/audio/ht-bananza-bed.mp3",
+  intro: "/audio/ht-portal-bed.mp3",
+} as const;
+
 const semitone = (root: number, steps: number) => root * Math.pow(2, steps / 12);
 
 class AudioManager {
@@ -86,10 +105,14 @@ class AudioManager {
   private bedGain: GainNode | null = null;
   private bedActive = false;
   private bedVolumeScale = 0.85;
+  private bedUrl: string | null = null;
   private windTimer: number | null = null;
   private windActive = false;
   private windTrack = 0;
   private windStep = 0;
+  private thermalTimer: number | null = null;
+  private thermalActive = false;
+  private thermalStep = 0;
   settings: AudioSettings = { master: 0.7, music: 0.5, effects: 0.8, muted: false };
 
   get ready() {
@@ -197,9 +220,9 @@ class AudioManager {
   }
 
   /**
-   * Heat Transfer bed track (Portal OST excerpt).
-   * Bananza: full music level, SFX unchanged.
-   * Intro: quieter background bed.
+   * Heat Transfer bed tracks.
+   * Bananza: Armageddon soundtrack at full music level.
+   * Intro: quieter Portal-bed background only.
    */
   startHeatTransferBed(mode: "bananza" | "intro") {
     this.init();
@@ -207,22 +230,36 @@ class AudioManager {
     this.resume();
     this.stopMusic();
     this.bedVolumeScale = mode === "bananza" ? 0.95 : 0.28;
+    const url = HT_BED_URL[mode];
     if (!this.bedEl) {
-      this.bedEl = new Audio("/audio/ht-portal-bed.mp3");
-      this.bedEl.loop = true;
+      this.bedEl = new Audio(url);
       this.bedEl.preload = "auto";
       this.bedSource = this.ctx.createMediaElementSource(this.bedEl);
       this.bedGain = this.ctx.createGain();
       this.bedSource.connect(this.bedGain);
       this.bedGain.connect(this.musicGain);
+      this.bedUrl = url;
+      this.bedEl.addEventListener("ended", () => {
+        if (!this.bedActive || !this.bedEl) return;
+        this.bedEl.currentTime = 0;
+        void this.bedEl.play().catch(() => undefined);
+      });
+    } else if (this.bedUrl !== url) {
+      this.bedEl.pause();
+      this.bedEl.src = url;
+      this.bedUrl = url;
+      this.bedEl.load();
     }
+    // Always re-assert looping — truncated MP3s sometimes ignore the attribute alone.
+    this.bedEl.loop = true;
     this.bedActive = true;
     this.syncBedGain();
-    if (this.bedEl.paused) {
-      void this.bedEl.play().catch(() => {
-        /* autoplay may wait until a user gesture; startAudio already handles that */
-      });
+    if (this.bedEl.ended || this.bedEl.paused) {
+      this.bedEl.currentTime = 0;
     }
+    void this.bedEl.play().catch(() => {
+      /* autoplay may wait until a user gesture; startAudio already handles that */
+    });
   }
 
   stopHeatTransferBed() {
@@ -237,8 +274,8 @@ class AudioManager {
   }
 
   /**
-   * Escalating wind / turbulence SFX (5 speed levels), used under the HT Bananza bed.
-   * Level advances from the game via setWindTrack(0..4).
+   * Escalating wind / turbulence SFX (10 speed levels) under the Bananza bed.
+   * Level advances from the game via setWindTrack(0..9).
    */
   startWindEscalation() {
     this.init();
@@ -257,55 +294,127 @@ class AudioManager {
     }
   }
 
-  /** Select wind intensity 0–4 (five increasing rush speeds). */
+  /** Select wind intensity 0–9 (ten increasing rush speeds). */
   setWindTrack(index: number) {
-    this.windTrack = Math.min(SUPERSONIC_TRACKS.length - 1, Math.max(0, Math.round(index)));
+    this.windTrack = Math.min(BANANZA_WIND_LEVELS.length - 1, Math.max(0, Math.round(index)));
+  }
+
+  /** Constant fire crackle + plasma-particle ambience for Bananza atmosphere. */
+  startThermalAmbience() {
+    this.init();
+    if (!this.ctx || this.thermalActive) return;
+    this.resume();
+    this.thermalActive = true;
+    this.thermalStep = 0;
+    this.scheduleThermalTick();
+  }
+
+  stopThermalAmbience() {
+    this.thermalActive = false;
+    if (this.thermalTimer !== null) {
+      window.clearTimeout(this.thermalTimer);
+      this.thermalTimer = null;
+    }
   }
 
   private scheduleWindTick() {
     if (!this.windActive || !this.ctx) return;
-    const track = SUPERSONIC_TRACKS[this.windTrack]!;
-    const beat = 60000 / (track.bpm * this.tempoMultiplier) / 2;
+    const level = BANANZA_WIND_LEVELS[this.windTrack]!;
+    const beat = 60000 / (level.bpm * this.tempoMultiplier) / 2;
     this.playWindStep();
     this.windTimer = window.setTimeout(() => this.scheduleWindTick(), beat);
   }
 
-  /** Wind-only layer: rushing air, hats, and shock shrieks — no melodic bed. */
+  /** Wind-only layer: rushing air and shock shrieks — no melodic bed. */
   private playWindStep() {
     const ctx = this.ctx;
     const bus = this.fxGain;
     if (!ctx || !bus || !this.windActive) return;
-    const track = SUPERSONIC_TRACKS[this.windTrack]!;
-    const turbulence = track.turbulence;
+    const level = BANANZA_WIND_LEVELS[this.windTrack]!;
+    const turbulence = level.turbulence;
     const intensity = Math.max(0.55, this.intensity);
     const now = ctx.currentTime;
 
     if (this.windStep % 2 === 1) {
       this.noiseBurst(0.045, 7200 + turbulence * 900, 0.07 * intensity * turbulence, bus);
     }
-    const rushEvery = turbulence > 1.5 ? 4 : turbulence > 1.1 ? 6 : 8;
+    const rushEvery = turbulence > 2.2 ? 3 : turbulence > 1.5 ? 4 : turbulence > 1.1 ? 6 : 8;
     if (this.windStep % rushEvery === 0) {
       this.noiseBurst(
-        Math.max(0.35, 1.1 / turbulence),
+        Math.max(0.3, 1.05 / turbulence),
         420 + Math.random() * 900 * turbulence,
-        Math.min(0.38, 0.15 * intensity * turbulence),
+        Math.min(0.4, 0.14 * intensity * turbulence),
         bus,
       );
     }
-    if (this.windStep % (turbulence > 1.6 ? 8 : 16) === 7) {
+    if (this.windStep % (turbulence > 2.0 ? 6 : turbulence > 1.4 ? 8 : 16) === 3) {
       const shriek = ctx.createOscillator();
       const sg = ctx.createGain();
       shriek.type = "sawtooth";
       shriek.frequency.setValueAtTime(900, now);
-      shriek.frequency.exponentialRampToValueAtTime(2600 * Math.min(1.6, turbulence), now + 0.5);
+      shriek.frequency.exponentialRampToValueAtTime(2600 * Math.min(1.8, turbulence), now + 0.5);
       sg.gain.setValueAtTime(0, now);
-      sg.gain.linearRampToValueAtTime(0.045 * intensity * turbulence, now + 0.08);
+      sg.gain.linearRampToValueAtTime(0.04 * intensity * Math.min(2.4, turbulence), now + 0.08);
       sg.gain.exponentialRampToValueAtTime(0.0006, now + 0.6);
       shriek.connect(sg).connect(bus);
       shriek.start(now);
       shriek.stop(now + 0.65);
     }
     this.windStep += 1;
+  }
+
+  private scheduleThermalTick() {
+    if (!this.thermalActive || !this.ctx) return;
+    this.playThermalStep();
+    this.thermalTimer = window.setTimeout(() => this.scheduleThermalTick(), 140);
+  }
+
+  /** Constant fire crackle + sparking plasma particles. */
+  private playThermalStep() {
+    const ctx = this.ctx;
+    const bus = this.fxGain;
+    if (!ctx || !bus || !this.thermalActive) return;
+    const now = ctx.currentTime;
+    const intensity = Math.max(0.5, this.intensity);
+
+    // low fiery rumble / burning ambience
+    if (this.thermalStep % 3 === 0) {
+      this.noiseBurst(0.28 + Math.random() * 0.22, 180 + Math.random() * 220, 0.045 * intensity, bus);
+    }
+    // mid crackle pops
+    if (this.thermalStep % 5 === 2) {
+      this.noiseBurst(0.05 + Math.random() * 0.05, 900 + Math.random() * 1400, 0.035 * intensity, bus);
+    }
+    // plasma particles — short bright zips always present
+    if (this.thermalStep % 2 === 0) {
+      const zip = ctx.createOscillator();
+      const zg = ctx.createGain();
+      zip.type = Math.random() > 0.5 ? "square" : "sawtooth";
+      const startF = 1800 + Math.random() * 4200;
+      zip.frequency.setValueAtTime(startF, now);
+      zip.frequency.exponentialRampToValueAtTime(Math.max(400, startF * (0.25 + Math.random() * 0.4)), now + 0.08);
+      zg.gain.setValueAtTime(0, now);
+      zg.gain.linearRampToValueAtTime(0.018 * intensity, now + 0.008);
+      zg.gain.exponentialRampToValueAtTime(0.0005, now + 0.09);
+      zip.connect(zg).connect(bus);
+      zip.start(now);
+      zip.stop(now + 0.1);
+    }
+    // occasional hotter plasma burst
+    if (this.thermalStep % 11 === 7) {
+      this.noiseBurst(0.12, 3500 + Math.random() * 2500, 0.05 * intensity, bus);
+      const spark = ctx.createOscillator();
+      const sg = ctx.createGain();
+      spark.type = "triangle";
+      spark.frequency.setValueAtTime(3200, now);
+      spark.frequency.exponentialRampToValueAtTime(700, now + 0.2);
+      sg.gain.setValueAtTime(0.03 * intensity, now);
+      sg.gain.exponentialRampToValueAtTime(0.0005, now + 0.22);
+      spark.connect(sg).connect(bus);
+      spark.start(now);
+      spark.stop(now + 0.25);
+    }
+    this.thermalStep += 1;
   }
 
   private syncBedGain() {
