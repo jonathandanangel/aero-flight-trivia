@@ -87,6 +87,12 @@ const HT_BED_URL = {
   intro: "/audio/ht-portal-bed.mp3",
 } as const;
 
+/** Bananza: Armageddon (from 34:20) → Portal OST → repeat. */
+const BANANZA_PLAYLIST = [
+  "/audio/ht-bananza-bed.mp3",
+  "/audio/ht-bananza-portal.mp3",
+] as const;
+
 /** Title-screen playlist (low volume): Crystal Vista → Armageddon → Portal, then repeats. */
 const TITLE_PLAYLIST = [
   "/audio/title-crystal-vista.mp3",
@@ -113,8 +119,8 @@ class AudioManager {
   private bedActive = false;
   private bedVolumeScale = 0.85;
   private bedUrl: string | null = null;
-  private titlePlaylistActive = false;
-  private titleTrackIndex = 0;
+  private bedPlaylist: readonly string[] | null = null;
+  private bedPlaylistIndex = 0;
   private bedEndedHandler: (() => void) | null = null;
   private windTimer: number | null = null;
   private windActive = false;
@@ -231,31 +237,40 @@ class AudioManager {
 
   /**
    * Heat Transfer bed tracks.
-   * Bananza: Armageddon soundtrack at full music level.
+   * Bananza: Armageddon (from 34:20) then Portal OST, looping between the two.
    * Intro: quieter Portal-bed background only.
    */
   startHeatTransferBed(mode: "bananza" | "intro") {
-    this.titlePlaylistActive = false;
     this.bedVolumeScale = mode === "bananza" ? 0.95 : 0.28;
-    this.startBed(HT_BED_URL[mode], { loopSame: true });
+    if (mode === "bananza") {
+      this.bedPlaylist = BANANZA_PLAYLIST;
+      this.bedPlaylistIndex = 0;
+      this.startBed(BANANZA_PLAYLIST[0]!, { loopSame: false });
+      return;
+    }
+    this.bedPlaylist = null;
+    this.bedPlaylistIndex = 0;
+    this.startBed(HT_BED_URL.intro, { loopSame: true });
   }
 
   stopHeatTransferBed() {
+    this.bedPlaylist = null;
+    this.bedPlaylistIndex = 0;
     this.stopBed();
   }
 
   /** Quiet title-screen playlist: Crystal Vista → Armageddon → Portal → repeat. */
   startTitlePlaylist() {
-    this.titlePlaylistActive = true;
-    this.titleTrackIndex = 0;
+    this.bedPlaylist = TITLE_PLAYLIST;
+    this.bedPlaylistIndex = 0;
     this.bedVolumeScale = 0.22;
     this.startBed(TITLE_PLAYLIST[0]!, { loopSame: false });
   }
 
   stopTitlePlaylist() {
-    if (!this.titlePlaylistActive && !this.bedActive) return;
-    this.titlePlaylistActive = false;
-    this.titleTrackIndex = 0;
+    if (!this.bedPlaylist && !this.bedActive) return;
+    this.bedPlaylist = null;
+    this.bedPlaylistIndex = 0;
     this.stopBed();
   }
 
@@ -274,9 +289,9 @@ class AudioManager {
       this.bedUrl = url;
       this.bedEndedHandler = () => {
         if (!this.bedActive || !this.bedEl) return;
-        if (this.titlePlaylistActive) {
-          this.titleTrackIndex = (this.titleTrackIndex + 1) % TITLE_PLAYLIST.length;
-          const next = TITLE_PLAYLIST[this.titleTrackIndex]!;
+        if (this.bedPlaylist && this.bedPlaylist.length > 0) {
+          this.bedPlaylistIndex = (this.bedPlaylistIndex + 1) % this.bedPlaylist.length;
+          const next = this.bedPlaylist[this.bedPlaylistIndex]!;
           this.bedEl.loop = false;
           this.bedEl.src = next;
           this.bedUrl = next;
