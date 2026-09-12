@@ -66,7 +66,8 @@ export function HeatTransferChapterJump({
           {psychedelic ? "Enoch-Ra Chapter Gate" : "Chapter Jump"}
         </h2>
         <p className="mt-3 font-mono text-sm text-muted-foreground">
-          Skip ahead (credited as correct), return to an earlier chapter, or continue here.
+          Enoch-Ra unlocked (HP over 11). Skip ahead (credited as correct), return to an earlier
+          chapter, or continue here.
         </p>
         {current && (
           <p className="mt-2 font-mono text-xs text-amber">

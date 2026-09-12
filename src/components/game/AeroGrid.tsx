@@ -209,7 +209,7 @@ export function AeroGrid() {
       ? mode
       : null;
 
-  // Open Enoch-Ra chapter gate once overload finishes (wait out an active gauntlet).
+  // Open Bananza chapter gate only after Enoch-Ra (HP > 11 overload), once the gauntlet is done.
   React.useEffect(() => {
     if (!enochGatePending || mode !== "ht-extreme") return;
     if (screen === "gauntlet" || screen === "ht-chapter-jump") return;
@@ -607,7 +607,7 @@ export function AeroGrid() {
         onDone={() => {
           setOverloadBurst(0);
           if (isExtremeFamily(mode)) setPsychedelicActive(true);
-          // Every Enoch-Ra trigger in Bananza arms the chapter gate (skip ahead or return).
+          // Chapter skip/return only arms when Bananza crosses into Enoch-Ra (HP > 11).
           if (mode === "ht-extreme") setEnochGatePending(true);
         }}
       />
@@ -1001,8 +1001,8 @@ export function AeroGrid() {
                 if (gauntletRecovery) {
                   setExtremeScore((value) => value + score);
                   setGauntletRecovery(false);
-                  // After Enoch-Ra (or when already active), offer skip/return; else advance.
-                  if (psychedelicActive || enochGatePending) {
+                  // Chapter gate only if Enoch-Ra just triggered (HP > 11), not every recovery.
+                  if (enochGatePending) {
                     openHtChapterGate(true);
                   } else {
                     setScreen("play");
@@ -1010,8 +1010,11 @@ export function AeroGrid() {
                   }
                 } else {
                   setExtremeScore(score);
-                  // Entry minigame: always offer chapter gate so players can jump or continue.
-                  openHtChapterGate(false);
+                  if (enochGatePending) {
+                    openHtChapterGate(false);
+                  } else {
+                    setScreen("play");
+                  }
                 }
                 return;
               }
@@ -1027,7 +1030,7 @@ export function AeroGrid() {
               if (mode === "ht-extreme" && gauntletRecovery) {
                 setExtremeScore((value) => value + score);
                 setGauntletRecovery(false);
-                if (psychedelicActive || enochGatePending) {
+                if (enochGatePending) {
                   openHtChapterGate(true);
                 } else {
                   exitRecoveryGauntlet(false);
