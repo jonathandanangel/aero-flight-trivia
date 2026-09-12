@@ -52,7 +52,7 @@ export function SettingsPanel({ onBack }: { onBack: () => void }) {
   return (
     <div className="panel mx-auto w-full max-w-xl space-y-4 p-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl text-cyan text-glow">SETTINGS</h2>
+        <h1 className="font-display text-xl text-cyan text-glow">SETTINGS</h1>
         <button type="button" onClick={onBack} className="rounded-md border border-border px-3 py-1 font-mono text-xs">
           Back
         </button>

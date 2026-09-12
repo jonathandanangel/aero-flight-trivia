@@ -19,7 +19,12 @@ export function TitleScreen(p: TitleScreenProps) {
     <div className="mx-auto flex min-h-[80vh] w-full max-w-3xl flex-col items-center justify-center gap-8 px-4 text-center">
       <div>
         <p className="font-mono text-xs uppercase tracking-[0.4em] text-magenta">Flight Dynamics Trivia</p>
-        <h1 className="mt-2 font-display text-4xl text-cyan text-glow sm:text-6xl">ZEUS AMMON-RA 11</h1>
+        <h1 className="mt-2 font-display text-4xl text-cyan text-glow sm:text-6xl">
+          ZEUS AMMON-RA 11
+          <span className="mt-2 block font-mono text-sm tracking-[0.3em] text-moon sm:text-base">
+            Flight Dynamics Trivia
+          </span>
+        </h1>
         <p className="mt-3 font-mono text-sm text-muted-foreground">
           333 aerodynamics questions · 67 learning sets
         </p>

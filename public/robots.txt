@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://aero-flight-trivia.lovable.app/sitemap.xml
