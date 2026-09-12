@@ -67,12 +67,15 @@ export function WorldBackground({
   reducedMotion,
   bloodMoon,
   psychedelic,
+  inferno,
 }: {
   progress: number;
   scanlines: boolean;
   reducedMotion: boolean;
   bloodMoon: boolean;
   psychedelic?: boolean;
+  /** Aerodynamics Extreme second half: everything burns bright red with lava. */
+  inferno?: boolean;
 }) {
   const phase = Math.min(1, Math.max(0, progress));
   const sky =
@@ -89,6 +92,7 @@ export function WorldBackground({
         bloodMoon && "blood-moon-scene",
         scanlines && "scanlines",
         psychedelic && !reducedMotion && "psychedelic-scene",
+        inferno && "inferno-scene",
       )}
       aria-hidden
     >
@@ -108,9 +112,10 @@ export function WorldBackground({
           bloodMoon && !reducedMotion && "blood-moon-awakening",
           psychedelic && "psycho-moon",
           psychedelic && !reducedMotion && "psycho-moon-shake",
+          inferno && "inferno-moon",
         )}
         style={
-          bloodMoon || psychedelic
+          bloodMoon || psychedelic || inferno
             ? undefined
             : { boxShadow: "0 0 60px rgba(234,247,255,0.45)" }
         }
@@ -122,6 +127,7 @@ export function WorldBackground({
             "moon-portrait h-full w-full object-cover",
             bloodMoon && "moon-portrait--blood",
             psychedelic && "moon-portrait--psycho",
+            inferno && "moon-portrait--inferno",
           )}
         />
       </div>
@@ -138,7 +144,7 @@ export function WorldBackground({
           }}
         />
       ))}
-      <svg viewBox="0 0 1200 300" preserveAspectRatio="none" className="absolute bottom-0 z-[3] h-[38vh] w-full">
+      <svg viewBox="0 0 1200 300" preserveAspectRatio="none" className={cn("absolute bottom-0 z-[3] h-[38vh] w-full", inferno && "inferno-city")}>
         <g fill="#071225" stroke="var(--color-cyan)" strokeWidth="1.4" opacity="0.85">
           {Array.from({ length: 26 }).map((_, i) => {
             const w = 30 + ((i * 37) % 44);
@@ -149,6 +155,14 @@ export function WorldBackground({
         </g>
         <line x1="0" y1="299" x2="1200" y2="299" stroke="var(--color-magenta)" strokeWidth="2" />
       </svg>
+      {inferno && (
+        <>
+          {/* Neon lava glow rising from the skyline */}
+          <div className={cn("inferno-lava absolute inset-x-0 bottom-0 z-[2] h-[40vh]", !reducedMotion && "inferno-lava--flow")} />
+          {/* Lava streams running down the buildings */}
+          <div className={cn("inferno-lava-streaks absolute inset-x-0 bottom-0 z-[4] h-[38vh]", !reducedMotion && "inferno-lava-streaks--flow")} />
+        </>
+      )}
       {bloodMoon && <div className="blood-moon-horizon absolute inset-x-0 bottom-0 z-[2] h-[30vh]" />}
       {!reducedMotion && (
         <>
