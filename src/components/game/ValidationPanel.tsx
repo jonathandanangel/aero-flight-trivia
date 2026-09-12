@@ -9,7 +9,7 @@ export function ValidationPanel({ onBack }: { onBack: () => void }) {
   return (
     <div className="panel mx-auto w-full max-w-3xl p-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl text-cyan text-glow">QUESTION BANK VALIDATION</h2>
+        <h1 className="font-display text-xl text-cyan text-glow">QUESTION BANK VALIDATION</h1>
         <button type="button" onClick={onBack} className="rounded-md border border-border px-3 py-1 font-mono text-xs">
           Back
         </button>
