@@ -729,6 +729,10 @@
   filter: drop-shadow(0 0 30px color-mix(in srgb, #ff2a2a 40%, transparent));
 }
 
+.ht-enoch-jump {
+  filter: drop-shadow(0 0 34px color-mix(in srgb, #d946ef 48%, transparent));
+}
+
 .ht-intro-menu-item {
   border-color: color-mix(in srgb, #ff8c1a 82%, transparent);
   color: #ff8c1a;

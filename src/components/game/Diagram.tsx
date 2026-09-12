@@ -310,6 +310,311 @@ function Shape({ type }: { type: DiagramType }) {
           <text x="200" y="48" textAnchor="middle" fill="var(--color-amber)" fontSize="9">T rising</text>
         </g>
       );
+    case "ht-conductivity-bars":
+      return (
+        <g>
+          {[
+            { x: 55, label: "A metal", fill: "var(--color-amber)" },
+            { x: 160, label: "B plastic", fill: "var(--color-cyan)" },
+            { x: 265, label: "C air", fill: "var(--color-mint)" },
+          ].map((b) => (
+            <g key={b.label}>
+              <rect x={b.x} y="60" width="70" height="100" fill={b.fill} opacity={0.35} stroke={stroke} />
+              <text x={b.x + 35} y="50" textAnchor="middle" fill="var(--color-moon)" fontSize="10">{b.label}</text>
+            </g>
+          ))}
+        </g>
+      );
+    case "ht-composite-wall":
+      return (
+        <g>
+          <rect x="70" y="50" width="100" height="120" fill="color-mix(in srgb, var(--color-orange) 45%, transparent)" stroke={stroke} />
+          <rect x="170" y="50" width="100" height="120" fill="color-mix(in srgb, var(--color-cyan) 40%, transparent)" stroke={stroke} />
+          <text x="50" y="115" fill="var(--color-amber)" fontSize="10">hot</text>
+          <text x="290" y="115" fill="var(--color-cyan)" fontSize="10">cool</text>
+          <line x1="90" y1="110" x2="250" y2="110" stroke="var(--color-magenta)" strokeWidth="3" />
+        </g>
+      );
+    case "ht-isotherms-2d":
+      return (
+        <g>
+          {[40, 70, 100, 130].map((r, i) => (
+            <path key={r} d={`M 60 ${180 - i * 20} Q 200 ${40 + i * 18} 340 ${160 - i * 15}`} fill="none" stroke="var(--color-cyan)" strokeWidth="1.5" opacity={0.5 + i * 0.1} />
+          ))}
+          <line x1="120" y1="140" x2="160" y2="90" stroke="var(--color-magenta)" strokeWidth="2" />
+          <line x1="220" y1="120" x2="260" y2="70" stroke="var(--color-magenta)" strokeWidth="2" />
+          <text x="200" y="30" textAnchor="middle" fill="var(--color-amber)" fontSize="10">isotherms + heat flux</text>
+        </g>
+      );
+    case "ht-buried-pipe":
+      return (
+        <g>
+          <line x1="40" y1="50" x2="360" y2="50" stroke={stroke} strokeWidth="2" />
+          <circle cx="200" cy="140" r="28" fill="var(--color-secondary)" stroke="var(--color-orange)" strokeWidth="2" />
+          {[ -50, -20, 20, 50].map((dx) => (
+            <path key={dx} d={`M ${200 + dx * 0.2} 112 Q ${200 + dx} 90 ${200 + dx * 1.4} 55`} fill="none" stroke="var(--color-magenta)" strokeWidth="1.5" />
+          ))}
+        </g>
+      );
+    case "ht-lumped-sphere":
+      return (
+        <g>
+          <circle cx="200" cy="115" r="48" fill="color-mix(in srgb, var(--color-orange) 50%, transparent)" stroke="var(--color-amber)" strokeWidth="2" />
+          <text x="200" y="120" textAnchor="middle" fill="var(--color-moon)" fontSize="11">≈ uniform T</text>
+          {[0, 1, 2].map((i) => (
+            <path key={i} d={`M ${200 + Math.cos(i) * 55} ${115 + Math.sin(i) * 40} Q ${240 + i * 20} ${80 + i * 15} ${300 + i * 10} ${70 + i * 20}`} fill="none" stroke="var(--color-mint)" strokeWidth="1.5" />
+          ))}
+        </g>
+      );
+    case "ht-biot-contrast":
+      return (
+        <g>
+          <circle cx="120" cy="115" r="40" fill="color-mix(in srgb, var(--color-orange) 55%, transparent)" stroke={stroke} />
+          <text x="120" y="120" textAnchor="middle" fill="var(--color-moon)" fontSize="10">A</text>
+          <defs>
+            <radialGradient id="htBiGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="var(--color-orange)" />
+              <stop offset="100%" stopColor="var(--color-cyan)" />
+            </radialGradient>
+          </defs>
+          <circle cx="280" cy="115" r="40" fill="url(#htBiGrad)" stroke={stroke} />
+          <text x="280" y="120" textAnchor="middle" fill="var(--color-moon)" fontSize="10">B</text>
+        </g>
+      );
+    case "ht-transient-wall":
+      return (
+        <g>
+          <rect x="80" y="50" width="240" height="120" fill="color-mix(in srgb, var(--color-orange) 30%, transparent)" stroke={stroke} />
+          <line x1="200" y1="50" x2="200" y2="170" stroke="var(--color-amber)" strokeDasharray="4 3" />
+          <text x="200" y="40" textAnchor="middle" fill="var(--color-amber)" fontSize="10">midplane</text>
+          <text x="100" y="115" fill="var(--color-cyan)" fontSize="10">Ts(t)</text>
+        </g>
+      );
+    case "ht-semi-infinite":
+      return (
+        <g>
+          <rect x="60" y="50" width="300" height="120" fill="none" stroke={stroke} />
+          <path d="M 60 50 Q 140 100 220 140 L 60 170 Z" fill="color-mix(in srgb, var(--color-orange) 40%, transparent)" />
+          <text x="280" y="115" fill="var(--color-cyan)" fontSize="10">still Ti</text>
+        </g>
+      );
+    case "ht-bl-dual":
+      return (
+        <g>
+          <line x1="40" y1="170" x2="360" y2="170" stroke={stroke} strokeWidth="2" />
+          <path d="M 40 170 Q 200 60 360 40" fill="none" stroke="var(--color-mint)" strokeWidth="2" />
+          <path d="M 40 170 Q 200 110 360 95" fill="none" stroke="var(--color-magenta)" strokeWidth="2" />
+          <text x="300" y="55" fill="var(--color-mint)" fontSize="9">velocity</text>
+          <text x="300" y="110" fill="var(--color-magenta)" fontSize="9">thermal</text>
+        </g>
+      );
+    case "ht-flat-plate":
+      return (
+        <g>
+          <line x1="40" y1="150" x2="360" y2="150" stroke={stroke} strokeWidth="3" />
+          <path d="M 60 150 Q 180 80 360 50" fill="none" stroke="var(--color-cyan)" strokeWidth="2" />
+          <text x="60" y="175" fill="var(--color-amber)" fontSize="10">LE</text>
+          {[100, 180, 260].map((x) => (
+            <line key={x} x1={x} y1="130" x2={x + 30} y2="130" stroke="var(--color-mint)" strokeWidth="1.5" />
+          ))}
+        </g>
+      );
+    case "ht-cylinder-crossflow":
+      return (
+        <g>
+          <circle cx="180" cy="115" r="36" fill="var(--color-secondary)" stroke="var(--color-orange)" strokeWidth="2" />
+          {[70, 100, 130].map((y) => (
+            <line key={y} x1="40" y1={y} x2="140" y2={y} stroke="var(--color-mint)" strokeWidth="1.5" />
+          ))}
+          <path d="M 220 90 C 280 70 320 100 340 80" fill="none" stroke="var(--color-magenta)" strokeWidth="1.5" />
+          <path d="M 220 140 C 280 160 320 130 340 150" fill="none" stroke="var(--color-magenta)" strokeWidth="1.5" />
+        </g>
+      );
+    case "ht-pipe-flow":
+      return (
+        <g>
+          <rect x="40" y="70" width="320" height="80" fill="none" stroke={stroke} strokeWidth="2" />
+          <ellipse cx="100" cy="110" rx="12" ry="28" fill="none" stroke="var(--color-mint)" />
+          <ellipse cx="220" cy="110" rx="18" ry="32" fill="none" stroke="var(--color-mint)" />
+          <ellipse cx="320" cy="110" rx="22" ry="34" fill="none" stroke="var(--color-cyan)" />
+          <text x="100" y="55" textAnchor="middle" fill="var(--color-amber)" fontSize="9">entry</text>
+          <text x="320" y="55" textAnchor="middle" fill="var(--color-cyan)" fontSize="9">FD</text>
+        </g>
+      );
+    case "ht-hydraulic-diameter":
+      return (
+        <g>
+          <rect x="110" y="60" width="180" height="100" fill="none" stroke={stroke} strokeWidth="2" />
+          <text x="200" y="115" textAnchor="middle" fill="var(--color-amber)" fontSize="11">A_c</text>
+          <text x="200" y="175" textAnchor="middle" fill="var(--color-cyan)" fontSize="10">P wetted</text>
+          <text x="200" y="40" textAnchor="middle" fill="var(--color-mint)" fontSize="10">Dh = 4Ac/P</text>
+        </g>
+      );
+    case "ht-free-plume":
+      return (
+        <g>
+          <rect x="170" y="50" width="20" height="130" fill="var(--color-secondary)" stroke="var(--color-orange)" />
+          <path d="M 190 160 Q 230 120 250 60" fill="none" stroke="var(--color-mint)" strokeWidth="2" />
+          <path d="M 190 150 Q 250 110 280 50" fill="none" stroke="var(--color-mint)" strokeWidth="2" />
+          <text x="260" y="45" fill="var(--color-cyan)" fontSize="10">plume</text>
+        </g>
+      );
+    case "ht-cavity-free":
+      return (
+        <g>
+          <rect x="80" y="40" width="240" height="140" fill="none" stroke={stroke} />
+          <rect x="80" y="40" width="18" height="140" fill="color-mix(in srgb, var(--color-orange) 55%, transparent)" />
+          <rect x="302" y="40" width="18" height="140" fill="color-mix(in srgb, var(--color-cyan) 45%, transparent)" />
+          <path d="M 120 150 Q 200 40 280 70 Q 200 180 120 150" fill="none" stroke="var(--color-mint)" strokeWidth="1.5" />
+        </g>
+      );
+    case "ht-boiling-nucleate":
+      return (
+        <g>
+          <rect x="60" y="150" width="280" height="20" fill="var(--color-secondary)" stroke="var(--color-orange)" />
+          {[100, 150, 200, 250, 300].map((x, i) => (
+            <circle key={x} cx={x} cy={130 - (i % 3) * 18} r={8 + (i % 3) * 3} fill="none" stroke="var(--color-cyan)" strokeWidth="1.5" />
+          ))}
+        </g>
+      );
+    case "ht-boiling-curve":
+      return (
+        <g>
+          <line x1="60" y1="180" x2="340" y2="180" stroke={stroke} />
+          <line x1="60" y1="180" x2="60" y2="40" stroke={stroke} />
+          <path d="M 70 160 Q 120 140 150 60 Q 180 120 220 100 Q 280 90 320 70" fill="none" stroke="var(--color-magenta)" strokeWidth="2" />
+          <circle cx="150" cy="60" r="5" fill="var(--color-amber)" />
+          <text x="160" y="55" fill="var(--color-amber)" fontSize="10">CHF</text>
+        </g>
+      );
+    case "ht-boiling-film":
+      return (
+        <g>
+          <rect x="60" y="150" width="280" height="24" fill="var(--color-secondary)" stroke="var(--color-orange)" />
+          <path d="M 60 150 Q 120 120 200 130 T 340 125" fill="color-mix(in srgb, var(--color-cyan) 25%, transparent)" stroke="var(--color-cyan)" />
+          <text x="200" y="100" textAnchor="middle" fill="var(--color-mint)" fontSize="10">vapor film</text>
+        </g>
+      );
+    case "ht-condensation-film":
+      return (
+        <g>
+          <rect x="160" y="40" width="20" height="140" fill="var(--color-secondary)" stroke="var(--color-cyan)" />
+          <path d="M 180 40 Q 210 80 200 180" fill="color-mix(in srgb, var(--color-mint) 30%, transparent)" stroke="var(--color-mint)" />
+          <text x="230" y="100" fill="var(--color-mint)" fontSize="10">film</text>
+        </g>
+      );
+    case "ht-hx-counterflow":
+      return (
+        <g>
+          <rect x="60" y="70" width="280" height="80" fill="none" stroke={stroke} />
+          <line x1="80" y1="95" x2="300" y2="95" stroke="var(--color-orange)" strokeWidth="2" />
+          <line x1="300" y1="125" x2="80" y2="125" stroke="var(--color-cyan)" strokeWidth="2" />
+          <text x="70" y="90" fill="var(--color-amber)" fontSize="9">hot→</text>
+          <text x="300" y="140" fill="var(--color-cyan)" fontSize="9">←cold</text>
+        </g>
+      );
+    case "ht-hx-parallel":
+      return (
+        <g>
+          <rect x="60" y="70" width="280" height="80" fill="none" stroke={stroke} />
+          <line x1="80" y1="95" x2="300" y2="95" stroke="var(--color-orange)" strokeWidth="2" />
+          <line x1="80" y1="125" x2="300" y2="125" stroke="var(--color-cyan)" strokeWidth="2" />
+          <text x="70" y="90" fill="var(--color-amber)" fontSize="9">hot→</text>
+          <text x="70" y="140" fill="var(--color-cyan)" fontSize="9">cold→</text>
+        </g>
+      );
+    case "ht-blackbody":
+      return (
+        <g>
+          <rect x="120" y="50" width="160" height="120" fill="#111" stroke="var(--color-amber)" strokeWidth="2" />
+          <circle cx="200" cy="110" r="22" fill="none" stroke="var(--color-orange)" strokeWidth="2" />
+          <text x="200" y="185" textAnchor="middle" fill="var(--color-amber)" fontSize="10">blackbody cavity</text>
+        </g>
+      );
+    case "ht-irradiation":
+      return (
+        <g>
+          <rect x="140" y="120" width="120" height="40" fill="var(--color-secondary)" stroke={stroke} />
+          <line x1="100" y1="60" x2="170" y2="120" stroke="var(--color-mint)" strokeWidth="2" strokeDasharray="4 3" />
+          <line x1="200" y1="50" x2="200" y2="120" stroke="var(--color-mint)" strokeWidth="2" strokeDasharray="4 3" />
+          <text x="110" y="55" fill="var(--color-mint)" fontSize="10">G</text>
+          <line x1="230" y1="120" x2="300" y2="60" stroke="var(--color-magenta)" strokeWidth="2" />
+          <text x="300" y="55" fill="var(--color-magenta)" fontSize="10">E</text>
+        </g>
+      );
+    case "ht-view-factor":
+      return (
+        <g>
+          <rect x="70" y="80" width="70" height="70" fill="none" stroke="var(--color-orange)" strokeWidth="2" />
+          <rect x="260" y="60" width="80" height="100" fill="none" stroke="var(--color-cyan)" strokeWidth="2" />
+          <text x="105" y="75" textAnchor="middle" fill="var(--color-amber)" fontSize="10">i</text>
+          <text x="300" y="55" textAnchor="middle" fill="var(--color-cyan)" fontSize="10">j</text>
+          {[0, 1, 2].map((i) => (
+            <line key={i} x1="140" y1={100 + i * 15} x2="260" y2={90 + i * 20} stroke="var(--color-magenta)" strokeWidth="1.2" />
+          ))}
+        </g>
+      );
+    case "ht-enclosure-tri":
+      return (
+        <g>
+          <polygon points="200,40 320,170 80,170" fill="none" stroke={stroke} strokeWidth="2" />
+          <text x="200" y="70" textAnchor="middle" fill="var(--color-amber)" fontSize="10">1</text>
+          <text x="280" y="155" fill="var(--color-cyan)" fontSize="10">2</text>
+          <text x="110" y="155" fill="var(--color-mint)" fontSize="10">3</text>
+        </g>
+      );
+    case "ht-radiation-shield":
+      return (
+        <g>
+          <rect x="60" y="60" width="30" height="100" fill="color-mix(in srgb, var(--color-orange) 50%, transparent)" stroke={stroke} />
+          <rect x="185" y="60" width="30" height="100" fill="none" stroke="var(--color-amber)" strokeWidth="2" strokeDasharray="5 3" />
+          <rect x="310" y="60" width="30" height="100" fill="color-mix(in srgb, var(--color-cyan) 45%, transparent)" stroke={stroke} />
+          <text x="200" y="50" textAnchor="middle" fill="var(--color-amber)" fontSize="10">shield</text>
+        </g>
+      );
+    case "ht-fick-diffusion":
+      return (
+        <g>
+          <defs>
+            <linearGradient id="htFickGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="var(--color-orange)" />
+              <stop offset="100%" stopColor="var(--color-cyan)" />
+            </linearGradient>
+          </defs>
+          <rect x="60" y="60" width="280" height="100" fill="url(#htFickGrad)" stroke={stroke} />
+          <text x="80" y="50" fill="var(--color-amber)" fontSize="10">high ω_A</text>
+          <text x="280" y="50" fill="var(--color-cyan)" fontSize="10">low ω_A</text>
+          <line x1="100" y1="110" x2="280" y2="110" stroke="var(--color-magenta)" strokeWidth="3" />
+        </g>
+      );
+    case "ht-heat-mass-analogy":
+      return (
+        <g>
+          <line x1="40" y1="170" x2="190" y2="170" stroke={stroke} />
+          <path d="M 40 170 Q 120 90 190 70" fill="none" stroke="var(--color-orange)" strokeWidth="2" />
+          <text x="100" y="55" fill="var(--color-amber)" fontSize="10">T BL</text>
+          <line x1="210" y1="170" x2="360" y2="170" stroke={stroke} />
+          <path d="M 210 170 Q 290 90 360 70" fill="none" stroke="var(--color-mint)" strokeWidth="2" />
+          <text x="280" y="55" fill="var(--color-mint)" fontSize="10">ω BL</text>
+        </g>
+      );
+    case "ht-mass-fraction":
+      return (
+        <g>
+          <rect x="100" y="50" width="200" height="120" fill="none" stroke={stroke} strokeWidth="2" />
+          <text x="200" y="100" textAnchor="middle" fill="var(--color-amber)" fontSize="12">ω_A = m_A / m</text>
+          <text x="200" y="130" textAnchor="middle" fill="var(--color-cyan)" fontSize="10">mixture</text>
+        </g>
+      );
+    case "ht-evaporation-bl":
+      return (
+        <g>
+          <rect x="40" y="150" width="320" height="30" fill="color-mix(in srgb, var(--color-cyan) 35%, transparent)" stroke={stroke} />
+          <text x="200" y="170" textAnchor="middle" fill="var(--color-moon)" fontSize="10">liquid</text>
+          <path d="M 40 150 Q 200 90 360 70" fill="none" stroke="var(--color-mint)" strokeWidth="2" />
+          <text x="280" y="85" fill="var(--color-mint)" fontSize="10">vapor BL</text>
+        </g>
+      );
     default:
       return (
         <g>

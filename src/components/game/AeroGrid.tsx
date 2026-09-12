@@ -30,6 +30,8 @@ import { HeatTransferExtremeBriefing } from "./HeatTransferExtremeBriefing";
 import { HeatTransferExtremeReview, type HtLogEntry } from "./HeatTransferExtremeReview";
 import { HeatTransferIntroBriefing } from "./HeatTransferIntroBriefing";
 import { HeatTransferIntroReview, type HtIntroLogEntry } from "./HeatTransferIntroReview";
+import { HeatTransferChapterJump } from "./HeatTransferChapterJump";
+import { getHtBananzaChapters, htChapterAtIndex } from "@/game/ht-chapters";
 import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
 import { Finale } from "./Finale";
@@ -54,7 +56,8 @@ type Screen =
   | "briefing"
   | "v2-review"
   | "ht-review"
-  | "hti-review";
+  | "hti-review"
+  | "ht-chapter-jump";
 type Mode =
   | "campaign"
   | "practice"
@@ -147,6 +150,8 @@ export function AeroGrid() {
   const [htLog, setHtLog] = React.useState<HtLogEntry[]>([]);
   const [htiLog, setHtiLog] = React.useState<HtIntroLogEntry[]>([]);
   const [extremeCorrectCount, setExtremeCorrectCount] = React.useState(0);
+  const [htJumpNeedsAdvance, setHtJumpNeedsAdvance] = React.useState(false);
+  const [enochGatePending, setEnochGatePending] = React.useState(false);
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
@@ -203,6 +208,15 @@ export function AeroGrid() {
     screen !== "validate"
       ? mode
       : null;
+
+  // Open Enoch-Ra chapter gate once overload finishes (wait out an active gauntlet).
+  React.useEffect(() => {
+    if (!enochGatePending || mode !== "ht-extreme") return;
+    if (screen === "gauntlet" || screen === "ht-chapter-jump") return;
+    setEnochGatePending(false);
+    setHtJumpNeedsAdvance(false);
+    setScreen("ht-chapter-jump");
+  }, [enochGatePending, screen, mode]);
 
   React.useEffect(() => {
     if (!htAudioSession) return undefined;
@@ -471,6 +485,77 @@ export function AeroGrid() {
     advance();
   };
 
+  const openHtChapterGate = (needsAdvance: boolean) => {
+    setHtJumpNeedsAdvance(needsAdvance);
+    setEnochGatePending(false);
+    setAnswer([]);
+    setShowHint(false);
+    setPhase("answering");
+    setScreen("ht-chapter-jump");
+  };
+
+  const continueHtChapterGate = () => {
+    if (htJumpNeedsAdvance) {
+      setHtJumpNeedsAdvance(false);
+      setScreen("play");
+      advance();
+      return;
+    }
+    setHtJumpNeedsAdvance(false);
+    setAnswer([]);
+    setShowHint(false);
+    setPhase("answering");
+    setScreen("play");
+  };
+
+  const jumpToHtChapter = (chapterId: string) => {
+    const target = getHtBananzaChapters().find((chapter) => chapter.id === chapterId);
+    if (!target) return;
+    const start = target.startIndex;
+    const bank = heatTransferExtremeQuestions;
+
+    if (start > localIndex) {
+      const skipped = bank.slice(localIndex, start);
+      setHtLog((entries) => {
+        const known = new Set(entries.map((entry) => entry.id));
+        let gained = 0;
+        const next = [...entries];
+        for (const question of skipped) {
+          if (!known.has(question.id)) {
+            next.push({ id: question.id, given: "(chapter jump · credited)", ok: true });
+            gained += question.points;
+          }
+        }
+        if (gained > 0) {
+          setExtremeScore((value) => value + gained);
+        }
+        return next;
+      });
+    } else if (start < localIndex) {
+      const replayIds = new Set(bank.slice(start).map((question) => question.id));
+      setHtLog((entries) => {
+        const removedPoints = entries
+          .filter((entry) => replayIds.has(entry.id) && entry.ok)
+          .reduce((sum, entry) => {
+            const question = bank.find((item) => item.id === entry.id);
+            return sum + (question?.points ?? 0);
+          }, 0);
+        if (removedPoints > 0) {
+          setExtremeScore((value) => Math.max(0, value - removedPoints));
+        }
+        return entries.filter((entry) => !replayIds.has(entry.id));
+      });
+    }
+
+    setHtJumpNeedsAdvance(false);
+    setEnochGatePending(false);
+    setLocalIndex(start);
+    setAnswer([]);
+    setShowHint(false);
+    setPhase("answering");
+    setScreen("play");
+  };
+
   const finishIntermission = () => {
     if (!pendingIntermission) return;
     setProgress((p) => ({
@@ -522,6 +607,8 @@ export function AeroGrid() {
         onDone={() => {
           setOverloadBurst(0);
           if (isExtremeFamily(mode)) setPsychedelicActive(true);
+          // Every Enoch-Ra trigger in Bananza arms the chapter gate (skip ahead or return).
+          if (mode === "ht-extreme") setEnochGatePending(true);
         }}
       />
 
@@ -610,6 +697,8 @@ export function AeroGrid() {
             setGauntletRecovery(false);
             setOverloadBurst(0);
             setPsychedelicActive(false);
+            setEnochGatePending(false);
+            setHtJumpNeedsAdvance(false);
             setScreen("briefing");
           }}
           onSettings={() => setScreen("settings")}
@@ -809,6 +898,8 @@ export function AeroGrid() {
             setGauntletRecovery(false);
             setOverloadBurst(0);
             setPsychedelicActive(false);
+            setEnochGatePending(false);
+            setHtJumpNeedsAdvance(false);
             setScreen("briefing");
           }}
           onMenu={() => setScreen("title")}
@@ -849,9 +940,22 @@ export function AeroGrid() {
             setGauntletRecovery(false);
             setOverloadBurst(0);
             setPsychedelicActive(false);
+            setEnochGatePending(false);
+            setHtJumpNeedsAdvance(false);
             setScreen("briefing");
           }}
           onMenu={() => setScreen("title")}
+        />
+      )}
+
+      {screen === "ht-chapter-jump" && mode === "ht-extreme" && (
+        <HeatTransferChapterJump
+          chapters={getHtBananzaChapters()}
+          currentIndex={localIndex}
+          currentChapterId={htChapterAtIndex(localIndex)?.id}
+          psychedelic={psychedelicActive}
+          onJump={jumpToHtChapter}
+          onContinue={continueHtChapterGate}
         />
       )}
 
@@ -893,6 +997,24 @@ export function AeroGrid() {
             onOvercharge={gainRecall}
             onDamage={damageRecall}
             onComplete={(score) => {
+              if (mode === "ht-extreme") {
+                if (gauntletRecovery) {
+                  setExtremeScore((value) => value + score);
+                  setGauntletRecovery(false);
+                  // After Enoch-Ra (or when already active), offer skip/return; else advance.
+                  if (psychedelicActive || enochGatePending) {
+                    openHtChapterGate(true);
+                  } else {
+                    setScreen("play");
+                    advance();
+                  }
+                } else {
+                  setExtremeScore(score);
+                  // Entry minigame: always offer chapter gate so players can jump or continue.
+                  openHtChapterGate(false);
+                }
+                return;
+              }
               if (gauntletRecovery) {
                 setExtremeScore((value) => value + score);
                 exitRecoveryGauntlet(true);
@@ -902,6 +1024,16 @@ export function AeroGrid() {
               }
             }}
             onAbort={(score) => {
+              if (mode === "ht-extreme" && gauntletRecovery) {
+                setExtremeScore((value) => value + score);
+                setGauntletRecovery(false);
+                if (psychedelicActive || enochGatePending) {
+                  openHtChapterGate(true);
+                } else {
+                  exitRecoveryGauntlet(false);
+                }
+                return;
+              }
               if (gauntletRecovery) {
                 setExtremeScore((value) => value + score);
                 exitRecoveryGauntlet(false);

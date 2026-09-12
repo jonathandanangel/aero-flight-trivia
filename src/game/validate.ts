@@ -396,8 +396,8 @@ function buildHeatTransferRules(): ValidationRule[] {
 
   return [
     {
-      name: "Heat Transfer Extreme Bananza contains exactly 400 canonical questions",
-      passed: HT_CORE_TOTAL === 400 && HT_TOTAL >= 400,
+      name: "Heat Transfer Extreme Bananza contains 400 canonical questions plus visual expansion",
+      passed: HT_CORE_TOTAL === 400 && HT_TOTAL >= 450,
       failingIds: [],
       detail: `${HT_CORE_TOTAL} core / ${HT_TOTAL} total`,
     },
