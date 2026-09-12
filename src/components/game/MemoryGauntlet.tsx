@@ -61,6 +61,7 @@ export interface MemoryGauntletProps {
   hp: number;
   /** Skip directly to a newly randomized Path Memory trial after a missed Extreme question. */
   recoveryOnly?: boolean;
+  banner?: string;
   onOvercharge: () => void;
   onDamage: () => void;
   onComplete: (score: number) => void;
@@ -75,6 +76,7 @@ export function MemoryGauntlet({
   reducedMotion,
   hp,
   recoveryOnly = false,
+  banner,
   onOvercharge,
   onDamage,
   onComplete,
@@ -241,7 +243,7 @@ export function MemoryGauntlet({
     <div className="panel mx-auto w-full max-w-3xl space-y-4 p-5">
       <header className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-widest">
         <span className="text-magenta">
-          {recoveryOnly ? "Extreme Recovery" : "Aerodynamics Extreme"}
+          {banner ?? (recoveryOnly ? "Extreme Recovery" : "Aerodynamics Extreme")}
         </span>
         <span className="text-cyan">{STAGE_TITLES[stage]}</span>
         <span className="text-amber">Score {score}</span>

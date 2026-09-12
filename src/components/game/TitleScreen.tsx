@@ -7,6 +7,8 @@ export interface TitleScreenProps {
   onPractice: () => void;
   onHighSpeed: () => void;
   onExtreme: () => void;
+  onExtremeV2: () => void;
+  onHeatTransferExtreme: () => void;
   onSettings: () => void;
   onValidate: () => void;
 }
@@ -51,6 +53,20 @@ export function TitleScreen(p: TitleScreenProps) {
           onClick={p.onExtreme}
         >
           Aerodynamics Extreme
+        </button>
+        <button
+          type="button"
+          className={`${item} extreme-v2-menu-item`}
+          onClick={p.onExtremeV2}
+        >
+          Aerodynamics Extreme V2
+        </button>
+        <button
+          type="button"
+          className={`${item} ht-extreme-menu-item`}
+          onClick={p.onHeatTransferExtreme}
+        >
+          HEAT TRANSFER EXTREME BANANZA
         </button>
         <button type="button" className={item} onClick={p.onSettings}>
           Settings

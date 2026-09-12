@@ -709,6 +709,26 @@
   filter: drop-shadow(0 0 26px color-mix(in srgb, var(--magenta) 22%, transparent));
 }
 
+.extreme-v2-menu-item {
+  border-color: color-mix(in srgb, #e879f9 72%, transparent);
+  color: #e879f9;
+  text-shadow: 0 0 14px color-mix(in srgb, #e879f9 70%, transparent);
+}
+
+.extreme-v2-shell {
+  filter: drop-shadow(0 0 28px color-mix(in srgb, #e879f9 34%, transparent));
+}
+
+.ht-extreme-menu-item {
+  border-color: color-mix(in srgb, #ff2a2a 78%, transparent);
+  color: #ff2a2a;
+  text-shadow: 0 0 16px color-mix(in srgb, #ff2a2a 80%, transparent);
+}
+
+.ht-extreme-shell {
+  filter: drop-shadow(0 0 30px color-mix(in srgb, #ff2a2a 40%, transparent));
+}
+
 .gauntlet-field {
   position: relative;
   min-height: clamp(20rem, 54vw, 26rem);

@@ -7,11 +7,24 @@ import { nextRecoveryLength, useGame } from "@/game/store";
 import type { Question } from "@/game/types";
 import { cn } from "@/lib/utils";
 import { extremeQuestions, EXTREME_INFERNO_START_INDEX } from "@/game/extreme";
+import {
+  EXTREME_V2_INFERNO_START_INDEX,
+  extremeV2Questions,
+  isExtremeFamily,
+} from "@/game/extreme-v2";
+import {
+  HT_INFERNO_START_INDEX,
+  heatTransferExtremeQuestions,
+} from "@/game/heat-transfer-extreme";
 import { BrainCelebration } from "./BrainCelebration";
 import { BrainOverload } from "./BrainOverload";
 import { HealthBar } from "./HealthBar";
 import { MemoryGauntlet } from "./MemoryGauntlet";
 import { ExtremeBriefing } from "./ExtremeBriefing";
+import { ExtremeV2Briefing } from "./ExtremeV2Briefing";
+import { ExtremeV2Review, type ExtremeV2LogEntry } from "./ExtremeV2Review";
+import { HeatTransferExtremeBriefing } from "./HeatTransferExtremeBriefing";
+import { HeatTransferExtremeReview, type HtLogEntry } from "./HeatTransferExtremeReview";
 import { Diagram } from "./Diagram";
 import { ElectricRecall } from "./ElectricRecall";
 import { Finale } from "./Finale";
@@ -33,8 +46,18 @@ type Screen =
   | "lightcycle"
   | "maze"
   | "gauntlet"
-  | "briefing";
-type Mode = "campaign" | "practice" | "high-speed" | "review" | "mastery" | "extreme";
+  | "briefing"
+  | "v2-review"
+  | "ht-review";
+type Mode =
+  | "campaign"
+  | "practice"
+  | "high-speed"
+  | "review"
+  | "mastery"
+  | "extreme"
+  | "extreme-v2"
+  | "ht-extreme";
 type Phase = "answering" | "revealed" | "recall";
 type IntermissionGame = "lightcycle" | "maze";
 
@@ -113,6 +136,8 @@ export function AeroGrid() {
   const [overloadBurst, setOverloadBurst] = React.useState(0);
   const [psychedelicActive, setPsychedelicActive] = React.useState(false);
   const [gauntletRecovery, setGauntletRecovery] = React.useState(false);
+  const [v2Log, setV2Log] = React.useState<ExtremeV2LogEntry[]>([]);
+  const [htLog, setHtLog] = React.useState<HtLogEntry[]>([]);
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
@@ -128,6 +153,10 @@ export function AeroGrid() {
         return highSpeedQuestionsOnly;
       case "extreme":
         return extremeQuestions;
+      case "extreme-v2":
+        return extremeV2Questions;
+      case "ht-extreme":
+        return heatTransferExtremeQuestions;
       case "mastery":
         return stableShuffle(allQuestions, "mastery");
       case "review":
@@ -141,7 +170,7 @@ export function AeroGrid() {
   const question = list[Math.min(index, list.length - 1)];
 
   React.useEffect(() => {
-    if (mode === "extreme") {
+    if (isExtremeFamily(mode)) {
       // Every 3 completed questions the turbulent track rotates and escalates.
       const stage = Math.floor(localIndex / 3);
       const track = stage % 5;
@@ -210,8 +239,20 @@ export function AeroGrid() {
       setWipe(true);
       window.setTimeout(() => setWipe(false), settings.interstitials === "full" ? 2000 : 800);
     }
-    if (mode === "extreme") {
+    if (isExtremeFamily(mode)) {
       setExtremeScore((value) => value + (ok ? question.points : 0));
+      if (mode === "extreme-v2") {
+        setV2Log((entries) => [
+          ...entries.filter((entry) => entry.id !== question.id),
+          { id: question.id, given: answer.join(" · "), ok },
+        ]);
+      }
+      if (mode === "ht-extreme") {
+        setHtLog((entries) => [
+          ...entries.filter((entry) => entry.id !== question.id),
+          { id: question.id, given: answer.join(" · "), ok },
+        ]);
+      }
       return;
     }
     if (mode !== "campaign") return;
@@ -255,7 +296,9 @@ export function AeroGrid() {
       setProgress((p) => ({ index: p.index + 1 }));
     } else {
       if (last) {
-        setScreen("title");
+        if (mode === "extreme-v2") setScreen("v2-review");
+        else if (mode === "ht-extreme") setScreen("ht-review");
+        else setScreen("title");
         return;
       }
       setLocalIndex((i) => i + 1);
@@ -280,11 +323,11 @@ export function AeroGrid() {
       enterPendingIntermission();
       return;
     }
-    if (wasCorrect || (mode !== "campaign" && mode !== "extreme")) {
+    if (wasCorrect || (mode !== "campaign" && !isExtremeFamily(mode))) {
       advance();
       return;
     }
-    if (mode === "extreme") {
+    if (isExtremeFamily(mode)) {
       setGauntletRecovery(true);
       setScreen("gauntlet");
       return;
@@ -317,7 +360,7 @@ export function AeroGrid() {
     }
     setProgress((p) => {
       const next = nextRecoveryLength(p.recoveryLength, won);
-      if (mode === "extreme" && next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
+      if (isExtremeFamily(mode) && next > 11 && next > p.recoveryLength) setOverloadBurst((burst) => burst + 1);
       return {
         recoveryLength: next,
         recallWins: p.recallWins + (won ? 1 : 0),
@@ -369,7 +412,10 @@ export function AeroGrid() {
   if (!hydrated) return null;
 
   const worldProgress = progress.index / TOTAL_QUESTIONS;
-  const infernoActive = mode === "extreme" && index >= EXTREME_INFERNO_START_INDEX;
+  const infernoActive =
+    (mode === "extreme" && index >= EXTREME_INFERNO_START_INDEX) ||
+    (mode === "extreme-v2" && index >= EXTREME_V2_INFERNO_START_INDEX) ||
+    (mode === "ht-extreme" && index >= HT_INFERNO_START_INDEX);
 
   return (
     <div className={cn("min-h-screen px-4 py-6", progress.bloodMoonAwakened && "blood-moon-active")}>
@@ -388,7 +434,7 @@ export function AeroGrid() {
         reducedMotion={settings.reducedMotion}
         onDone={() => {
           setOverloadBurst(0);
-          if (mode === "extreme") setPsychedelicActive(true);
+          if (isExtremeFamily(mode)) setPsychedelicActive(true);
         }}
       />
 
@@ -411,6 +457,42 @@ export function AeroGrid() {
             setPhase("answering");
             setShowHint(false);
             setExtremeScore(0);
+            setV2Log([]);
+            setHtLog([]);
+            setPendingIntermission(null);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setScreen("briefing");
+          }}
+          onExtremeV2={() => {
+            startAudio();
+            setMode("extreme-v2");
+            setReviewIds([]);
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setV2Log([]);
+            setHtLog([]);
+            setPendingIntermission(null);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setScreen("briefing");
+          }}
+          onHeatTransferExtreme={() => {
+            startAudio();
+            setMode("ht-extreme");
+            setReviewIds([]);
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setV2Log([]);
+            setHtLog([]);
             setPendingIntermission(null);
             setGauntletRecovery(false);
             setOverloadBurst(0);
@@ -499,20 +581,100 @@ export function AeroGrid() {
         />
       )}
 
-      {screen === "briefing" && (
+      {screen === "briefing" && mode === "extreme" && (
         <ExtremeBriefing
           reducedMotion={settings.reducedMotion}
           onComplete={() => setScreen("gauntlet")}
         />
       )}
 
+      {screen === "briefing" && mode === "extreme-v2" && (
+        <ExtremeV2Briefing
+          reducedMotion={settings.reducedMotion}
+          onComplete={() => setScreen("gauntlet")}
+        />
+      )}
+
+      {screen === "briefing" && mode === "ht-extreme" && (
+        <HeatTransferExtremeBriefing
+          reducedMotion={settings.reducedMotion}
+          onComplete={() => setScreen("gauntlet")}
+        />
+      )}
+
+      {screen === "v2-review" && (
+        <ExtremeV2Review
+          questions={extremeV2Questions}
+          log={v2Log}
+          score={v2Log.filter((entry) => entry.ok).length}
+          onRestart={() => {
+            startAudio();
+            setMode("extreme-v2");
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setV2Log([]);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setScreen("briefing");
+          }}
+          onMenu={() => setScreen("title")}
+        />
+      )}
+
+      {screen === "ht-review" && (
+        <HeatTransferExtremeReview
+          questions={heatTransferExtremeQuestions}
+          log={htLog}
+          score={htLog.filter((entry) => entry.ok).length}
+          onRestart={() => {
+            startAudio();
+            setMode("ht-extreme");
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setHtLog([]);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setScreen("briefing");
+          }}
+          onMenu={() => setScreen("title")}
+        />
+      )}
+
       {screen === "gauntlet" && (
-        <div className="extreme-shell mx-auto w-full max-w-3xl">
+        <div
+          className={cn(
+            "mx-auto w-full max-w-3xl",
+            mode === "ht-extreme"
+              ? "ht-extreme-shell"
+              : mode === "extreme-v2"
+                ? "extreme-v2-shell"
+                : "extreme-shell",
+          )}
+        >
           <MemoryGauntlet
             key={`gauntlet-${gauntletRecovery ? "recovery" : "entry"}-${localIndex}`}
             reducedMotion={settings.reducedMotion}
             hp={progress.recoveryLength}
             recoveryOnly={gauntletRecovery}
+            {...(mode === "extreme-v2"
+              ? {
+                  banner: gauntletRecovery ? "Extreme V2 Recovery" : "Aerodynamics Extreme V2",
+                }
+              : mode === "ht-extreme"
+                ? {
+                    banner: gauntletRecovery
+                      ? "Heat Transfer Recovery"
+                      : "Heat Transfer Extreme Bananza",
+                  }
+                : {})}
             onOvercharge={gainRecall}
             onDamage={damageRecall}
             onComplete={(score) => {
@@ -538,20 +700,26 @@ export function AeroGrid() {
 
       {(screen === "lightcycle" || screen === "maze") && (
         <div className="mx-auto mt-4 w-full max-w-3xl">
-          <HealthBar hp={progress.recoveryLength} className="justify-center" glow={mode === "extreme"} />
+          <HealthBar hp={progress.recoveryLength} className="justify-center" glow={isExtremeFamily(mode)} />
         </div>
       )}
 
       {screen === "play" && question && (
-        <div className="mx-auto w-full max-w-4xl space-y-4">
+        <div
+          className={cn(
+            "mx-auto w-full max-w-4xl space-y-4",
+            mode === "extreme-v2" && "extreme-v2-shell",
+            mode === "ht-extreme" && "ht-extreme-shell",
+          )}
+        >
           <Hud
             question={question}
             number={mode === "campaign" ? question.globalNumber : index + 1}
             total={mode === "campaign" ? TOTAL_QUESTIONS : list.length}
-            score={mode === "extreme" ? extremeScore : progress.score}
+            score={isExtremeFamily(mode) ? extremeScore : progress.score}
             streak={progress.streak}
             recoveryLength={progress.recoveryLength}
-            glow={mode === "extreme"}
+            glow={isExtremeFamily(mode)}
             onPause={() => setPaused(true)}
           />
 

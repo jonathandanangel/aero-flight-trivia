@@ -8,6 +8,19 @@ import {
   EXTREME_INFERNO_START_INDEX,
   extremeQuestions,
 } from "./extreme";
+import {
+  EXTREME_V2_CORE_TOTAL,
+  EXTREME_V2_INFERNO_START_INDEX,
+  EXTREME_V2_TOTAL,
+  extremeV2Questions,
+} from "./extreme-v2";
+import {
+  HT_CHAPTER_COUNTS,
+  HT_CORE_TOTAL,
+  HT_INFERNO_START_INDEX,
+  HT_TOTAL,
+  heatTransferExtremeQuestions,
+} from "./heat-transfer-extreme";
 import type { Question } from "./types";
 
 export interface ValidationRule {
@@ -297,7 +310,123 @@ export function runValidation(): ValidationRule[] {
         EXTREME_INFERNO_START_INDEX - EXTREME_EXPANSION_START_INDEX + 1
       }`,
     },
+    {
+      name: "Extreme V2 Class 05 quiz contains exactly 33 questions",
+      passed: EXTREME_V2_CORE_TOTAL === 33 && EXTREME_V2_TOTAL >= 33,
+      failingIds: [],
+      detail: `${EXTREME_V2_CORE_TOTAL} core / ${EXTREME_V2_TOTAL} total`,
+    },
+    {
+      name: "Extreme V2 has 27 multiple-choice then 6 fill-in questions",
+      passed:
+        extremeV2Questions.slice(0, 27).every((q) => q.interactionType === "multiple-choice") &&
+        extremeV2Questions.slice(27, 33).every((q) => q.interactionType === "fill-in"),
+      failingIds: extremeV2Questions
+        .filter((q, index) =>
+          index < 27 ? q.interactionType !== "multiple-choice" : index < 33 && q.interactionType !== "fill-in",
+        )
+        .map((q) => q.id),
+      detail: "Class 05 quiz shape",
+    },
+    {
+      name: "Extreme V2 inferno starts at the current bank midpoint",
+      passed: EXTREME_V2_INFERNO_START_INDEX === Math.floor(EXTREME_V2_TOTAL / 2),
+      failingIds: [],
+      detail: `Extreme V2 question ${EXTREME_V2_INFERNO_START_INDEX + 1}`,
+    },
+    ...buildHeatTransferRules(),
   ];
 
   return rules.map((r) => ({ ...r, passed: r.passed && r.failingIds.length === 0 }));
+}
+
+function buildHeatTransferRules(): ValidationRule[] {
+  const htIdCounts = new Map<string, number>();
+  const htPromptIds = new Map<string, string[]>();
+  const chapterCounts = new Map<string, number>();
+  for (const question of heatTransferExtremeQuestions) {
+    htIdCounts.set(question.id, (htIdCounts.get(question.id) ?? 0) + 1);
+    const prompt = question.prompt.trim().toLowerCase();
+    htPromptIds.set(prompt, [...(htPromptIds.get(prompt) ?? []), question.id]);
+    chapterCounts.set(question.chapterId, (chapterCounts.get(question.chapterId) ?? 0) + 1);
+  }
+  const duplicateHtIds = [...htIdCounts].filter(([, count]) => count > 1).map(([id]) => id);
+  const duplicateHtPrompts = [...htPromptIds.values()].filter((ids) => ids.length > 1).flat();
+  const chapterMismatches = Object.entries(HT_CHAPTER_COUNTS)
+    .filter(([chapterId, expected]) => (chapterCounts.get(chapterId) ?? 0) !== expected)
+    .map(([chapterId]) => chapterId);
+  const invalidHtChoices = heatTransferExtremeQuestions
+    .filter((question) => {
+      if (question.interactionType === "multiple-choice") {
+        return (
+          question.choices?.length !== 4 ||
+          hasDupes(question.choices) ||
+          !question.choices.includes(question.correctAnswer[0] ?? "")
+        );
+      }
+      if (question.interactionType === "fill-in") {
+        return !question.acceptedAnswers || question.acceptedAnswers.length === 0;
+      }
+      if (question.interactionType === "compare-select") {
+        return (
+          !question.choices ||
+          question.choices.length < 2 ||
+          !question.choices.includes(question.correctAnswer[0] ?? "")
+        );
+      }
+      return !question.correctAnswer?.length;
+    })
+    .map((question) => question.id);
+  const missingMeta = heatTransferExtremeQuestions
+    .filter(
+      (q) =>
+        !q.explanation ||
+        q.explanation.trim().length < 10 ||
+        !q.hint ||
+        !q.correctAnswer?.length ||
+        q.difficulty < 1 ||
+        q.difficulty > 5,
+    )
+    .map((q) => q.id);
+
+  return [
+    {
+      name: "Heat Transfer Extreme Bananza contains exactly 400 canonical questions",
+      passed: HT_CORE_TOTAL === 400 && HT_TOTAL >= 400,
+      failingIds: [],
+      detail: `${HT_CORE_TOTAL} core / ${HT_TOTAL} total`,
+    },
+    {
+      name: "Heat Transfer Extreme chapter totals match the master distribution",
+      passed: chapterMismatches.length === 0,
+      failingIds: chapterMismatches,
+      detail: Object.entries(HT_CHAPTER_COUNTS)
+        .map(([id, n]) => `${id}:${chapterCounts.get(id) ?? 0}/${n}`)
+        .join(" · "),
+    },
+    {
+      name: "Heat Transfer Extreme ids and prompts are unique",
+      passed: duplicateHtIds.length === 0 && duplicateHtPrompts.length === 0,
+      failingIds: [...duplicateHtIds, ...duplicateHtPrompts],
+      detail: "unique across the HT Bananza bank",
+    },
+    {
+      name: "Heat Transfer Extreme questions are playable",
+      passed: invalidHtChoices.length === 0,
+      failingIds: invalidHtChoices,
+      detail: "choices / fill-in / answers valid",
+    },
+    {
+      name: "Heat Transfer Extreme metadata is complete",
+      passed: missingMeta.length === 0,
+      failingIds: missingMeta,
+      detail: "explanation, hint, answer, difficulty 1-5",
+    },
+    {
+      name: "Heat Transfer Extreme inferno starts at the bank midpoint",
+      passed: HT_INFERNO_START_INDEX === Math.floor(HT_TOTAL / 2),
+      failingIds: [],
+      detail: `HT Bananza question ${HT_INFERNO_START_INDEX + 1}`,
+    },
+  ];
 }

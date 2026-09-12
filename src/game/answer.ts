@@ -25,12 +25,55 @@ export function isComplete(q: Question, answer: string[]): boolean {
   return filled >= needed;
 }
 
+function compactEq(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/α/g, "alpha")
+    .replace(/λ/g, "lambda")
+    .replace(/c̄|cbar/g, "c_bar")
+    .replace(/squared/g, "^2")
+    .replace(/\*\*/g, "^")
+    .replace(/×|·/g, "*")
+    .replace(/−/g, "-")
+    .replace(/[^a-z0-9=^/*+_()-]/g, "");
+}
+
+function extractNumber(s: string): number | null {
+  const match = s.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+}
+
+function fillInMatches(q: Question, givenRaw: string): boolean {
+  const given = norm(givenRaw);
+  if (!given) return false;
+  const accepted = [q.correctAnswer[0] ?? "", ...(q.acceptedAnswers ?? [])];
+  if (accepted.map(norm).includes(given)) return true;
+  const compactGiven = compactEq(given);
+  if (accepted.some((item) => compactEq(item) === compactGiven)) return true;
+
+  const targetNum = extractNumber(q.correctAnswer[0] ?? "");
+  const givenNum = extractNumber(given);
+  if (targetNum !== null && givenNum !== null && Number.isFinite(targetNum) && Number.isFinite(givenNum)) {
+    const canonicalIsNumeric = accepted.every((item) => {
+      const compact = compactEq(item);
+      return extractNumber(item) !== null && !compact.includes("integral") && compact.length < 24;
+    });
+    if (canonicalIsNumeric && Math.abs(givenNum - targetNum) < 1e-9) return true;
+  }
+
+  const wantsMac = accepted.some((item) => /mac|c_bar|mean aerodynamic/i.test(item));
+  if (wantsMac) {
+    const hasEquation =
+      (compactGiven.includes("mac=") || compactGiven.includes("c_bar=") || compactGiven.includes("cbar=")) &&
+      (compactGiven.includes("integral") || compactGiven.includes("intfrom") || given.includes("∫"));
+    if (hasEquation) return true;
+  }
+  return false;
+}
+
 export function isCorrect(q: Question, answer: string[]): boolean {
   if (q.interactionType === "fill-in") {
-    const given = norm(answer[0] ?? "");
-    if (!given) return false;
-    const accepted = [q.correctAnswer[0] ?? "", ...(q.acceptedAnswers ?? [])].map(norm);
-    return accepted.includes(given);
+    return fillInMatches(q, answer[0] ?? "");
   }
   if (q.correctAnswer.length !== answer.length) return false;
   return q.correctAnswer.every((c, i) => norm(c) === norm(answer[i] ?? ""));
