@@ -1,5 +1,5 @@
 import * as React from "react";
-import brainAsset from "@/assets/brainpic-2.png.asset.json";
+import brainUrl from "@/assets/brainpic-2.png";
 import { audio } from "@/game/audio";
 
 /**
@@ -27,7 +27,7 @@ export function BrainOverload({
 
   return (
     <div key={burst} className="brain-overload" role="status" aria-live="polite">
-      <img src={brainAsset.url} alt="" className="brain-overload-img" />
+      <img src={brainUrl} alt="" className="brain-overload-img" />
       <p className="brain-overload-label">+3 RECALL!</p>
       <span className="brain-overload-blast" aria-hidden />
     </div>

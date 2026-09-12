@@ -1,4 +1,13 @@
 import { allQuestions, AERO_TOTAL, highSpeedQuestionsOnly, TOTAL_QUESTIONS } from "@/data/questions";
+import {
+  extremeExpansionQuestions,
+  EXTREME_EXPANSION_TOTAL,
+} from "@/data/questions/extreme-expansion";
+import {
+  EXTREME_EXPANSION_START_INDEX,
+  EXTREME_INFERNO_START_INDEX,
+  extremeQuestions,
+} from "./extreme";
 import type { Question } from "./types";
 
 export interface ValidationRule {
@@ -81,6 +90,33 @@ function collect(predicateFails: (q: Question) => boolean): string[] {
 }
 
 export function runValidation(): ValidationRule[] {
+  const expectedInfernoStart =
+    EXTREME_EXPANSION_START_INDEX + Math.floor(EXTREME_EXPANSION_TOTAL / 2);
+  const extremeIdCounts = new Map<string, number>();
+  const extremePromptIds = new Map<string, string[]>();
+  for (const question of extremeQuestions) {
+    extremeIdCounts.set(question.id, (extremeIdCounts.get(question.id) ?? 0) + 1);
+    const prompt = question.prompt.trim().toLowerCase();
+    extremePromptIds.set(prompt, [...(extremePromptIds.get(prompt) ?? []), question.id]);
+  }
+  const duplicateExtremeIds = [...extremeIdCounts]
+    .filter(([, count]) => count > 1)
+    .map(([id]) => id);
+  const duplicateExtremePrompts = [...extremePromptIds.values()]
+    .filter((ids) => ids.length > 1)
+    .flat();
+  const invalidExtremeChoices = extremeExpansionQuestions
+    .filter(
+      (question) =>
+        question.interactionType !== "multiple-choice" ||
+        question.choices?.length !== 4 ||
+        hasDupes(question.choices) ||
+        !question.choices.includes(question.correctAnswer[0] ?? ""),
+    )
+    .map((question) => question.id);
+  const invalidExtremeNumbering = extremeExpansionQuestions
+    .filter((question, index) => question.globalNumber !== index + 1)
+    .map((question) => question.id);
   const question188 = allQuestions.find((q) => q.globalNumber === 188);
   const question188Targets = Object.fromEntries(
     (question188?.targets ?? []).map((target) => [target.id, target]),
@@ -225,6 +261,41 @@ export function runValidation(): ValidationRule[] {
       passed: allQuestions.every((q, i) => q.globalNumber === i + 1),
       failingIds: allQuestions.filter((q, i) => q.globalNumber !== i + 1).map((q) => q.id),
       detail: "sequential numbering",
+    },
+    {
+      name: "Extreme expansion contains exactly 150 questions",
+      passed: EXTREME_EXPANSION_TOTAL === 150,
+      failingIds: [],
+      detail: `${EXTREME_EXPANSION_TOTAL} found`,
+    },
+    {
+      name: "Extreme question ids and prompts are unique",
+      passed: duplicateExtremeIds.length === 0 && duplicateExtremePrompts.length === 0,
+      failingIds: [...duplicateExtremeIds, ...duplicateExtremePrompts],
+      detail: "unique across the original and expansion banks",
+    },
+    {
+      name: "Extreme expansion choices are complete and playable",
+      passed: invalidExtremeChoices.length === 0,
+      failingIds: invalidExtremeChoices,
+      detail: "four unique choices containing the correct answer",
+    },
+    {
+      name: "Extreme expansion numbers run 1..150 continuously",
+      passed: invalidExtremeNumbering.length === 0,
+      failingIds: invalidExtremeNumbering,
+      detail: "sequential expansion numbering",
+    },
+    {
+      name: "Extreme inferno starts at the expansion midpoint",
+      passed: EXTREME_INFERNO_START_INDEX === expectedInfernoStart,
+      failingIds:
+        EXTREME_INFERNO_START_INDEX === expectedInfernoStart
+          ? []
+          : ["EXTREME-INFERNO-THRESHOLD"],
+      detail: `Extreme question ${EXTREME_INFERNO_START_INDEX + 1}; expansion question ${
+        EXTREME_INFERNO_START_INDEX - EXTREME_EXPANSION_START_INDEX + 1
+      }`,
     },
   ];
 

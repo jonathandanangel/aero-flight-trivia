@@ -332,15 +332,14 @@ export function AeroGrid() {
   };
 
   const exitRecoveryGauntlet = (cleared: boolean) => {
+    setGauntletRecovery(false);
     if (!cleared && progress.recoveryLength <= 2) {
       setProgress((p) => ({ recallLosses: p.recallLosses + 1, gameOver: true }));
       setScreen("gameover");
       return;
     }
     setScreen("play");
-    setPhase("answering");
-    setAnswer([]);
-    setShowHint(false);
+    advance();
   };
 
   const finishIntermission = () => {
@@ -513,18 +512,21 @@ export function AeroGrid() {
             key={`gauntlet-${gauntletRecovery ? "recovery" : "entry"}-${localIndex}`}
             reducedMotion={settings.reducedMotion}
             hp={progress.recoveryLength}
+            recoveryOnly={gauntletRecovery}
             onOvercharge={gainRecall}
             onDamage={damageRecall}
             onComplete={(score) => {
-              setExtremeScore(score);
               if (gauntletRecovery) {
+                setExtremeScore((value) => value + score);
                 exitRecoveryGauntlet(true);
               } else {
+                setExtremeScore(score);
                 setScreen("play");
               }
             }}
-            onAbort={() => {
+            onAbort={(score) => {
               if (gauntletRecovery) {
+                setExtremeScore((value) => value + score);
                 exitRecoveryGauntlet(false);
               } else {
                 setScreen("title");

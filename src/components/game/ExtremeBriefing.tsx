@@ -1,53 +1,53 @@
 import * as React from "react";
 import { audio } from "@/game/audio";
-import wingGeometry from "@/assets/wing-geometry.gif.asset.json";
-import wingForces from "@/assets/wing-forces-moments.png.asset.json";
-import forceVectors from "@/assets/airfoil-force-vectors.jpg.asset.json";
-import airfoilGeometry from "@/assets/airfoil-geometry.png.asset.json";
-import notes1 from "@/assets/notes-122932.png.asset.json";
-import notes2 from "@/assets/notes-122942.png.asset.json";
-import notes3 from "@/assets/notes-122957.png.asset.json";
-import notes4 from "@/assets/notes-123007.png.asset.json";
-import notes5 from "@/assets/notes-123014.png.asset.json";
-import notes6 from "@/assets/notes-123020.png.asset.json";
-import basicAerodynamics from "@/assets/basic-aerodynamics.png.asset.json";
-import lectureB1 from "@/assets/lecture-b1.png.asset.json";
-import lectureB2 from "@/assets/lecture-b2.png.asset.json";
-import lectureB3 from "@/assets/lecture-b3.png.asset.json";
-import lectureB4 from "@/assets/lecture-b4.png.asset.json";
-import lectureB5 from "@/assets/lecture-b5.png.asset.json";
-import lectureB6 from "@/assets/lecture-b6.png.asset.json";
-import lectureB7 from "@/assets/lecture-b7.png.asset.json";
-import lectureB8 from "@/assets/lecture-b8.png.asset.json";
-import lectureB9 from "@/assets/lecture-b9.png.asset.json";
-import lectureB10 from "@/assets/lecture-b10.png.asset.json";
-import lectureVideo from "@/assets/briefing-lecture.mp4.asset.json";
-import nerdBrain from "@/assets/nerd-brain.png.asset.json";
-import rudderSheet from "@/assets/vertical-stabilizer-rudder.png.asset.json";
+import wingGeometry from "@/assets/wing-geometry.gif";
+import wingForces from "@/assets/wing-forces-moments.png";
+import forceVectors from "@/assets/airfoil-force-vectors.jpg";
+import airfoilGeometry from "@/assets/airfoil-geometry.png";
+import notes1 from "@/assets/notes-122932.png";
+import notes2 from "@/assets/notes-122942.png";
+import notes3 from "@/assets/notes-122957.png";
+import notes4 from "@/assets/notes-123007.png";
+import notes5 from "@/assets/notes-123014.png";
+import notes6 from "@/assets/notes-123020.png";
+import basicAerodynamics from "@/assets/basic-aerodynamics.png";
+import lectureB1 from "@/assets/lecture-b1.png";
+import lectureB2 from "@/assets/lecture-b2.png";
+import lectureB3 from "@/assets/lecture-b3.png";
+import lectureB4 from "@/assets/lecture-b4.png";
+import lectureB5 from "@/assets/lecture-b5.png";
+import lectureB6 from "@/assets/lecture-b6.png";
+import lectureB7 from "@/assets/lecture-b7.png";
+import lectureB8 from "@/assets/lecture-b8.png";
+import lectureB9 from "@/assets/lecture-b9.png";
+import lectureB10 from "@/assets/lecture-b10.png";
+import lectureVideo from "@/assets/briefing-lecture.mp4";
+import nerdBrain from "@/assets/nerd-brain.png";
+import rudderSheet from "@/assets/vertical-stabilizer-rudder.png";
 
 const SLIDES = [
-  { url: wingGeometry.url, title: "Wing Geometry Definitions", alt: "NASA wing geometry definitions: chord, span, wing area, camber, dihedral" },
-  { url: wingForces.url, title: "Wing Forces and Moments", alt: "Three-dimensional wing with lift, drag and side forces plus roll, pitch and yaw moments" },
-  { url: forceVectors.url, title: "Force Vectors on an Airfoil", alt: "Airfoil showing lift, drag and resultant force at the center of pressure" },
-  { url: airfoilGeometry.url, title: "Airfoil Geometry", alt: "Airfoil geometry: leading edge, chord line, mean camber line, maximum thickness" },
-  { url: basicAerodynamics.url, title: "Review of Basic Aerodynamics", alt: "Lecture notes reviewing lift, drag, thrust, weight and flowfield properties" },
-  { url: lectureB1.url, title: "Flow Point Properties", alt: "Lecture notes defining flow pressure, density, temperature and velocity" },
-  { url: lectureB2.url, title: "Steady Flow, Units & Perfect Gas", alt: "Lecture notes covering steady flow, physical units and the perfect-gas equation of state" },
-  { url: lectureB3.url, title: "Compressibility & Bernoulli's Equation", alt: "Lecture notes covering incompressible and compressible flow and Bernoulli's equation" },
-  { url: lectureB4.url, title: "Momentum, Speed of Sound & Mach Number", alt: "Lecture notes covering momentum, speed of sound and Mach number" },
-  { url: lectureB5.url, title: "Mach Regimes & Standard Atmosphere", alt: "Lecture notes covering Mach regimes, dynamic pressure and the standard atmosphere" },
-  { url: lectureB6.url, title: "Standard Atmosphere Ratios", alt: "Lecture notes defining theta, sigma and delta standard-atmosphere ratios" },
-  { url: lectureB7.url, title: "Fundamentals of Airfoils", alt: "Class 03 notes on two-dimensional infinite wings, pressure and shear stress" },
-  { url: lectureB8.url, title: "Lift Force & Pressure Distributions", alt: "Lecture notes explaining lift force and pressure distributions around an airfoil" },
-  { url: lectureB9.url, title: "Bernoulli Lift & Skin Friction Drag", alt: "Lecture notes explaining the Bernoulli lift mechanism and skin-friction drag" },
-  { url: lectureB10.url, title: "Skin Friction & Pressure Drag", alt: "Lecture notes covering skin-friction drag coefficient, pressure drag and flow separation" },
-  { url: notes1.url, title: "Notes 1 — Profile Drag & Airfoil Terminology", alt: "Lecture notes: profile drag, chord line, mean camber line, max camber" },
-  { url: notes2.url, title: "Notes 2 — Thickness, AoA & Coefficients", alt: "Lecture notes: thickness, angle of attack, lift drag and moment coefficients" },
-  { url: notes3.url, title: "Notes 3 — Coefficient Definitions", alt: "Lecture notes: CL, CD, CM definitions and per unit span coefficients" },
-  { url: notes4.url, title: "Notes 4 — Center of Pressure", alt: "Lecture notes: pressure distribution, aerodynamic moment and center of pressure" },
-  { url: notes5.url, title: "Notes 5 — Aerodynamic Center", alt: "Lecture notes: center of pressure versus aerodynamic center at quarter chord" },
-  { url: notes6.url, title: "Notes 6 — Moment About the AC", alt: "Lecture notes: aerodynamic moment about the aerodynamic center stays constant" },
-  { url: rudderSheet.url, title: "Vertical Stabilizer — Rudder", alt: "NASA reference sheet: vertical stabilizer and rudder, side force, distance from center of gravity and yawing motion" },
+  { url: wingGeometry, title: "Wing Geometry Definitions", alt: "NASA wing geometry definitions: chord, span, wing area, camber, dihedral" },
+  { url: wingForces, title: "Wing Forces and Moments", alt: "Three-dimensional wing with lift, drag and side forces plus roll, pitch and yaw moments" },
+  { url: forceVectors, title: "Force Vectors on an Airfoil", alt: "Airfoil showing lift, drag and resultant force at the center of pressure" },
+  { url: airfoilGeometry, title: "Airfoil Geometry", alt: "Airfoil geometry: leading edge, chord line, mean camber line, maximum thickness" },
+  { url: basicAerodynamics, title: "Review of Basic Aerodynamics", alt: "Lecture notes reviewing lift, drag, thrust, weight and flowfield properties" },
+  { url: lectureB1, title: "Flow Point Properties", alt: "Lecture notes defining flow pressure, density, temperature and velocity" },
+  { url: lectureB2, title: "Steady Flow, Units & Perfect Gas", alt: "Lecture notes covering steady flow, physical units and the perfect-gas equation of state" },
+  { url: lectureB3, title: "Compressibility & Bernoulli's Equation", alt: "Lecture notes covering incompressible and compressible flow and Bernoulli's equation" },
+  { url: lectureB4, title: "Momentum, Speed of Sound & Mach Number", alt: "Lecture notes covering momentum, speed of sound and Mach number" },
+  { url: lectureB5, title: "Mach Regimes & Standard Atmosphere", alt: "Lecture notes covering Mach regimes, dynamic pressure and the standard atmosphere" },
+  { url: lectureB6, title: "Standard Atmosphere Ratios", alt: "Lecture notes defining theta, sigma and delta standard-atmosphere ratios" },
+  { url: lectureB7, title: "Fundamentals of Airfoils", alt: "Class 03 notes on two-dimensional infinite wings, pressure and shear stress" },
+  { url: lectureB8, title: "Lift Force & Pressure Distributions", alt: "Lecture notes explaining lift force and pressure distributions around an airfoil" },
+  { url: lectureB9, title: "Bernoulli Lift & Skin Friction Drag", alt: "Lecture notes explaining the Bernoulli lift mechanism and skin-friction drag" },
+  { url: lectureB10, title: "Skin Friction & Pressure Drag", alt: "Lecture notes covering skin-friction drag coefficient, pressure drag and flow separation" },
+  { url: notes1, title: "Notes 1 — Profile Drag & Airfoil Terminology", alt: "Lecture notes: profile drag, chord line, mean camber line, max camber" },
+  { url: notes2, title: "Notes 2 — Thickness, AoA & Coefficients", alt: "Lecture notes: thickness, angle of attack, lift drag and moment coefficients" },
+  { url: notes3, title: "Notes 3 — Coefficient Definitions", alt: "Lecture notes: CL, CD, CM definitions and per unit span coefficients" },
+  { url: notes4, title: "Notes 4 — Center of Pressure", alt: "Lecture notes: pressure distribution, aerodynamic moment and center of pressure" },
+  { url: notes5, title: "Notes 5 — Aerodynamic Center", alt: "Lecture notes: center of pressure versus aerodynamic center at quarter chord" },
+  { url: notes6, title: "Notes 6 — Moment About the AC", alt: "Lecture notes: aerodynamic moment about the aerodynamic center stays constant" },
+  { url: rudderSheet, title: "Vertical Stabilizer — Rudder", alt: "NASA reference sheet: vertical stabilizer and rudder, side force, distance from center of gravity and yawing motion" },
 ];
 
 const SECONDS = 30;
@@ -110,7 +110,7 @@ export function ExtremeBriefing({ reducedMotion, onComplete }: ExtremeBriefingPr
       <div className="relative mx-auto flex min-h-[60vh] w-full max-w-4xl items-center justify-center overflow-hidden px-4">
         <p className="font-display text-2xl uppercase tracking-[0.2em] text-magenta text-glow">Study complete</p>
         <img
-          src={nerdBrain.url}
+          src={nerdBrain}
           alt="Study brain flying away"
           width={1024}
           height={1024}
@@ -127,7 +127,7 @@ export function ExtremeBriefing({ reducedMotion, onComplete }: ExtremeBriefingPr
           Lecture Recording
         </h2>
         <video
-          src={lectureVideo.url}
+          src={lectureVideo}
           className="w-full rounded-xl border border-cyan/40 bg-black"
           controls
           autoPlay

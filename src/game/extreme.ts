@@ -1,5 +1,8 @@
 import { allQuestions } from "@/data/questions";
-import { extremeExpansionQuestions } from "@/data/questions/extreme-expansion";
+import {
+  extremeExpansionQuestions,
+  EXTREME_EXPANSION_TOTAL,
+} from "@/data/questions/extreme-expansion";
 import type { Question } from "./types";
 
 /** Chapters that make up the Aerodynamics Extreme curated gauntlet. */
@@ -21,5 +24,9 @@ export const extremeQuestions: Question[] = [
 
 export const EXTREME_TOTAL = extremeQuestions.length;
 
-/** The inferno begins halfway through the entire Aerodynamics Extreme set. */
-export const EXTREME_INFERNO_START_INDEX = Math.floor(EXTREME_TOTAL / 2);
+/** Zero-based index of the first question authored for the 150-card expansion. */
+export const EXTREME_EXPANSION_START_INDEX = originalExtremeQuestions.length;
+
+/** The inferno begins with the second half of the 150-card expansion. */
+export const EXTREME_INFERNO_START_INDEX =
+  EXTREME_EXPANSION_START_INDEX + Math.floor(EXTREME_EXPANSION_TOTAL / 2);

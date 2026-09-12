@@ -1,15 +1,15 @@
 import * as React from "react";
-import brainAsset from "@/assets/winged-brain.png.asset.json";
-import cyanBrainAsset from "@/assets/winged-brain-cyan.png.asset.json";
-import solarBrainAsset from "@/assets/winged-brain-solar.png.asset.json";
-import voltBrainAsset from "@/assets/winged-brain-volt.png.asset.json";
+import brainUrl from "@/assets/winged-brain.png";
+import cyanBrainUrl from "@/assets/winged-brain-cyan.png";
+import solarBrainUrl from "@/assets/winged-brain-solar.png";
+import voltBrainUrl from "@/assets/winged-brain-volt.png";
 
-const originalVariant = { src: brainAsset.url, theme: "magenta" } as const;
+const originalVariant = { src: brainUrl, theme: "magenta" } as const;
 const variants = [
   originalVariant,
-  { src: cyanBrainAsset.url, theme: "cyan" },
-  { src: solarBrainAsset.url, theme: "solar" },
-  { src: voltBrainAsset.url, theme: "volt" },
+  { src: cyanBrainUrl, theme: "cyan" },
+  { src: solarBrainUrl, theme: "solar" },
+  { src: voltBrainUrl, theme: "volt" },
 ] as const;
 
 type Flyer = {

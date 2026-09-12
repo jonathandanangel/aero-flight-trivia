@@ -59,6 +59,8 @@ const STAGE_BLURBS: Record<Stage, string> = {
 export interface MemoryGauntletProps {
   reducedMotion: boolean;
   hp: number;
+  /** Skip directly to a newly randomized Path Memory trial after a missed Extreme question. */
+  recoveryOnly?: boolean;
   onOvercharge: () => void;
   onDamage: () => void;
   onComplete: (score: number) => void;
@@ -72,12 +74,13 @@ export interface MemoryGauntletProps {
 export function MemoryGauntlet({
   reducedMotion,
   hp,
+  recoveryOnly = false,
   onOvercharge,
   onDamage,
   onComplete,
   onAbort,
 }: MemoryGauntletProps) {
-  const [stage, setStage] = React.useState<Stage>(1);
+  const [stage, setStage] = React.useState<Stage>(recoveryOnly ? 3 : 1);
   const [attempt, setAttempt] = React.useState(0);
   const [lives, setLives] = React.useState(3);
   const [score, setScore] = React.useState(0);
@@ -237,7 +240,9 @@ export function MemoryGauntlet({
   return (
     <div className="panel mx-auto w-full max-w-3xl space-y-4 p-5">
       <header className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-widest">
-        <span className="text-magenta">Aerodynamics Extreme</span>
+        <span className="text-magenta">
+          {recoveryOnly ? "Extreme Recovery" : "Aerodynamics Extreme"}
+        </span>
         <span className="text-cyan">{STAGE_TITLES[stage]}</span>
         <span className="text-amber">Score {score}</span>
         <span className="text-orange">Lives {Math.max(0, lives)}</span>

@@ -14,16 +14,16 @@
 - [x] Share the memory recall HP bar across trivia, intermissions, and the gauntlet, with brain-overload +3 celebration.
 - [x] Play a futuristic laser sound as each red path line connects nodes in Path Memory.
 - [x] Keep the 3-stage memory gauntlet exclusive to Aerodynamics Extreme entry; retain Electric Recall for normal campaign/trivia mistakes.
-- [ ] Scope the recall HP neon light-up and full-screen brain explosion celebration to Aerodynamics Extreme only.
-- [ ] Use the new attached brain image as the Extreme brain-overload explosion asset.
-- [ ] Show “+3 RECALL!” text during the Extreme brain overload expansion.
-- [ ] After Extreme overload, morph the moon into a glancing eyeball and activate a psychedelic, vertigo-inducing background distortion while keeping UI legible.
-- [ ] In Aerodynamics Extreme, trigger Path Memory on missed questions with a fully randomized line sequence each attempt.
-- [ ] Animate Path Memory preview lines with laser sound effects, then smoothly fade them out completely before the recall phase.
+- [x] Scope the recall HP neon light-up and full-screen brain explosion celebration to Aerodynamics Extreme only.
+- [x] Use the new attached brain image as the Extreme brain-overload explosion asset.
+- [x] Show “+3 RECALL!” text during the Extreme brain overload expansion.
+- [x] After Extreme overload, morph the moon into Enoch-Ra and activate a psychedelic background distortion while keeping UI legible.
+- [x] In Aerodynamics Extreme, trigger Path Memory on missed questions with a fully randomized line sequence each attempt.
+- [x] Animate Path Memory preview lines with laser sound effects, then smoothly fade them out completely before the recall phase.
 - [x] Show four aerodynamics reference diagrams with gunshot cue and 30s countdown before Aerodynamics Extreme.
 - [x] Extend the Extreme study briefing with 6 lecture note sheets, lecture video, and nerd-brain fly-away outro.
 - [x] Add the Basic Aerodynamics opening sheet and 10 sequential lecture notes before the final video and nerd-brain outro.
 - [x] Swap the Aerodynamics Extreme psychedelic moon to the Enoch-Ra image, bright purple with slight shake (no eyeball).
 - [x] Add a futuristic light-blue neon jet with fluid light trails looping across the background (left↔right, occasional 45° climb).
 - [x] Add 150 wing-aerodynamics cards to Aerodynamics Extreme and trigger a red lava skyline in their second half.
-- [x] Add 150 Extreme expansion questions; inferno (red city/jet/moon + lava) now starts at the midpoint of the entire Extreme set (index 139 of 278).
+- [x] Add 150 Extreme expansion questions; inferno (red city/jet/moon + lava) starts with expansion question 76 (Extreme question 204, index 203 of 278).

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import moonPortrait from "@/assets/seus-moon.png.asset.json";
-import enochRaMoon from "@/assets/enoch-ra-moon.png.asset.json";
+import moonPortraitUrl from "@/assets/seus-moon.png";
+import enochRaMoonUrl from "@/assets/enoch-ra-moon.png";
 
 /** Futuristic delta-wing jet silhouette with fluid neon light trails. */
 function NeonJet({ flip = false }: { flip?: boolean }) {
@@ -74,7 +74,7 @@ export function WorldBackground({
   reducedMotion: boolean;
   bloodMoon: boolean;
   psychedelic?: boolean;
-  /** Aerodynamics Extreme second half: everything burns bright red with lava. */
+  /** Extreme expansion second half: red moon, skyline, and lava. */
   inferno?: boolean;
 }) {
   const phase = Math.min(1, Math.max(0, progress));
@@ -121,7 +121,7 @@ export function WorldBackground({
         }
       >
         <img
-          src={psychedelic ? enochRaMoon.url : moonPortrait.url}
+          src={psychedelic ? enochRaMoonUrl : moonPortraitUrl}
           alt=""
           className={cn(
             "moon-portrait h-full w-full object-cover",
