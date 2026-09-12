@@ -181,7 +181,26 @@ export function AeroGrid() {
   const question = list[Math.min(index, list.length - 1)];
 
   React.useEffect(() => {
+    if (screen === "title") {
+      audio.stopHeatTransferBed();
+      audio.stopWindEscalation();
+      audio.stopThermalAmbience();
+      audio.stopMusic();
+      audio.setTempoMultiplier(1);
+      audio.startTitlePlaylist();
+      return () => {
+        audio.stopTitlePlaylist();
+      };
+    }
+    return undefined;
+  }, [screen]);
+
+  React.useEffect(() => {
+    if (screen === "title" || screen === "settings" || screen === "validate") {
+      return undefined;
+    }
     if (mode === "ht-intro") {
+      audio.stopTitlePlaylist();
       audio.startHeatTransferBed("intro");
       audio.stopWindEscalation();
       audio.stopThermalAmbience();
@@ -193,6 +212,7 @@ export function AeroGrid() {
       };
     }
     if (mode === "ht-extreme") {
+      audio.stopTitlePlaylist();
       audio.startHeatTransferBed("bananza");
       audio.startWindEscalation();
       audio.startThermalAmbience();
@@ -224,13 +244,20 @@ export function AeroGrid() {
     if (!question) return undefined;
     audio.setGenre(question.audioGenre, 0.5 + Math.min(0.4, progress.streak * 0.05));
     return undefined;
-  }, [question, progress.streak, mode, localIndex]);
+  }, [question, progress.streak, mode, localIndex, screen]);
 
 
   const startAudio = () => {
     audio.init();
     audio.resume();
+    audio.stopTitlePlaylist();
     audio.startMusic();
+  };
+
+  const unlockTitleAudio = () => {
+    audio.init();
+    audio.resume();
+    audio.startTitlePlaylist();
   };
 
   const beginRun = (nextMode: Mode, ids: string[] = [], resumeMilestone = false) => {
@@ -491,6 +518,7 @@ export function AeroGrid() {
       {screen === "title" && (
         <TitleScreen
           hasSave={progress.answeredCount > 0 && !progress.gameOver}
+          onUnlockAudio={unlockTitleAudio}
           onStart={() => {
             resetCampaign();
             beginRun("campaign");

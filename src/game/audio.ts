@@ -87,6 +87,13 @@ const HT_BED_URL = {
   intro: "/audio/ht-portal-bed.mp3",
 } as const;
 
+/** Title-screen playlist (low volume): Crystal Vista → Armageddon → Portal, then repeats. */
+const TITLE_PLAYLIST = [
+  "/audio/title-crystal-vista.mp3",
+  "/audio/title-armageddon.mp3",
+  "/audio/title-portal.mp3",
+] as const;
+
 const semitone = (root: number, steps: number) => root * Math.pow(2, steps / 12);
 
 class AudioManager {
@@ -106,6 +113,9 @@ class AudioManager {
   private bedActive = false;
   private bedVolumeScale = 0.85;
   private bedUrl: string | null = null;
+  private titlePlaylistActive = false;
+  private titleTrackIndex = 0;
+  private bedEndedHandler: (() => void) | null = null;
   private windTimer: number | null = null;
   private windActive = false;
   private windTrack = 0;
@@ -225,12 +235,35 @@ class AudioManager {
    * Intro: quieter Portal-bed background only.
    */
   startHeatTransferBed(mode: "bananza" | "intro") {
+    this.titlePlaylistActive = false;
+    this.bedVolumeScale = mode === "bananza" ? 0.95 : 0.28;
+    this.startBed(HT_BED_URL[mode], { loopSame: true });
+  }
+
+  stopHeatTransferBed() {
+    this.stopBed();
+  }
+
+  /** Quiet title-screen playlist: Crystal Vista → Armageddon → Portal → repeat. */
+  startTitlePlaylist() {
+    this.titlePlaylistActive = true;
+    this.titleTrackIndex = 0;
+    this.bedVolumeScale = 0.22;
+    this.startBed(TITLE_PLAYLIST[0]!, { loopSame: false });
+  }
+
+  stopTitlePlaylist() {
+    if (!this.titlePlaylistActive && !this.bedActive) return;
+    this.titlePlaylistActive = false;
+    this.titleTrackIndex = 0;
+    this.stopBed();
+  }
+
+  private ensureBedElement(url: string) {
     this.init();
-    if (!this.ctx || !this.musicGain) return;
+    if (!this.ctx || !this.musicGain) return null;
     this.resume();
     this.stopMusic();
-    this.bedVolumeScale = mode === "bananza" ? 0.95 : 0.28;
-    const url = HT_BED_URL[mode];
     if (!this.bedEl) {
       this.bedEl = new Audio(url);
       this.bedEl.preload = "auto";
@@ -239,30 +272,47 @@ class AudioManager {
       this.bedSource.connect(this.bedGain);
       this.bedGain.connect(this.musicGain);
       this.bedUrl = url;
-      this.bedEl.addEventListener("ended", () => {
+      this.bedEndedHandler = () => {
         if (!this.bedActive || !this.bedEl) return;
+        if (this.titlePlaylistActive) {
+          this.titleTrackIndex = (this.titleTrackIndex + 1) % TITLE_PLAYLIST.length;
+          const next = TITLE_PLAYLIST[this.titleTrackIndex]!;
+          this.bedEl.loop = false;
+          this.bedEl.src = next;
+          this.bedUrl = next;
+          this.bedEl.load();
+          void this.bedEl.play().catch(() => undefined);
+          return;
+        }
         this.bedEl.currentTime = 0;
         void this.bedEl.play().catch(() => undefined);
-      });
+      };
+      this.bedEl.addEventListener("ended", this.bedEndedHandler);
     } else if (this.bedUrl !== url) {
       this.bedEl.pause();
       this.bedEl.src = url;
       this.bedUrl = url;
       this.bedEl.load();
     }
-    // Always re-assert looping — truncated MP3s sometimes ignore the attribute alone.
-    this.bedEl.loop = true;
+    return this.bedEl;
+  }
+
+  private startBed(url: string, opts: { loopSame: boolean }) {
+    const el = this.ensureBedElement(url);
+    if (!el) return;
+    // Truncated MP3s often break native loop; ended-handler restarts / advances.
+    el.loop = opts.loopSame;
     this.bedActive = true;
     this.syncBedGain();
-    if (this.bedEl.ended || this.bedEl.paused) {
-      this.bedEl.currentTime = 0;
+    if (el.ended || el.paused) {
+      el.currentTime = 0;
     }
-    void this.bedEl.play().catch(() => {
-      /* autoplay may wait until a user gesture; startAudio already handles that */
+    void el.play().catch(() => {
+      /* autoplay may wait until a user gesture */
     });
   }
 
-  stopHeatTransferBed() {
+  private stopBed() {
     this.bedActive = false;
     if (this.bedEl) {
       this.bedEl.pause();
