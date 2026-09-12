@@ -77,11 +77,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "ZEUS AMMON-RA 11: Flight Dynamics Trivia" },
+      {
+        name: "description",
+        content:
+          "A neon retro-arcade aerodynamics trivia game with 333 questions on lift, drag, airfoils and Mach number science.",
+      },
+      { name: "author", content: "ZEUS AMMON-RA 11" },
+      { property: "og:title", content: "ZEUS AMMON-RA 11: Flight Dynamics Trivia" },
+      {
+        property: "og:description",
+        content:
+          "A neon retro-arcade aerodynamics trivia game with 333 questions on lift, drag, airfoils and Mach number science.",
+      },
+      { property: "og:site_name", content: "ZEUS AMMON-RA 11" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
