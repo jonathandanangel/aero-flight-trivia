@@ -81,6 +81,15 @@ class AudioManager {
   private intensity = 0.6;
   private tempoMultiplier = 1;
   private extremeTrack = 0;
+  private bedEl: HTMLAudioElement | null = null;
+  private bedSource: MediaElementAudioSourceNode | null = null;
+  private bedGain: GainNode | null = null;
+  private bedActive = false;
+  private bedVolumeScale = 0.85;
+  private windTimer: number | null = null;
+  private windActive = false;
+  private windTrack = 0;
+  private windStep = 0;
   settings: AudioSettings = { master: 0.7, music: 0.5, effects: 0.8, muted: false };
 
   get ready() {
@@ -113,10 +122,16 @@ class AudioManager {
     this.masterGain.gain.setTargetAtTime(settings.muted ? 0 : settings.master, t, 0.05);
     this.musicGain.gain.setTargetAtTime(settings.music * 0.35, t, 0.05);
     this.fxGain.gain.setTargetAtTime(settings.effects * 0.6, t, 0.05);
+    this.syncBedGain();
   }
 
   /** Smoothly switch the backing track's genre without restarting hard. */
   setGenre(genre: AudioGenre, intensity = 0.6) {
+    if (this.bedActive) {
+      this.intensity = intensity;
+      this.genre = genre;
+      return;
+    }
     this.intensity = intensity;
     if (genre === this.genre) return;
     this.genre = genre;
@@ -124,7 +139,7 @@ class AudioManager {
     const t = this.ctx.currentTime;
     this.musicGain.gain.setTargetAtTime(0.02, t, 0.25);
     window.setTimeout(() => {
-      if (!this.ctx || !this.musicGain) return;
+      if (!this.ctx || !this.musicGain || this.bedActive) return;
       this.musicGain.gain.setTargetAtTime(this.settings.music * 0.35, this.ctx.currentTime, 0.4);
     }, 500);
   }
@@ -135,6 +150,7 @@ class AudioManager {
 
   /** Select one of the five escalating Aerodynamics Extreme turbulence tracks (0-4). */
   setExtremeTrack(index: number) {
+    if (this.bedActive) return;
     const next = Math.min(SUPERSONIC_TRACKS.length - 1, Math.max(0, Math.round(index)));
     if (next === this.extremeTrack) return;
     this.extremeTrack = next;
@@ -143,7 +159,7 @@ class AudioManager {
     const t = this.ctx.currentTime;
     this.musicGain.gain.setTargetAtTime(0.02, t, 0.12);
     window.setTimeout(() => {
-      if (!this.ctx || !this.musicGain) return;
+      if (!this.ctx || !this.musicGain || this.bedActive) return;
       this.musicGain.gain.setTargetAtTime(this.settings.music * 0.35, this.ctx.currentTime, 0.25);
     }, 260);
   }
@@ -158,9 +174,13 @@ class AudioManager {
 
   startMusic() {
     this.init();
-    if (!this.ctx || this.loopTimer !== null) return;
+    if (!this.ctx || this.loopTimer !== null || this.bedActive) return;
     this.resume();
     const tick = () => {
+      if (this.bedActive) {
+        this.loopTimer = null;
+        return;
+      }
       const preset = this.activePreset;
       const beat = 60000 / (preset.bpm * this.tempoMultiplier) / 2;
       this.playStep();
@@ -176,7 +196,126 @@ class AudioManager {
     }
   }
 
+  /**
+   * Heat Transfer bed track (Portal OST excerpt).
+   * Bananza: full music level, SFX unchanged.
+   * Intro: quieter background bed.
+   */
+  startHeatTransferBed(mode: "bananza" | "intro") {
+    this.init();
+    if (!this.ctx || !this.musicGain) return;
+    this.resume();
+    this.stopMusic();
+    this.bedVolumeScale = mode === "bananza" ? 0.95 : 0.28;
+    if (!this.bedEl) {
+      this.bedEl = new Audio("/audio/ht-portal-bed.mp3");
+      this.bedEl.loop = true;
+      this.bedEl.preload = "auto";
+      this.bedSource = this.ctx.createMediaElementSource(this.bedEl);
+      this.bedGain = this.ctx.createGain();
+      this.bedSource.connect(this.bedGain);
+      this.bedGain.connect(this.musicGain);
+    }
+    this.bedActive = true;
+    this.syncBedGain();
+    if (this.bedEl.paused) {
+      void this.bedEl.play().catch(() => {
+        /* autoplay may wait until a user gesture; startAudio already handles that */
+      });
+    }
+  }
+
+  stopHeatTransferBed() {
+    this.bedActive = false;
+    if (this.bedEl) {
+      this.bedEl.pause();
+      this.bedEl.currentTime = 0;
+    }
+    if (this.bedGain && this.ctx) {
+      this.bedGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+    }
+  }
+
+  /**
+   * Escalating wind / turbulence SFX (5 speed levels), used under the HT Bananza bed.
+   * Level advances from the game via setWindTrack(0..4).
+   */
+  startWindEscalation() {
+    this.init();
+    if (!this.ctx || this.windActive) return;
+    this.resume();
+    this.windActive = true;
+    this.windStep = 0;
+    this.scheduleWindTick();
+  }
+
+  stopWindEscalation() {
+    this.windActive = false;
+    if (this.windTimer !== null) {
+      window.clearTimeout(this.windTimer);
+      this.windTimer = null;
+    }
+  }
+
+  /** Select wind intensity 0–4 (five increasing rush speeds). */
+  setWindTrack(index: number) {
+    this.windTrack = Math.min(SUPERSONIC_TRACKS.length - 1, Math.max(0, Math.round(index)));
+  }
+
+  private scheduleWindTick() {
+    if (!this.windActive || !this.ctx) return;
+    const track = SUPERSONIC_TRACKS[this.windTrack]!;
+    const beat = 60000 / (track.bpm * this.tempoMultiplier) / 2;
+    this.playWindStep();
+    this.windTimer = window.setTimeout(() => this.scheduleWindTick(), beat);
+  }
+
+  /** Wind-only layer: rushing air, hats, and shock shrieks — no melodic bed. */
+  private playWindStep() {
+    const ctx = this.ctx;
+    const bus = this.fxGain;
+    if (!ctx || !bus || !this.windActive) return;
+    const track = SUPERSONIC_TRACKS[this.windTrack]!;
+    const turbulence = track.turbulence;
+    const intensity = Math.max(0.55, this.intensity);
+    const now = ctx.currentTime;
+
+    if (this.windStep % 2 === 1) {
+      this.noiseBurst(0.045, 7200 + turbulence * 900, 0.07 * intensity * turbulence, bus);
+    }
+    const rushEvery = turbulence > 1.5 ? 4 : turbulence > 1.1 ? 6 : 8;
+    if (this.windStep % rushEvery === 0) {
+      this.noiseBurst(
+        Math.max(0.35, 1.1 / turbulence),
+        420 + Math.random() * 900 * turbulence,
+        Math.min(0.38, 0.15 * intensity * turbulence),
+        bus,
+      );
+    }
+    if (this.windStep % (turbulence > 1.6 ? 8 : 16) === 7) {
+      const shriek = ctx.createOscillator();
+      const sg = ctx.createGain();
+      shriek.type = "sawtooth";
+      shriek.frequency.setValueAtTime(900, now);
+      shriek.frequency.exponentialRampToValueAtTime(2600 * Math.min(1.6, turbulence), now + 0.5);
+      sg.gain.setValueAtTime(0, now);
+      sg.gain.linearRampToValueAtTime(0.045 * intensity * turbulence, now + 0.08);
+      sg.gain.exponentialRampToValueAtTime(0.0006, now + 0.6);
+      shriek.connect(sg).connect(bus);
+      shriek.start(now);
+      shriek.stop(now + 0.65);
+    }
+    this.windStep += 1;
+  }
+
+  private syncBedGain() {
+    if (!this.bedGain || !this.ctx) return;
+    const level = this.settings.muted ? 0 : this.settings.music * this.bedVolumeScale;
+    this.bedGain.gain.setTargetAtTime(level, this.ctx.currentTime, 0.08);
+  }
+
   private playStep() {
+    if (this.bedActive) return;
     const ctx = this.ctx;
     const bus = this.musicGain;
     if (!ctx || !bus) return;

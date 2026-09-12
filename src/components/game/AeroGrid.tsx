@@ -182,13 +182,25 @@ export function AeroGrid() {
 
   React.useEffect(() => {
     if (mode === "ht-intro") {
-      // Relaxed ambient bed — not Extreme's escalating supersonic tracks.
-      audio.setGenre("ambient-space", 0.45);
-      audio.setExtremeTrack(0);
-      audio.setTempoMultiplier(0.72);
+      audio.startHeatTransferBed("intro");
+      audio.stopWindEscalation();
       return () => {
+        audio.stopHeatTransferBed();
+        audio.stopWindEscalation();
+        audio.startMusic();
+      };
+    }
+    if (mode === "ht-extreme") {
+      audio.startHeatTransferBed("bananza");
+      audio.startWindEscalation();
+      // 5 wind-speed levels; advance about every 10 questions (holds at max after Q50).
+      audio.setWindTrack(Math.min(4, Math.floor(localIndex / 10)));
+      audio.setTempoMultiplier(1 + Math.min(4, Math.floor(localIndex / 10)) * 0.12);
+      return () => {
+        audio.stopHeatTransferBed();
+        audio.stopWindEscalation();
         audio.setTempoMultiplier(1);
-        audio.setExtremeTrack(0);
+        audio.startMusic();
       };
     }
     if (isExtremeFamily(mode)) {
