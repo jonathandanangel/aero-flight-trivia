@@ -138,6 +138,7 @@ export function AeroGrid() {
   const [gauntletRecovery, setGauntletRecovery] = React.useState(false);
   const [v2Log, setV2Log] = React.useState<ExtremeV2LogEntry[]>([]);
   const [htLog, setHtLog] = React.useState<HtLogEntry[]>([]);
+  const [extremeCorrectCount, setExtremeCorrectCount] = React.useState(0);
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
@@ -241,6 +242,9 @@ export function AeroGrid() {
     }
     if (isExtremeFamily(mode)) {
       setExtremeScore((value) => value + (ok ? question.points : 0));
+      if (mode === "extreme" && ok) {
+        setExtremeCorrectCount((value) => value + 1);
+      }
       if (mode === "extreme-v2") {
         setV2Log((entries) => [
           ...entries.filter((entry) => entry.id !== question.id),
@@ -296,9 +300,11 @@ export function AeroGrid() {
       setProgress((p) => ({ index: p.index + 1 }));
     } else {
       if (last) {
-        if (mode === "extreme-v2") setScreen("v2-review");
-        else if (mode === "ht-extreme") setScreen("ht-review");
-        else setScreen("title");
+        if (isExtremeFamily(mode)) {
+          setScreen("finale");
+          return;
+        }
+        setScreen("title");
         return;
       }
       setLocalIndex((i) => i + 1);
@@ -457,6 +463,7 @@ export function AeroGrid() {
             setPhase("answering");
             setShowHint(false);
             setExtremeScore(0);
+            setExtremeCorrectCount(0);
             setV2Log([]);
             setHtLog([]);
             setPendingIntermission(null);
@@ -474,6 +481,7 @@ export function AeroGrid() {
             setPhase("answering");
             setShowHint(false);
             setExtremeScore(0);
+            setExtremeCorrectCount(0);
             setV2Log([]);
             setHtLog([]);
             setPendingIntermission(null);
@@ -491,6 +499,7 @@ export function AeroGrid() {
             setPhase("answering");
             setShowHint(false);
             setExtremeScore(0);
+            setExtremeCorrectCount(0);
             setV2Log([]);
             setHtLog([]);
             setPendingIntermission(null);
@@ -510,11 +519,45 @@ export function AeroGrid() {
       {screen === "finale" && (
         <Finale
           progress={progress}
-          total={TOTAL_QUESTIONS}
+          total={isExtremeFamily(mode) ? list.length : TOTAL_QUESTIONS}
           reducedMotion={settings.reducedMotion}
           onReviewMissed={() => beginRun("review", progress.missedIds)}
           onMastery={() => beginRun("mastery")}
           onMenu={() => setScreen("title")}
+          {...(mode === "extreme"
+            ? {
+                extremeMission: {
+                  title: "Aerodynamics Extreme",
+                  score: extremeScore,
+                  correct: extremeCorrectCount,
+                  total: list.length,
+                  continueLabel: "Main menu",
+                  onContinue: () => setScreen("title"),
+                },
+              }
+            : mode === "extreme-v2"
+              ? {
+                  extremeMission: {
+                    title: "Aerodynamics Extreme V2",
+                    score: v2Log.filter((entry) => entry.ok).length,
+                    correct: v2Log.filter((entry) => entry.ok).length,
+                    total: list.length,
+                    continueLabel: "Open review",
+                    onContinue: () => setScreen("v2-review"),
+                  },
+                }
+              : mode === "ht-extreme"
+                ? {
+                    extremeMission: {
+                      title: "Heat Transfer Extreme Bananza",
+                      score: htLog.filter((entry) => entry.ok).length,
+                      correct: htLog.filter((entry) => entry.ok).length,
+                      total: list.length,
+                      continueLabel: "Open review",
+                      onContinue: () => setScreen("ht-review"),
+                    },
+                  }
+                : {})}
         />
       )}
 
@@ -615,6 +658,7 @@ export function AeroGrid() {
             setPhase("answering");
             setShowHint(false);
             setExtremeScore(0);
+            setExtremeCorrectCount(0);
             setV2Log([]);
             setGauntletRecovery(false);
             setOverloadBurst(0);
@@ -638,6 +682,7 @@ export function AeroGrid() {
             setPhase("answering");
             setShowHint(false);
             setExtremeScore(0);
+            setExtremeCorrectCount(0);
             setHtLog([]);
             setGauntletRecovery(false);
             setOverloadBurst(0);

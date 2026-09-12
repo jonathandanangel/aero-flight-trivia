@@ -2,6 +2,15 @@ import * as React from "react";
 import { audio } from "@/game/audio";
 import type { Progress } from "@/game/store";
 
+export interface ExtremeMissionSummary {
+  title: string;
+  score: number;
+  correct: number;
+  total: number;
+  continueLabel: string;
+  onContinue: () => void;
+}
+
 export function Finale({
   progress,
   total,
@@ -9,6 +18,7 @@ export function Finale({
   onReviewMissed,
   onMastery,
   onMenu,
+  extremeMission,
 }: {
   progress: Progress;
   total: number;
@@ -16,6 +26,8 @@ export function Finale({
   onReviewMissed: () => void;
   onMastery: () => void;
   onMenu: () => void;
+  /** When set, shows the same rocket launch for Extreme-family course endings. */
+  extremeMission?: ExtremeMissionSummary;
 }) {
   const [launched, setLaunched] = React.useState(reducedMotion);
 
@@ -25,20 +37,36 @@ export function Finale({
     return () => window.clearTimeout(t);
   }, [reducedMotion]);
 
-  const accuracy = progress.answeredCount
-    ? Math.round((progress.correctCount / progress.answeredCount) * 100)
-    : 0;
+  const accuracy = extremeMission
+    ? extremeMission.total
+      ? Math.round((extremeMission.correct / extremeMission.total) * 100)
+      : 0
+    : progress.answeredCount
+      ? Math.round((progress.correctCount / progress.answeredCount) * 100)
+      : 0;
+
+  const clearedTotal = extremeMission?.total ?? total;
+  const heading = extremeMission ? "MISSION SUCCESS" : "MISSION SUCCESS";
+  const subtitle = extremeMission
+    ? `${extremeMission.title} · All ${clearedTotal} questions cleared`
+    : `All ${clearedTotal} questions cleared`;
 
   const exportSummary = () => {
-    const text = [
-      "ZEUS AMMON-RA 11 — Mission Summary",
-      `Score: ${progress.score}`,
-      `Answered: ${progress.answeredCount} / ${total}`,
-      `Correct: ${progress.correctCount} (${accuracy}%)`,
-      `Best streak: ${progress.bestStreak}`,
-      `Recall wins/losses: ${progress.recallWins}/${progress.recallLosses}`,
-      `Missed: ${progress.missedIds.join(", ") || "none"}`,
-    ].join("\n");
+    const text = extremeMission
+      ? [
+          `ZEUS AMMON-RA 11 — ${extremeMission.title}`,
+          `Score: ${extremeMission.score}`,
+          `Correct: ${extremeMission.correct} / ${extremeMission.total} (${accuracy}%)`,
+        ].join("\n")
+      : [
+          "ZEUS AMMON-RA 11 — Mission Summary",
+          `Score: ${progress.score}`,
+          `Answered: ${progress.answeredCount} / ${total}`,
+          `Correct: ${progress.correctCount} (${accuracy}%)`,
+          `Best streak: ${progress.bestStreak}`,
+          `Recall wins/losses: ${progress.recallWins}/${progress.recallLosses}`,
+          `Missed: ${progress.missedIds.join(", ") || "none"}`,
+        ].join("\n");
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
     const a = document.createElement("a");
     a.href = url;
@@ -65,21 +93,28 @@ export function Finale({
           </svg>
         </div>
       </div>
-      <h2 className="mt-2 font-display text-3xl text-mint text-glow">MISSION SUCCESS</h2>
+      <h2 className="mt-2 font-display text-3xl text-mint text-glow">{heading}</h2>
       <p className="mt-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-        All {total} questions cleared
+        {subtitle}
       </p>
       {launched && (
         <>
           <dl className="mt-6 grid grid-cols-2 gap-3 text-left font-mono text-sm sm:grid-cols-3">
-            {[
-              ["Score", progress.score],
-              ["Correct", `${progress.correctCount}/${progress.answeredCount}`],
-              ["Accuracy", `${accuracy}%`],
-              ["Best streak", progress.bestStreak],
-              ["Recall wins", progress.recallWins],
-              ["Recall losses", progress.recallLosses],
-            ].map(([k, v]) => (
+            {(extremeMission
+              ? [
+                  ["Score", extremeMission.score],
+                  ["Correct", `${extremeMission.correct}/${extremeMission.total}`],
+                  ["Accuracy", `${accuracy}%`],
+                ]
+              : [
+                  ["Score", progress.score],
+                  ["Correct", `${progress.correctCount}/${progress.answeredCount}`],
+                  ["Accuracy", `${accuracy}%`],
+                  ["Best streak", progress.bestStreak],
+                  ["Recall wins", progress.recallWins],
+                  ["Recall losses", progress.recallLosses],
+                ]
+            ).map(([k, v]) => (
               <div key={String(k)} className="rounded-md border border-border bg-deepblue/60 p-3">
                 <dt className="text-[10px] uppercase tracking-widest text-muted-foreground">{k}</dt>
                 <dd className="text-lg text-cyan">{v}</dd>
@@ -87,18 +122,34 @@ export function Finale({
             ))}
           </dl>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <button type="button" className={btn} onClick={onReviewMissed} disabled={!progress.missedIds.length}>
-              Review missed ({progress.missedIds.length})
-            </button>
-            <button type="button" className={btn} onClick={onMastery}>
-              Mastery mode
-            </button>
-            <button type="button" className={btn} onClick={exportSummary}>
-              Export summary
-            </button>
-            <button type="button" className={btn} onClick={onMenu}>
-              Main menu
-            </button>
+            {extremeMission ? (
+              <>
+                <button type="button" className={btn} onClick={extremeMission.onContinue}>
+                  {extremeMission.continueLabel}
+                </button>
+                <button type="button" className={btn} onClick={exportSummary}>
+                  Export summary
+                </button>
+                <button type="button" className={btn} onClick={onMenu}>
+                  Main menu
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" className={btn} onClick={onReviewMissed} disabled={!progress.missedIds.length}>
+                  Review missed ({progress.missedIds.length})
+                </button>
+                <button type="button" className={btn} onClick={onMastery}>
+                  Mastery mode
+                </button>
+                <button type="button" className={btn} onClick={exportSummary}>
+                  Export summary
+                </button>
+                <button type="button" className={btn} onClick={onMenu}>
+                  Main menu
+                </button>
+              </>
+            )}
           </div>
         </>
       )}
