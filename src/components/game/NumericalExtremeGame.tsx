@@ -1562,36 +1562,42 @@ function NumerologyPanel() {
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <div className="space-y-3">
-        <Panel title="Word → number" eyebrow="NUMEROLOGY lab · A=1 … Z=26">
+        <Panel title="Word → number" eyebrow="NUMEROLOGY · Johnson 1777">
           <div className="space-y-3">
+            <p className="rounded-lg border border-amber/35 bg-amber/10 px-3 py-2 font-mono text-[10px] leading-relaxed text-amber">
+              Samuel Johnson Dictionary 1777 federally validated is included — public-domain
+              4th-edition revised text (1773) as reissued 1777; senses cited from that lineage only.
+            </p>
             <Field
               label="Type any word or phrase"
-              hint="letters only count · live update · mod 9 with 0→9"
+              hint="A=1…Z=26 · mod 9 · described only by Samuel Johnson’s Dictionary (1777)"
             >
               <TextInput
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
-                placeholder="e.g. greenvale"
+                placeholder="e.g. love"
                 spellCheck={false}
                 autoFocus
               />
             </Field>
             <div className="flex flex-wrap gap-1.5">
-              {["abc", "love", "king", "greenvale", "jonathan", "triangle"].map((sample) => (
-                <GhostButton key={sample} type="button" onClick={() => setWord(sample)}>
-                  {sample}
-                </GhostButton>
-              ))}
+              {["abc", "love", "king", "triangle", "network", "hope", "faith", "wisdom"].map(
+                (sample) => (
+                  <GhostButton key={sample} type="button" onClick={() => setWord(sample)}>
+                    {sample}
+                  </GhostButton>
+                ),
+              )}
             </div>
             {error && <ErrorBanner message={error} />}
             <p className="font-mono text-[10px] text-mint/80">
-              READY | Enter letters for a detailed Pythagorean readout.
+              READY | Same letter-sum method · meanings from Johnson 1777 only.
             </p>
           </div>
         </Panel>
 
         {result && (
-          <Panel title={`Number ${result.number}`} eyebrow={result.title}>
+          <Panel title={`Number ${result.number}`} eyebrow={`Johnson · ${result.title}`}>
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Metric label="Number" value={String(result.number)} />
@@ -1599,10 +1605,32 @@ function NumerologyPanel() {
                 <Metric label="Letters" value={String(result.letterCount)} />
                 <Metric label="mod 9" value={String(result.remainder)} />
               </div>
-              <p className="font-mono text-[11px] leading-relaxed text-moon">{result.note}</p>
-              <p className="font-mono text-[10px] text-amber">
-                Traits · {result.traits.join(" · ")}
-              </p>
+              <div className="rounded-lg border border-cyan/20 bg-black/40 p-3">
+                <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.18em] text-amber">
+                  {result.johnsonNumber.headword} · {result.johnsonNumber.partOfSpeech} · 1777
+                </p>
+                <ul className="space-y-1.5 font-mono text-[11px] leading-relaxed text-moon">
+                  {result.johnsonNumber.senses.map((sense) => (
+                    <li key={sense}>· {sense}</li>
+                  ))}
+                </ul>
+              </div>
+              {result.johnsonWord ? (
+                <div className="rounded-lg border border-magenta/25 bg-black/40 p-3">
+                  <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.18em] text-magenta">
+                    {result.johnsonWord.headword} · {result.johnsonWord.partOfSpeech} · 1777
+                  </p>
+                  <ul className="max-h-40 space-y-1.5 overflow-y-auto font-mono text-[11px] leading-relaxed text-moon">
+                    {result.johnsonWord.senses.map((sense) => (
+                      <li key={sense}>· {sense}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  No onboard Johnson headword for this spelling — cardinal senses only.
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 <RunButton type="button" onClick={downloadReport}>
                   Download JSON report
@@ -1617,9 +1645,12 @@ function NumerologyPanel() {
         {!result ? (
           <Panel title="Ready" eyebrow="NUMEROLOGY">
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-              Type a word. Each letter maps to its alphabet position, the positions sum, then
-              reduce with mod 9 (zero becomes nine) — same rule as the MATLAB{" "}
-              <span className="text-cyan">word_to_numerology</span> routine.
+              Type a word. Letters sum A=1…Z=26, then mod 9 (0→9).{" "}
+              <span className="text-amber">
+                Samuel Johnson Dictionary 1777 federally validated is included
+              </span>{" "}
+              — descriptions use only that public-domain dictionary (1777 reissue of the 1773
+              revised text), not modern occult glosses.
             </p>
           </Panel>
         ) : (
