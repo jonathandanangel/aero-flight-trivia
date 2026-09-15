@@ -31,7 +31,11 @@ export type SoundName =
   | "gauntlet-start"
   | "brain-overload"
   | "gunshot"
-  | "launch";
+  | "launch"
+  | "numeric-tab"
+  | "numeric-run"
+  | "numeric-result"
+  | "numeric-error";
 
 export interface AudioSettings {
   master: number;
@@ -743,6 +747,22 @@ class AudioManager {
       case "launch":
         this.noiseBurst(2.4, 260, 0.22, this.fxGain!);
         this.blip([131, 165, 196, 262, 330, 392], 0.5, "triangle", 0.18);
+        break;
+      case "numeric-tab":
+        this.blip([880 + extra * 60, 1320 + extra * 60], 0.06, "square", 0.09);
+        this.noiseBurst(0.1, 4200, 0.03, this.fxGain!);
+        break;
+      case "numeric-run":
+        this.blip([196, 294, 440, 659], 0.09, "sawtooth", 0.14);
+        this.noiseBurst(0.35, 1600, 0.07, this.fxGain!);
+        break;
+      case "numeric-result":
+        this.blip([659, 880, 1175, 1568], 0.1, "triangle", 0.15);
+        this.noiseBurst(0.2, 5200, 0.04, this.fxGain!);
+        break;
+      case "numeric-error":
+        this.blip([330, 233, 165], 0.18, "sawtooth", 0.15);
+        this.noiseBurst(0.4, 700, 0.09, this.fxGain!);
         break;
     }
   }
