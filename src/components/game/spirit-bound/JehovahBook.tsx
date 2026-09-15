@@ -63,7 +63,7 @@ export function JehovahBook({ collectedIds, onClose, initialTabId = null }: Prop
             {JEHOVAH_BOOK_TITLE}
           </p>
           <p className="mt-1 text-center text-[8px] text-[#c8a048]">
-            Golden leaves · {collected.length} / {SCATTERED_PAPERS.length} tabs bound
+            Bound leaves · {collected.length} / {SCATTERED_PAPERS.length} tabs
           </p>
         </header>
 
@@ -103,7 +103,7 @@ export function JehovahBook({ collectedIds, onClose, initialTabId = null }: Prop
               </>
             ) : (
               <p className="font-pixel text-[9px] leading-relaxed text-[#a88828]">
-                The golden covers are empty. Gather the scattered papers of Greenvale — in order — to bind each tab.
+                The covers wait. Gather every scrap from the grasslands to bind the leaves.
               </p>
             )}
           </div>

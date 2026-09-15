@@ -12,6 +12,7 @@ import { ReasonTrial } from "@/components/game/spirit-bound/reason/ReasonTrial";
 import { ShrineTrial } from "@/components/game/spirit-bound/shrine/ShrineTrial";
 import {
   startMusic,
+  startGrasslandsMusic,
   playDemonicLaugh,
   playBurnSfx,
   stopAmbient,
@@ -22,7 +23,7 @@ import { ENEMIES, TILE, type Npc } from "@/game/spirit-bound/data";
 import { GRASS_TILE, VINE_MIN_LEVEL, generateRandomBushKeys, type GrassNpc } from "@/game/spirit-bound/grasslands-data";
 import {
   JEHOVAH_BOOK_TITLE,
-  nextPaperToCollect,
+  allPapersCollected,
   type ScatteredPaper,
 } from "@/game/spirit-bound/scattered-papers";
 import { cn } from "@/lib/utils";
@@ -82,6 +83,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   const [bookOpen, setBookOpen] = React.useState(false);
   const [bookTabId, setBookTabId] = React.useState<string | null>(null);
   const [shrineCleared, setShrineCleared] = React.useState(false);
+  const demonicLaughPlayedRef = React.useRef(false);
 
   const maxHp = MAX_HP_BY_LEVEL(level);
   const goMenu = React.useCallback(() => {
@@ -163,14 +165,14 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     if (mode !== "overworld" || bookOpen || goldenEggOpen || hawkEggOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "b" || e.key === "B") {
-        if (collectedPapers.size === 0) return;
+        if (!allPapersCollected(collectedPapers)) return;
         e.preventDefault();
         setBookOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mode, bookOpen, goldenEggOpen, hawkEggOpen, collectedPapers.size]);
+  }, [mode, bookOpen, goldenEggOpen, hawkEggOpen, collectedPapers]);
 
   const onTalk = React.useCallback(
     (npc: Npc) => {
@@ -213,6 +215,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   );
 
   const onExitToGrasslands = React.useCallback((_at: { x: number; y: number }) => {
+    startGrasslandsMusic();
     setMapId("grasslands");
     setSpawn({ x: 2 * GRASS_TILE, y: 3 * GRASS_TILE });
     setBushTiles((prev) => (prev.size > 0 ? prev : generateRandomBushKeys(14)));
@@ -225,26 +228,33 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     return () => window.clearTimeout(id);
   }, [burningBushKey]);
 
-  const onPaper = React.useCallback(
-    (paper: ScatteredPaper) => {
-      const next = nextPaperToCollect(collectedPapers);
-      if (!next || paper.id !== next.id) {
-        setDialogue({
-          lines: [
-            "* The ink on this scrap is sealed.",
-            "* Bind an earlier tab into the book first — in order.",
-          ],
-        });
-        setMode("dialogue");
-        return;
-      }
-      setCollectedPapers((prev) => new Set(prev).add(paper.id));
-      setBanner(paper.tab);
-      setBookTabId(paper.id);
-      setBookOpen(true);
-    },
-    [collectedPapers],
-  );
+  const collectedPapersRef = React.useRef(collectedPapers);
+  collectedPapersRef.current = collectedPapers;
+
+  const onPaper = React.useCallback((paper: ScatteredPaper) => {
+    if (collectedPapersRef.current.has(paper.id)) return;
+    const next = new Set(collectedPapersRef.current).add(paper.id);
+    collectedPapersRef.current = next;
+    setCollectedPapers(next);
+    if (allPapersCollected(next)) {
+      setBanner("Press B");
+      setDialogue({
+        lines: [
+          "* You pick up a scrap of paper.",
+          "* The scraps bind together.",
+          "* Press B.",
+        ],
+      });
+    } else {
+      setDialogue({
+        lines: [
+          "* You pick up a scrap of paper.",
+          "* The ink is sealed. You cannot read it yet.",
+        ],
+      });
+    }
+    setMode("dialogue");
+  }, []);
 
   const onGoldenEgg = React.useCallback(() => {
     setHawkEggOpen(false);
@@ -344,7 +354,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     if (wasKing && (r.outcome === "win" || r.outcome === "spare")) {
       setBossBeaten(true);
       setExitDoorOpen(true);
-      playDemonicLaugh();
+      demonicLaughPlayedRef.current = false;
       setDialogue({
         name: "FATES",
         lines: [
@@ -353,7 +363,8 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
           "* Adoni Je Hovah your old fruitful grape vine will be stopped by Paul Barnabus the Nazarene. Mark my words!",
           "* Demonic laughter echoes through the shrine...",
           "* The gold door blazes open. A pastoral field waits beyond.",
-          "* Scraps of doctrine scatter across GREENVALE — bind them in order into",
+          "* Scraps of doctrine scatter across the grasslands — find them all.",
+          "* When every scrap is bound, Press B to open",
           `* ${JEHOVAH_BOOK_TITLE}.`,
           "* That hunt is harder than the vine. The door still opens.",
         ],
@@ -523,12 +534,10 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
                 spawn={spawn}
                 paused={mode !== "overworld" || bookOpen}
                 exitDoorOpen={exitDoorOpen}
-                collectedPaperIds={collectedPapers}
                 onTalk={onTalk}
                 onEncounter={onEncounter}
                 onBossDoor={onBossDoor}
                 onExitToGrasslands={onExitToGrasslands}
-                onPaper={onPaper}
               />
             ) : (
               <GrasslandsOverworld
@@ -539,12 +548,14 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
                 burntBushes={burntBushes}
                 burningBushKey={burningBushKey}
                 vineDefeated={vinePurged}
+                collectedPaperIds={collectedPapers}
                 onTalk={onGrassTalk}
                 onBush={onGrassBush}
                 onVine={onGrassVine}
                 onWildGrass={onGrassWild}
                 onGoldenEgg={onGoldenEgg}
                 onHawkEgg={onHawkEgg}
+                onPaper={onPaper}
               />
             )}
             {goldenEggOpen && mapId === "grasslands" && (
@@ -553,7 +564,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
             {hawkEggOpen && mapId === "grasslands" && (
               <HawkEggReader onClose={() => setHawkEggOpen(false)} />
             )}
-            {bookOpen && (
+            {bookOpen && allPapersCollected(collectedPapers) && (
               <JehovahBook
                 collectedIds={collectedPapers}
                 initialTabId={bookTabId}
@@ -564,6 +575,15 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
               <DialogueBox
                 {...(dialogue.name ? { name: dialogue.name } : {})}
                 lines={dialogue.lines}
+                onLine={(_i, line) => {
+                  if (
+                    !demonicLaughPlayedRef.current &&
+                    line.includes("Demonic laughter echoes through the shrine")
+                  ) {
+                    demonicLaughPlayedRef.current = true;
+                    playDemonicLaugh();
+                  }
+                }}
                 onDone={() => {
                   setDialogue(null);
                   if (afterDialogue === "vine") {
@@ -681,7 +701,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
             <span>
               Heart x{items.cookie} · Fairy x{items.hotdog}
             </span>
-            {exitDoorOpen && collectedPapers.size > 0 && (
+            {allPapersCollected(collectedPapers) && (
               <button
                 type="button"
                 className="border border-game-yellow px-2 py-1 font-pixel text-[9px] text-game-yellow hover:bg-game-yellow hover:text-game-bg"

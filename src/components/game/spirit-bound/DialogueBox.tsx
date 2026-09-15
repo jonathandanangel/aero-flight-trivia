@@ -4,14 +4,22 @@ type Props = {
   name?: string;
   lines: string[];
   onDone: () => void;
+  /** Fires when a line begins (including the first). */
+  onLine?: (index: number, line: string) => void;
 };
 
-export function DialogueBox({ name, lines, onDone }: Props) {
+export function DialogueBox({ name, lines, onDone, onLine }: Props) {
   const [idx, setIdx] = useState(0);
   const [shown, setShown] = useState("");
   const full = lines[idx] ?? "";
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
+  const onLineRef = useRef(onLine);
+  onLineRef.current = onLine;
+
+  useEffect(() => {
+    onLineRef.current?.(idx, full);
+  }, [idx, full]);
 
   useEffect(() => {
     setShown("");

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { isSolid, MAP_H, MAP_W, NPCS, TILE, tileAt, WILD_POOL, type Npc } from "@/game/spirit-bound/data";
-import { SCATTERED_PAPERS, paperAt, type ScatteredPaper } from "@/game/spirit-bound/scattered-papers";
 import { drawTriForce, pixelTriangle, px } from "@/game/spirit-bound/pixel";
 import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 
@@ -8,13 +7,10 @@ type Props = {
   spawn: { x: number; y: number };
   paused: boolean;
   exitDoorOpen?: boolean;
-  collectedPaperIds?: Set<string>;
   onTalk: (npc: Npc) => void;
   onEncounter: (enemyId: string, at: { x: number; y: number }) => void;
   onBossDoor: (at: { x: number; y: number }) => void;
   onExitToGrasslands?: (at: { x: number; y: number }) => void;
-  /** Interact with a paper scrap (in-order collect, or sealed hint). */
-  onPaper?: (paper: ScatteredPaper) => void;
 };
 
 const W = MAP_W * TILE;
@@ -25,12 +21,10 @@ export function Overworld({
   spawn,
   paused,
   exitDoorOpen = false,
-  collectedPaperIds,
   onTalk,
   onEncounter,
   onBossDoor,
   onExitToGrasslands,
-  onPaper,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pos = useRef({ ...spawn });
@@ -40,19 +34,9 @@ export function Overworld({
   const frame = useRef(0);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
-  const collectedRef = useRef(collectedPaperIds ?? new Set<string>());
-  collectedRef.current = collectedPaperIds ?? new Set<string>();
-  const papersVisible = exitDoorOpen;
 
-  const paperImg = useRef<HTMLImageElement | null>(null);
-  useEffect(() => {
-    const img = new Image();
-    img.src = "/spirit-bound/scattered-paper.jpg";
-    paperImg.current = img;
-  }, []);
-
-  const cb = useRef({ onTalk, onEncounter, onBossDoor, onExitToGrasslands, onPaper });
-  cb.current = { onTalk, onEncounter, onBossDoor, onExitToGrasslands, onPaper };
+  const cb = useRef({ onTalk, onEncounter, onBossDoor, onExitToGrasslands });
+  cb.current = { onTalk, onEncounter, onBossDoor, onExitToGrasslands };
 
   const facingTile = (): { tx: number; ty: number } => {
     const cx = pos.current.x + TILE / 2;
@@ -68,22 +52,9 @@ export function Overworld({
     return NPCS.find((n) => n.tx === tx && n.ty === ty);
   };
 
-  const facingPaper = (): ScatteredPaper | undefined => {
-    if (!papersVisible) return undefined;
-    const { tx, ty } = facingTile();
-    const p = paperAt(tx, ty);
-    if (!p || collectedRef.current.has(p.id)) return undefined;
-    return p;
-  };
-
   const held = useKeys((key) => {
     if (pausedRef.current) return;
     if (["z", "Z", "Enter", " "].includes(key)) {
-      const paper = facingPaper();
-      if (paper) {
-        cb.current.onPaper?.(paper);
-        return;
-      }
       const npc = facingNpc();
       if (npc) cb.current.onTalk(npc);
     }
@@ -181,20 +152,6 @@ export function Overworld({
         }
       }
 
-      if (papersVisible) {
-        for (const paper of SCATTERED_PAPERS) {
-          if (collectedRef.current.has(paper.id)) continue;
-          drawScatteredPaper(
-            ctx,
-            paper.tx * TILE,
-            paper.ty * TILE,
-            frame.current,
-            paperImg.current,
-            paper.order,
-          );
-        }
-      }
-
       for (const n of NPCS) {
         const bob = Math.sin((frame.current + n.tx * 17) / 25) * 1.5;
         drawNpc(ctx, n.tx * TILE, n.ty * TILE + bob, n.id, n.color);
@@ -208,7 +165,7 @@ export function Overworld({
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [held, exitDoorOpen, papersVisible]);
+  }, [held, exitDoorOpen]);
 
   return (
     <canvas
@@ -219,32 +176,6 @@ export function Overworld({
       style={{ imageRendering: "pixelated" }}
     />
   );
-}
-
-function drawScatteredPaper(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  frame: number,
-  img: HTMLImageElement | null,
-  order: number,
-) {
-  const bob = Math.sin((frame + order * 9) / 16) * 1.2;
-  const dx = x + 2;
-  const dy = y + 2 + bob;
-  if (img && img.complete && img.naturalWidth > 0) {
-    ctx.drawImage(img, dx, dy, 20, 20);
-  } else {
-    // pixel fallback matching the paper sprite
-    px(ctx, dx + 2, dy + 1, 14, 18, "#181010");
-    px(ctx, dx + 3, dy + 2, 12, 16, "#d8d8d8");
-    px(ctx, dx + 11, dy + 2, 4, 4, "#181010");
-    px(ctx, dx + 11, dy + 3, 3, 3, "#b0b0b0");
-    px(ctx, dx + 5, dy + 6, 8, 1, "#606060");
-    px(ctx, dx + 5, dy + 9, 6, 1, "#606060");
-    px(ctx, dx + 5, dy + 12, 9, 1, "#606060");
-    px(ctx, dx + 5, dy + 15, 5, 1, "#606060");
-  }
 }
 
 function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: number, openDoor = false) {

@@ -10,6 +10,7 @@ import {
   grassTileAt,
   type GrassNpc,
 } from "@/game/spirit-bound/grasslands-data";
+import { SCATTERED_PAPERS, paperAt, type ScatteredPaper } from "@/game/spirit-bound/scattered-papers";
 import { pixelTriangle, px } from "@/game/spirit-bound/pixel";
 import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 
@@ -23,12 +24,14 @@ type Props = {
   /** Bush key currently playing flame animation (just defeated). */
   burningBushKey: string | null;
   vineDefeated: boolean;
+  collectedPaperIds: Set<string>;
   onTalk: (npc: GrassNpc) => void;
   onBush: (at: { x: number; y: number }, key: string) => void;
   onVine: (at: { x: number; y: number }) => void;
   onWildGrass: (at: { x: number; y: number }) => void;
   onGoldenEgg: () => void;
   onHawkEgg: () => void;
+  onPaper: (paper: ScatteredPaper) => void;
 };
 
 const W = GRASS_W * GRASS_TILE;
@@ -43,12 +46,14 @@ export function GrasslandsOverworld({
   burntBushes,
   burningBushKey,
   vineDefeated,
+  collectedPaperIds,
   onTalk,
   onBush,
   onVine,
   onWildGrass,
   onGoldenEgg,
   onHawkEgg,
+  onPaper,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pos = useRef({ ...spawn });
@@ -66,9 +71,11 @@ export function GrasslandsOverworld({
   burntRef.current = burntBushes;
   const burningRef = useRef(burningBushKey);
   burningRef.current = burningBushKey;
+  const collectedRef = useRef(collectedPaperIds);
+  collectedRef.current = collectedPaperIds;
 
-  const cb = useRef({ onTalk, onBush, onVine, onWildGrass, onGoldenEgg, onHawkEgg });
-  cb.current = { onTalk, onBush, onVine, onWildGrass, onGoldenEgg, onHawkEgg };
+  const cb = useRef({ onTalk, onBush, onVine, onWildGrass, onGoldenEgg, onHawkEgg, onPaper });
+  cb.current = { onTalk, onBush, onVine, onWildGrass, onGoldenEgg, onHawkEgg, onPaper };
 
   const facingTile = (): { tx: number; ty: number } => {
     const cx = pos.current.x + GRASS_TILE / 2;
@@ -84,6 +91,13 @@ export function GrasslandsOverworld({
     return GRASS_NPCS.find((n) => n.tx === tx && n.ty === ty);
   };
 
+  const facingPaper = (): ScatteredPaper | undefined => {
+    const { tx, ty } = facingTile();
+    const p = paperAt(tx, ty);
+    if (!p || collectedRef.current.has(p.id)) return undefined;
+    return p;
+  };
+
   const facingGoldenEgg = (): boolean => {
     const { tx, ty } = facingTile();
     return tx === GOLDEN_EGG.tx && ty === GOLDEN_EGG.ty;
@@ -97,6 +111,11 @@ export function GrasslandsOverworld({
   const held = useKeys((key) => {
     if (pausedRef.current) return;
     if (["z", "Z", "Enter", " "].includes(key)) {
+      const paper = facingPaper();
+      if (paper) {
+        cb.current.onPaper(paper);
+        return;
+      }
       if (facingGoldenEgg()) {
         cb.current.onGoldenEgg();
         return;
@@ -241,6 +260,11 @@ export function GrasslandsOverworld({
         }
       }
 
+      for (const paper of SCATTERED_PAPERS) {
+        if (collectedRef.current.has(paper.id)) continue;
+        drawRainbowPaper(ctx, paper, frame.current);
+      }
+
       if (!night) {
         for (const n of GRASS_NPCS) {
           drawGrassNpc(ctx, n.tx * GRASS_TILE, n.ty * GRASS_TILE, n.id, frame.current);
@@ -377,6 +401,22 @@ function drawGrassTile(
   }
 
   px(ctx, x, y, GRASS_TILE, GRASS_TILE, grass);
+}
+
+/** Pixel folded scrap — body = paper.color, ink lines = paper.ink, no white bg. */
+function drawRainbowPaper(ctx: CanvasRenderingContext2D, paper: ScatteredPaper, frame: number) {
+  const bob = Math.sin((frame + paper.order * 9) / 16) * 1.2;
+  const dx = paper.tx * GRASS_TILE + 2;
+  const dy = paper.ty * GRASS_TILE + 2 + bob;
+  const fold = paper.ink; // darker same-hue fold (ink is already a deep shade of the scrap)
+  px(ctx, dx + 2, dy + 1, 14, 18, "#181010"); // outline
+  px(ctx, dx + 3, dy + 2, 12, 16, paper.color); // body
+  px(ctx, dx + 11, dy + 2, 4, 4, "#181010");
+  px(ctx, dx + 11, dy + 3, 3, 3, fold); // dog-ear
+  px(ctx, dx + 5, dy + 6, 8, 1, paper.ink);
+  px(ctx, dx + 5, dy + 9, 6, 1, paper.ink);
+  px(ctx, dx + 5, dy + 12, 9, 1, paper.ink);
+  px(ctx, dx + 5, dy + 15, 5, 1, paper.ink);
 }
 
 function drawLiveBush(ctx: CanvasRenderingContext2D, x: number, y: number, frame: number) {
