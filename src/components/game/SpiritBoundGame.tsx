@@ -21,11 +21,7 @@ import {
 } from "@/game/spirit-bound/shrine/audio";
 import { ENEMIES, TILE, type Npc } from "@/game/spirit-bound/data";
 import { GRASS_TILE, VINE_MIN_LEVEL, generateRandomBushKeys, type GrassNpc } from "@/game/spirit-bound/grasslands-data";
-import {
-  JEHOVAH_BOOK_TITLE,
-  allPapersCollected,
-  type ScatteredPaper,
-} from "@/game/spirit-bound/scattered-papers";
+import { allPapersCollected, type ScatteredPaper } from "@/game/spirit-bound/scattered-papers";
 import { cn } from "@/lib/utils";
 
 type Mode =
@@ -364,8 +360,6 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
           "* Demonic laughter echoes through the shrine...",
           "* The gold door blazes open. A pastoral field waits beyond.",
           "* Scraps of doctrine scatter across the grasslands — find them all.",
-          "* When every scrap is bound, Press B to open",
-          `* ${JEHOVAH_BOOK_TITLE}.`,
           "* That hunt is harder than the vine. The door still opens.",
         ],
       });
