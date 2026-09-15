@@ -46,6 +46,17 @@ export {
 
 export type * from "./types";
 
+export {
+  buildFunctionReport,
+  buildVibrationReport,
+  buildMethodFormulation,
+  FUNCTION_PRESETS,
+  COMPOSITE_FORMULAS,
+} from "./v15-report";
+
+export { TOOLBOX_REFERENCES } from "./references";
+export type { ReferenceEntry, ReferenceSection } from "./references";
+
 /** Format a number for display (null-safe). */
 export function formatNumber(
   value: number | null | undefined,

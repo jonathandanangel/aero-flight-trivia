@@ -18,16 +18,22 @@ import {
 import {
   analyzeFunction,
   analyzeVibration,
+  buildFunctionReport,
+  buildMethodFormulation,
+  buildVibrationReport,
   compileScalar,
   compositeIntegration,
+  COMPOSITE_FORMULAS,
   downloadJson,
   formatNumber,
+  FUNCTION_PRESETS,
   interpolate,
   parseNumberList,
   runDerpar,
   runModifiedCholesky,
   runTalbot,
   solveNonlinearSystem,
+  TOOLBOX_REFERENCES,
   vectorizeExpression,
   type FunctionAnalysisResult,
   type IntegrationResult,
@@ -39,7 +45,14 @@ import { audio } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { cn } from "@/lib/utils";
 
-type Mode = "main" | "vector" | "method" | "composite" | "diff" | "algorithms";
+type Mode =
+  | "main"
+  | "vector"
+  | "method"
+  | "composite"
+  | "diff"
+  | "algorithms"
+  | "references";
 
 const MODES: Array<{ id: Mode; label: string }> = [
   { id: "main", label: "MAIN" },
@@ -48,88 +61,17 @@ const MODES: Array<{ id: Mode; label: string }> = [
   { id: "composite", label: "COMPOSITE" },
   { id: "diff", label: "DIFF" },
   { id: "algorithms", label: "ALGORITHMS" },
+  { id: "references", label: "REFS" },
 ];
 
 export interface NumericalExtremeGameProps {
   onMenu: () => void;
 }
 
-function functionLog(result: FunctionAnalysisResult): string {
-  return [
-    "=== FUNCTION ANALYSIS ===",
-    result.expression.normalized,
-    "",
-    "1) Factorization",
-    `   ${result.expression.factorized ?? "—"}`,
-    "",
-    "2) Shifted representation",
-    `   x = y + ${formatNumber(result.expression.shift, 10)}`,
-    `   g(y) = ${result.expression.shifted ?? "—"}`,
-    "",
-    `3) IVT scan on [${result.domain.a}, ${result.domain.b}]`,
-    `   Brackets detected: ${result.ivt.brackets.length}`,
-    `   Roots: ${result.ivt.roots.map((r) => formatNumber(r, 12)).join(", ") || "none"}`,
-    "",
-    "4) Proposed secant pairs",
-    ...result.secantPairs.map(
-      (pair, i) =>
-        `   ${i + 1}: [${formatNumber(pair[0], 9)}, ${formatNumber(pair[1], 9)}]`,
-    ),
-    "",
-    "5) Mean Value Theorem",
-    `   slope = ${formatNumber(result.meanValueTheorem.chordSlope, 10)}`,
-    `   c = ${formatNumber(result.meanValueTheorem.c, 10)}`,
-    "",
-    "6) Integral Mean Value Theorem",
-    `   integral = ${formatNumber(result.integralMeanValueTheorem.integral, 10)}`,
-    `   average = ${formatNumber(result.integralMeanValueTheorem.average, 10)}`,
-    `   c = ${formatNumber(result.integralMeanValueTheorem.c, 10)}`,
-    "",
-    "7) Taylor polynomials at x = 0",
-    ...result.taylor.map((item) =>
-      item.valid
-        ? `   degree ${item.degree}: ${item.polynomial}`
-        : `   degree ${item.degree}: unavailable`,
-    ),
-    "",
-    "8) Iterative solvers",
-    `   Newton: x = ${formatNumber(result.iterations.newton.root, 12)}, residual = ${formatNumber(
-      result.iterations.newton.residual,
-      6,
-    )}, iterations = ${result.iterations.newton.iterations}`,
-    ...result.iterations.secant.slice(0, 4).map(
-      (run, i) =>
-        `   Secant ${i + 1}: x = ${formatNumber(run.root, 12)}, residual = ${formatNumber(
-          run.residual,
-          6,
-        )}, iterations = ${run.iterations}`,
-    ),
-  ].join("\n");
-}
-
-function vibrationLog(result: VibrationResult): string {
-  const lines = [
-    "=== VIBRATION ANALYSIS ===",
-    `mode = ${result.mode}`,
-    `natural frequency = ${formatNumber(result.naturalFrequency, 10)} rad/s`,
-    `natural frequency = ${formatNumber(result.naturalFrequencyHz, 10)} Hz`,
-    `damping ratio = ${formatNumber(result.dampingRatio, 10)}`,
-  ];
-  if (result.mode === "free") {
-    lines.push(`regime = ${result.regime}`);
-    lines.push(`damped frequency = ${formatNumber(result.dampedFrequency, 10)} rad/s`);
-  } else {
-    lines.push(`magnification = ${formatNumber(result.magnification, 10)}`);
-    lines.push(`amplitude = ${formatNumber(result.amplitude, 10)} m`);
-    lines.push(`phase = ${formatNumber(result.phase, 10)} rad`);
-  }
-  return lines.join("\n");
-}
-
 function MainPanel() {
-  const [expression, setExpression] = React.useState("x - cos(x)");
-  const [a, setA] = React.useState(1e-6);
-  const [b, setB] = React.useState(2);
+  const [expression, setExpression] = React.useState(FUNCTION_PRESETS[0]!.expr);
+  const [a, setA] = React.useState(FUNCTION_PRESETS[0]!.a);
+  const [b, setB] = React.useState(FUNCTION_PRESETS[0]!.b);
   const [tolerance, setTolerance] = React.useState(1e-6);
   const [maxIterations, setMaxIterations] = React.useState(200);
   const [gridPoints, setGridPoints] = React.useState(400);
@@ -137,6 +79,9 @@ function MainPanel() {
   const [shift, setShift] = React.useState(true);
   const [seedOne, setSeedOne] = React.useState("");
   const [seedTwo, setSeedTwo] = React.useState("");
+  const [clickMode, setClickMode] = React.useState<"off" | "inspect" | "secant">("inspect");
+  const [seedStage, setSeedStage] = React.useState(0);
+  const [clickedPoints, setClickedPoints] = React.useState<Array<{ x: number; y: number }>>([]);
 
   const [vibrationMode, setVibrationMode] = React.useState<"free" | "forced">("free");
   const [mass, setMass] = React.useState(1);
@@ -153,6 +98,11 @@ function MainPanel() {
   const [activeOutput, setActiveOutput] = React.useState<"function" | "vibration" | null>(null);
   const [log, setLog] = React.useState("(output will appear here)");
   const [error, setError] = React.useState("");
+  const compute = React.useContext(NumericalComputeContext);
+
+  function appendClickLog(line: string) {
+    setLog((prev) => `${prev}\n${line}`);
+  }
 
   function runFunction(event: React.FormEvent) {
     event.preventDefault();
@@ -174,8 +124,11 @@ function MainPanel() {
         seeds,
       );
       setFunctionResult(result);
+      setVibrationResult(null);
       setActiveOutput("function");
-      setLog(functionLog(result));
+      setClickedPoints([]);
+      setSeedStage(0);
+      setLog(buildFunctionReport(result));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Analysis failed.");
     }
@@ -183,6 +136,7 @@ function MainPanel() {
 
   function runVibration() {
     setError("");
+    compute?.();
     try {
       const result = analyzeVibration(
         vibrationMode,
@@ -198,7 +152,12 @@ function MainPanel() {
       );
       setVibrationResult(result);
       setActiveOutput("vibration");
-      setLog(vibrationLog(result));
+      setClickedPoints([]);
+      setLog((prev) => {
+        const block = buildVibrationReport(result);
+        if (prev.startsWith("(output") || prev.startsWith("(output cleared)")) return block;
+        return `${prev}\n\n${block}`;
+      });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Vibration analysis failed.");
     }
@@ -208,11 +167,64 @@ function MainPanel() {
     setFunctionResult(null);
     setVibrationResult(null);
     setActiveOutput(null);
+    setClickedPoints([]);
+    setSeedStage(0);
     setLog("(output cleared)");
     setError("");
   }
 
+  function handleChartClick(point: { x: number; y: number }) {
+    if (clickMode === "off") return;
+    setClickedPoints((prev) => [...prev, point]);
+    appendClickLog(
+      `Clicked point: x=${formatNumber(point.x, 12)}, y=${formatNumber(point.y, 12)}`,
+    );
+    if (clickMode === "secant" && activeOutput === "function") {
+      if (seedStage === 0) {
+        setSeedOne(String(point.x));
+        setSeedStage(1);
+        appendClickLog(`Secant seed 1 ← ${formatNumber(point.x, 12)}`);
+      } else {
+        const first = Number(seedOne);
+        const pair = [first, point.x].sort((u, v) => u - v);
+        setSeedOne(String(pair[0]));
+        setSeedTwo(String(pair[1]));
+        setSeedStage(0);
+        appendClickLog(
+          `Secant seeds ← [${formatNumber(pair[0]!, 12)}, ${formatNumber(pair[1]!, 12)}]`,
+        );
+      }
+    }
+  }
+
+  const seedMarkers =
+    clickMode === "secant"
+      ? [
+          seedOne.trim() && Number.isFinite(Number(seedOne))
+            ? { x: Number(seedOne), y: 0, color: "#f59e0b", label: "s0" }
+            : null,
+          seedTwo.trim() && Number.isFinite(Number(seedTwo))
+            ? { x: Number(seedTwo), y: 0, color: "#f59e0b", label: "s1" }
+            : null,
+        ].filter(Boolean) as Array<{ x: number; y: number; color: string; label: string }>
+      : [];
+
   const chart = React.useMemo(() => {
+    const inspectMarkers = clickedPoints.map((p) => ({
+      x: p.x,
+      y: p.y,
+      color: "#f472b6",
+      label: `(${formatNumber(p.x, 4)}, ${formatNumber(p.y, 4)})`,
+    }));
+    const clickProps =
+      clickMode === "off"
+        ? {}
+        : {
+            onPointClick: (point: { x: number; y: number; index: number }) => {
+              handleChartClick(point);
+            },
+          };
+
     if (activeOutput === "function" && functionResult) {
       return (
         <Chart
@@ -225,8 +237,13 @@ function MainPanel() {
               color: "#22d3ee",
             },
           ]}
-          referenceX={functionResult.ivt.roots}
+          referenceX={[
+            ...functionResult.ivt.roots,
+            ...seedMarkers.map((m) => m.x),
+          ]}
           referenceY={0}
+          markers={inspectMarkers}
+          {...clickProps}
           height={300}
         />
       );
@@ -249,6 +266,8 @@ function MainPanel() {
             },
           ]}
           referenceY={0}
+          markers={inspectMarkers}
+          {...clickProps}
           height={300}
         />
       );
@@ -270,6 +289,8 @@ function MainPanel() {
               color: "#22d3ee",
             },
           ]}
+          markers={inspectMarkers}
+          {...clickProps}
           height={300}
         />
       );
@@ -286,7 +307,16 @@ function MainPanel() {
         </div>
       </div>
     );
-  }, [activeOutput, functionResult, vibrationResult]);
+  }, [
+    activeOutput,
+    functionResult,
+    vibrationResult,
+    clickMode,
+    clickedPoints,
+    seedMarkers,
+    seedOne,
+    seedStage,
+  ]);
 
   return (
     <form
@@ -303,6 +333,21 @@ function MainPanel() {
               spellCheck={false}
             />
           </Field>
+          <div className="flex flex-wrap gap-1.5">
+            {FUNCTION_PRESETS.map((preset) => (
+              <GhostButton
+                key={preset.label}
+                type="button"
+                onClick={() => {
+                  setExpression(preset.expr);
+                  setA(preset.a);
+                  setB(preset.b);
+                }}
+              >
+                {preset.label}
+              </GhostButton>
+            ))}
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <Field label="a">
               <NumberInput value={a} step="any" onChange={(e) => setA(Number(e.target.value))} />
@@ -311,7 +356,20 @@ function MainPanel() {
               <NumberInput value={b} step="any" onChange={(e) => setB(Number(e.target.value))} />
             </Field>
           </div>
-          <Field label="Secant seeds" hint="blank = auto">
+          <Field label="Plot click mode">
+            <Select
+              value={clickMode}
+              onChange={(e) => {
+                setClickMode(e.target.value as "off" | "inspect" | "secant");
+                setSeedStage(0);
+              }}
+            >
+              <option value="off">Off</option>
+              <option value="inspect">Inspect (snap + log)</option>
+              <option value="secant">Pick Secant seeds</option>
+            </Select>
+          </Field>
+          <Field label="Secant seeds" hint={clickMode === "secant" ? "click plot twice" : "blank = auto"}>
             <div className="grid grid-cols-2 gap-2">
               <NumberInput
                 value={seedOne}
@@ -360,7 +418,7 @@ function MainPanel() {
               onChange={(e) => setShift(e.target.checked)}
               className="accent-cyan"
             />
-            Shift y = x − c
+            Shift-to-zero (y = x − c)
           </label>
         </div>
 
@@ -405,15 +463,27 @@ function MainPanel() {
             Run vibration
           </GhostButton>
         </div>
-        <GhostButton type="button" onClick={clearOutput} className="w-full">
-          Clear output
-        </GhostButton>
+        <div className="grid grid-cols-2 gap-2">
+          <GhostButton type="button" onClick={clearOutput} className="w-full">
+            Clear output
+          </GhostButton>
+          <GhostButton
+            type="button"
+            className="w-full"
+            onClick={() => {
+              setClickedPoints([]);
+              appendClickLog("Clicked points cleared.");
+            }}
+          >
+            Clear clicks
+          </GhostButton>
+        </div>
         {error && <ErrorBanner message={error} />}
       </aside>
 
       <div className="min-w-0 space-y-3">
         {chart}
-        <Panel title="Engine log" eyebrow="Monospace telemetry">
+        <Panel title="Engine log" eyebrow="V15 telemetry · sections 1–11">
           <pre className="max-h-80 overflow-auto rounded-lg border border-cyan/20 bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-mint whitespace-pre-wrap">
             {log}
           </pre>
@@ -436,6 +506,10 @@ function VectorPanel() {
   } | null>(null);
   const [previewX, setPreviewX] = React.useState<number[]>([]);
   const [previewY, setPreviewY] = React.useState<Array<number | null>>([]);
+  const [inspect, setInspect] = React.useState<Array<{ x: number; y: number }>>([]);
+  const [status, setStatus] = React.useState(
+    "READY | Paste an equation, vectorize it, then plot.",
+  );
   const [error, setError] = React.useState("");
   const [copied, setCopied] = React.useState("");
 
@@ -447,6 +521,8 @@ function VectorPanel() {
       setResult(data);
       setPreviewX([]);
       setPreviewY([]);
+      setInspect([]);
+      setStatus("VECTORIZATION COMPLETE | Output is ready.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Vectorization failed.");
     }
@@ -457,7 +533,7 @@ function VectorPanel() {
     setError("");
     try {
       const fn = compileScalar(result.cleaned);
-      const n = 240;
+      const n = 400;
       const xs: number[] = [];
       const ys: Array<number | null> = [];
       for (let i = 0; i < n; i += 1) {
@@ -472,6 +548,10 @@ function VectorPanel() {
       }
       setPreviewX(xs);
       setPreviewY(ys);
+      setInspect([]);
+      setStatus(
+        `PLOT COMPLETE | ${ys.filter((v) => v !== null).length} finite real samples.`,
+      );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Preview failed.");
     }
@@ -481,6 +561,7 @@ function VectorPanel() {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(name);
+      setStatus(`OUTPUT COPIED (${name})`);
       window.setTimeout(() => setCopied(""), 1200);
     } catch {
       setError("Clipboard unavailable.");
@@ -490,9 +571,9 @@ function VectorPanel() {
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <form onSubmit={vectorize} className="space-y-3">
-        <Panel title="Raw algebra" eyebrow="Equation studio">
+        <Panel title="Equation conversion matrix" eyebrow="VECTOR lab">
           <div className="space-y-3">
-            <Field label="Paste an equation" hint="implicit products cleaned">
+            <Field label="Paste raw algebraic equation" hint="implicit products cleaned">
               <TextArea value={raw} onChange={(e) => setRaw(e.target.value)} rows={8} />
             </Field>
             <div className="grid grid-cols-2 gap-2">
@@ -505,6 +586,7 @@ function VectorPanel() {
             </div>
             <RunButton>Vectorize & clean</RunButton>
             {error && <ErrorBanner message={error} />}
+            <p className="font-mono text-[10px] text-mint/80">{status}</p>
           </div>
         </Panel>
       </form>
@@ -514,7 +596,7 @@ function VectorPanel() {
           <Panel title="Ready" eyebrow="VECTOR">
             <p className="font-mono text-xs text-muted-foreground">
               Turn handwritten algebra into cleaned, Python, and Octave forms, then sample with the
-              local scalar compiler.
+              local scalar compiler. Click the plot to inspect nearest samples (V15 inspect mode).
             </p>
           </Panel>
         ) : (
@@ -542,9 +624,21 @@ function VectorPanel() {
                     </pre>
                   </div>
                 ))}
-                <GhostButton type="button" onClick={plotPreview} className="w-full">
-                  Compile & sample preview
-                </GhostButton>
+                <div className="grid grid-cols-2 gap-2">
+                  <GhostButton type="button" onClick={plotPreview} className="w-full">
+                    Plot clean equation
+                  </GhostButton>
+                  <GhostButton
+                    type="button"
+                    className="w-full"
+                    onClick={() => {
+                      setInspect([]);
+                      setStatus("Inspection points cleared.");
+                    }}
+                  >
+                    Clear dots
+                  </GhostButton>
+                </div>
               </div>
             </Panel>
             {previewX.length > 0 && (
@@ -554,7 +648,19 @@ function VectorPanel() {
                   { key: "f", label: "f(x)", values: previewY, color: "#e879f9" },
                 ]}
                 referenceY={0}
-                height={260}
+                markers={inspect.map((p) => ({
+                  x: p.x,
+                  y: p.y,
+                  color: "#22d3ee",
+                  label: `(${formatNumber(p.x, 4)}, ${formatNumber(p.y, 4)})`,
+                }))}
+                onPointClick={(point) => {
+                  setInspect((prev) => [...prev, { x: point.x, y: point.y }]);
+                  setStatus(
+                    `INSPECT | x=${formatNumber(point.x, 12)}, y=${formatNumber(point.y, 12)}`,
+                  );
+                }}
+                height={280}
               />
             )}
           </>
@@ -565,19 +671,31 @@ function VectorPanel() {
 }
 
 function MethodPanel() {
-  const [eq1, setEq1] = React.useState("4*x + sin(y) - 1");
-  const [eq2, setEq2] = React.useState("x^2 + 5*y - 1");
+  const [eq1, setEq1] = React.useState("5*x + sin(y) - 1");
+  const [eq2, setEq2] = React.useState("x^2 + 6*y - 1");
   const [initial, setInitial] = React.useState("0, 0");
   const [outerTol, setOuterTol] = React.useState(1e-8);
   const [outerMax, setOuterMax] = React.useState(30);
   const [innerTol, setInnerTol] = React.useState(1e-10);
   const [innerMax, setInnerMax] = React.useState(100);
+  const [page, setPage] = React.useState<"workflow" | "jacobian" | "split" | "pseudo" | "solve">(
+    "workflow",
+  );
   const [result, setResult] = React.useState<NonlinearSystemResult | null>(null);
   const [error, setError] = React.useState("");
+
+  const guessParts = initial.split(/[,;\s]+/).filter(Boolean);
+  const formulation = buildMethodFormulation(
+    eq1,
+    eq2,
+    guessParts[0] ?? "0",
+    guessParts[1] ?? "0",
+  );
 
   function run(event: React.FormEvent) {
     event.preventDefault();
     setError("");
+    setPage("solve");
     try {
       const guess = parseNumberList(initial);
       if (guess.length !== 2) throw new Error("Initial vector must contain exactly 2 values.");
@@ -596,10 +714,18 @@ function MethodPanel() {
     : 0;
   const traceX = Array.from({ length: traceLen }, (_, i) => i);
 
+  const pages = [
+    ["workflow", "WORKFLOW"],
+    ["jacobian", "JACOBIAN"],
+    ["split", "JACOBI SPLIT"],
+    ["pseudo", "PSEUDOCODE"],
+    ["solve", "ANALYSIS"],
+  ] as const;
+
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <form onSubmit={run} className="space-y-3">
-        <Panel title="2-equation system" eyebrow="Nonlinear method lab">
+        <Panel title="Problem input" eyebrow="Newton–Jacobi method builder">
           <div className="space-y-3">
             <Field label="f₁(x,y) = 0">
               <TextInput value={eq1} onChange={(e) => setEq1(e.target.value)} spellCheck={false} />
@@ -638,67 +764,124 @@ function MethodPanel() {
                 />
               </Field>
             </div>
-            <RunButton>Solve system</RunButton>
+            <div className="grid grid-cols-2 gap-2">
+              <GhostButton
+                type="button"
+                onClick={() => {
+                  setEq1("5*x + sin(y) - 1");
+                  setEq2("x^2 + 6*y - 1");
+                  setInitial("0, 0");
+                  setPage("workflow");
+                }}
+              >
+                Load problem A
+              </GhostButton>
+              <GhostButton
+                type="button"
+                onClick={() => {
+                  setEq1("4*x + sin(y) - 1");
+                  setEq2("x^2 + 5*y - 1");
+                  setInitial("0, 0");
+                }}
+              >
+                Load problem B
+              </GhostButton>
+            </div>
+            <RunButton>Run optional analysis</RunButton>
             {error && <ErrorBanner message={error} />}
           </div>
         </Panel>
       </form>
 
       <div className="space-y-3">
-        {!result ? (
-          <Panel title="Ready" eyebrow="METHOD">
-            <p className="font-mono text-xs text-muted-foreground">
-              Diagonal nonlinear Jacobi vs inexact Newton–Jacobi on a 2×2 residual system.
-            </p>
-          </Panel>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-2">
-              <Metric
-                label="Jacobi residual"
-                value={jacobi?.finalResidual}
-                detail={`${jacobi?.iterations ?? 0} iters · ${jacobi?.converged ? "ok" : "stop"}`}
-              />
-              <Metric
-                label="Newton residual"
-                value={newton?.finalResidual}
-                detail={`${newton?.iterations ?? 0} iters · ${newton?.converged ? "ok" : "stop"}`}
-                accent="magenta"
-              />
-            </div>
-            <Panel title="Estimates" eyebrow="X*">
-              <pre className="font-mono text-[11px] text-mint whitespace-pre-wrap">
-                {`Jacobi:  [${(jacobi?.estimate ?? []).map((v) => formatNumber(v, 8)).join(", ")}]\nNewton:  [${(newton?.estimate ?? []).map((v) => formatNumber(v, 8)).join(", ")}]`}
-              </pre>
-            </Panel>
-            {traceLen > 0 && (
-              <Chart
-                x={traceX}
-                series={[
-                  {
-                    key: "jacobi",
-                    label: "Jacobi residual",
-                    values: traceX.map((_, i) => jacobi?.history[i]?.residual ?? null),
-                    color: "#22d3ee",
-                  },
-                  {
-                    key: "newton",
-                    label: "Newton residual",
-                    values: traceX.map((_, i) => newton?.history[i]?.residual ?? null),
-                    color: "#e879f9",
-                  },
-                ]}
-                height={260}
-              />
-            )}
+        <div className="flex flex-wrap gap-1.5">
+          {pages.map(([id, label]) => (
             <GhostButton
+              key={id}
               type="button"
-              onClick={() => downloadJson("nonlinear-system.json", result)}
+              className={cn(page === id && "border-cyan text-cyan")}
+              onClick={() => setPage(id)}
             >
-              Export JSON
+              {label}
             </GhostButton>
-          </>
+          ))}
+        </div>
+
+        {page === "workflow" && (
+          <Panel title="Workflow" eyebrow="Formulation only">
+            <EquationBox>{formulation.workflow}</EquationBox>
+          </Panel>
         )}
+        {page === "jacobian" && (
+          <Panel title="Jacobian structure" eyebrow="∂F/∂X">
+            <EquationBox>{formulation.jacobian}</EquationBox>
+          </Panel>
+        )}
+        {page === "split" && (
+          <Panel title="Inner Jacobi split" eyebrow="J = D + L + U">
+            <EquationBox>{formulation.split}</EquationBox>
+          </Panel>
+        )}
+        {page === "pseudo" && (
+          <Panel title="Pseudocode" eyebrow="No auto-solve on this tab">
+            <EquationBox>{formulation.pseudocode}</EquationBox>
+          </Panel>
+        )}
+        {page === "solve" &&
+          (!result ? (
+            <Panel title="Optional analysis" eyebrow="METHOD">
+              <p className="font-mono text-xs text-muted-foreground">
+                Build the method tabs first, then press Run optional analysis for residual history.
+              </p>
+            </Panel>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <Metric
+                  label="Jacobi residual"
+                  value={jacobi?.finalResidual}
+                  detail={`${jacobi?.iterations ?? 0} iters · ${jacobi?.converged ? "ok" : "stop"}`}
+                />
+                <Metric
+                  label="Newton residual"
+                  value={newton?.finalResidual}
+                  detail={`${newton?.iterations ?? 0} iters · ${newton?.converged ? "ok" : "stop"}`}
+                  accent="magenta"
+                />
+              </div>
+              <Panel title="Estimates" eyebrow="X*">
+                <pre className="font-mono text-[11px] text-mint whitespace-pre-wrap">
+                  {`Jacobi:  [${(jacobi?.estimate ?? []).map((v) => formatNumber(v, 8)).join(", ")}]\nNewton:  [${(newton?.estimate ?? []).map((v) => formatNumber(v, 8)).join(", ")}]\n\n${jacobi?.message ?? ""}\n${newton?.message ?? ""}`}
+                </pre>
+              </Panel>
+              {traceLen > 0 && (
+                <Chart
+                  x={traceX}
+                  series={[
+                    {
+                      key: "jacobi",
+                      label: "Jacobi residual",
+                      values: traceX.map((_, i) => jacobi?.history[i]?.residual ?? null),
+                      color: "#22d3ee",
+                    },
+                    {
+                      key: "newton",
+                      label: "Newton residual",
+                      values: traceX.map((_, i) => newton?.history[i]?.residual ?? null),
+                      color: "#e879f9",
+                    },
+                  ]}
+                  height={260}
+                />
+              )}
+              <GhostButton
+                type="button"
+                onClick={() => downloadJson("nonlinear-system.json", result)}
+              >
+                Export JSON
+              </GhostButton>
+            </>
+          ))}
       </div>
     </div>
   );
@@ -734,7 +917,7 @@ function CompositePanel() {
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <form onSubmit={run} className="space-y-3">
-        <Panel title="Quadrature controls" eyebrow="Composite lab">
+        <Panel title="Function & interval" eyebrow="Composite integration lab">
           <div className="space-y-3">
             <Field label="Integrand f(x)">
               <TextInput
@@ -779,7 +962,8 @@ function CompositePanel() {
                 onChange={(e) => setSubintervals(Number(e.target.value))}
               />
             </Field>
-            <RunButton>Compute all methods</RunButton>
+            <EquationBox>{COMPOSITE_FORMULAS}</EquationBox>
+            <RunButton>Compute area</RunButton>
             {error && <ErrorBanner message={error} />}
           </div>
         </Panel>
@@ -789,7 +973,8 @@ function CompositePanel() {
         {!result ? (
           <Panel title="Ready" eyebrow="COMPOSITE">
             <p className="font-mono text-xs text-muted-foreground">
-              Compare trapezoidal, midpoint, and Simpson composite rules against a dense reference.
+              Compare trapezoidal, midpoint, and Simpson composite rules against a dense reference —
+              formulas shown in the control panel (V11 Neon Composite Lab).
             </p>
           </Panel>
         ) : (
@@ -812,6 +997,20 @@ function CompositePanel() {
                 />
               ))}
             </div>
+            <Panel title="Method comparison" eyebrow="Nodes + residuals">
+              <pre className="max-h-40 overflow-auto font-mono text-[11px] text-mint whitespace-pre-wrap">
+                {[
+                  `Integral on [${formatNumber(result.interval.a)}, ${formatNumber(result.interval.b)}], n=${result.interval.subintervals}`,
+                  `Reference (${result.reference.method}): ${formatNumber(result.reference.value, 14)}`,
+                  "",
+                  ...methods.map(([name, method]) =>
+                    method.available
+                      ? `${name.padEnd(14)} = ${formatNumber(method.value, 14)}   |error|=${formatNumber(method.absoluteError, 3)}`
+                      : `${name.padEnd(14)} = unavailable (${method.reason ?? "n/a"})`,
+                  ),
+                ].join("\n")}
+              </pre>
+            </Panel>
             <Chart
               x={result.plot.x}
               series={[
@@ -1276,6 +1475,55 @@ function AlgorithmsPanel() {
   );
 }
 
+function ReferencesPanel() {
+  return (
+    <div className="space-y-4">
+      <Panel title="People & literature that inspired the toolbox" eyebrow="REFS">
+        <p className="font-mono text-xs leading-relaxed text-muted-foreground">
+          Numerical Extreme carries forward NumericalAnalysisToolbox_V15 / V11 Neon: ACM Collected
+          Algorithms, Sauer-style root finding, classical quadrature & interpolation, and SDOF
+          vibration analysis — presented in the ZEUS neon shell.
+        </p>
+      </Panel>
+
+      {TOOLBOX_REFERENCES.map((section) => (
+        <Panel key={section.heading} title={section.heading} eyebrow="Citation">
+          <div className="space-y-3">
+            <p className="font-mono text-[11px] text-muted-foreground">{section.blurb}</p>
+            <ul className="space-y-3">
+              {section.entries.map((entry) => (
+                <li
+                  key={entry.title}
+                  className="rounded-lg border border-cyan/25 bg-black/30 px-3 py-2.5"
+                >
+                  <p className="font-display text-sm uppercase tracking-[0.08em] text-cyan">
+                    {entry.title}
+                  </p>
+                  <p className="mt-1 font-mono text-[11px] text-amber">{entry.authors}</p>
+                  {entry.venue ? (
+                    <p className="mt-0.5 font-mono text-[10px] text-magenta/90">{entry.venue}</p>
+                  ) : null}
+                  <p className="mt-2 font-mono text-[11px] leading-relaxed text-mint/90">
+                    {entry.detail}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Panel>
+      ))}
+
+      <Panel title="Disclaimer" eyebrow="Attribution">
+        <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+          Algorithm names, author credits, and TOMS citations honor the original published work.
+          This client port reimplements selected demos in TypeScript for education and gameplay; it
+          is not an official ACM redistribution of the Fortran/MATLAB source packages.
+        </p>
+      </Panel>
+    </div>
+  );
+}
+
 export function NumericalExtremeGame({ onMenu }: NumericalExtremeGameProps) {
   const { settings } = useGame();
   const [mode, setMode] = React.useState<Mode>("main");
@@ -1305,7 +1553,7 @@ export function NumericalExtremeGame({ onMenu }: NumericalExtremeGameProps) {
                 NUMERICAL EXTREME
               </h1>
               <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                Local TypeScript engine · V11 / V15 ports
+                Local TypeScript engine · V11 / V15 ports · ACM & Sauer lineage
               </p>
             </div>
             <button
@@ -1346,6 +1594,7 @@ export function NumericalExtremeGame({ onMenu }: NumericalExtremeGameProps) {
           {mode === "composite" && <CompositePanel />}
           {mode === "diff" && <DiffPanel />}
           {mode === "algorithms" && <AlgorithmsPanel />}
+          {mode === "references" && <ReferencesPanel />}
         </main>
       </div>
     </NumericalComputeContext.Provider>

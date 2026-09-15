@@ -14,6 +14,10 @@ export interface ChartProps {
   series: ChartSeries[];
   referenceX?: number[];
   referenceY?: number;
+  /** Extra inspect / seed markers drawn on the chart. */
+  markers?: Array<{ x: number; y: number; color?: string; label?: string }>;
+  /** Snap click to nearest finite sample of the first series and report it. */
+  onPointClick?: (point: { x: number; y: number; index: number }) => void;
   height?: number;
   className?: string;
 }
@@ -46,6 +50,8 @@ export function Chart({
   series,
   referenceX = [],
   referenceY,
+  markers = [],
+  onPointClick,
   height = 280,
   className,
 }: ChartProps) {
@@ -53,6 +59,7 @@ export function Chart({
   const width = 720;
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
+  const svgRef = React.useRef<SVGSVGElement | null>(null);
 
   const finiteX = x.filter((v) => Number.isFinite(v));
   const finiteY = series.flatMap((s) =>
@@ -80,6 +87,32 @@ export function Chart({
   const mapX = (v: number) => pad.left + ((v - xMin) / xSpan) * innerW;
   const mapY = (v: number) => pad.top + ((yMax - v) / ySpan) * innerH;
 
+  function handlePointer(event: React.MouseEvent<SVGSVGElement>) {
+    if (!onPointClick || !svgRef.current || !series[0]) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const px = ((event.clientX - rect.left) / rect.width) * width;
+    const dataX = xMin + ((px - pad.left) / innerW) * xSpan;
+    if (!Number.isFinite(dataX)) return;
+
+    let bestIndex = -1;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < x.length; i += 1) {
+      const y = series[0]!.values[i];
+      if (y === null || y === undefined || !Number.isFinite(y) || !Number.isFinite(x[i]!)) {
+        continue;
+      }
+      const dist = Math.abs(x[i]! - dataX);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIndex = i;
+      }
+    }
+    if (bestIndex < 0) return;
+    const y = series[0]!.values[bestIndex];
+    if (y === null || y === undefined || !Number.isFinite(y)) return;
+    onPointClick({ x: x[bestIndex]!, y, index: bestIndex });
+  }
+
   const xTicks = [xMin, xMin + xSpan / 2, xMax];
   const yTicks = [yMin, yMin + ySpan / 2, yMax];
 
@@ -91,12 +124,14 @@ export function Chart({
       )}
     >
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
         width="100%"
         height={height}
         role="img"
         aria-label="Numerical chart"
-        className="block"
+        className={cn("block", onPointClick && "cursor-crosshair")}
+        onClick={onPointClick ? handlePointer : undefined}
       >
         <defs>
           <linearGradient id="ne-chart-fade" x1="0" y1="0" x2="0" y2="1">
@@ -193,8 +228,34 @@ export function Chart({
               points={points}
               strokeLinejoin="round"
               strokeLinecap="round"
+              pointerEvents="none"
             />
           )),
+        )}
+
+        {markers.map((marker, idx) =>
+          Number.isFinite(marker.x) && Number.isFinite(marker.y) ? (
+            <g key={`mk-${idx}-${marker.x}`} pointerEvents="none">
+              <circle
+                cx={mapX(marker.x)}
+                cy={mapY(marker.y)}
+                r={4.5}
+                fill={marker.color ?? "#f472b6"}
+                stroke="#0b1220"
+                strokeWidth={1}
+              />
+              {marker.label ? (
+                <text
+                  x={mapX(marker.x) + 6}
+                  y={mapY(marker.y) - 6}
+                  className="fill-moon"
+                  style={{ fontSize: 9, fontFamily: "ui-monospace, monospace" }}
+                >
+                  {marker.label}
+                </text>
+              ) : null}
+            </g>
+          ) : null,
         )}
 
         {series.length > 1 &&
