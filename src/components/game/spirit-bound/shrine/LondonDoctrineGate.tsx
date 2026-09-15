@@ -3,8 +3,13 @@ import { generatePuzzle } from "@/game/spirit-bound/shrine/generator";
 import { applyMove, canLift, canPlace, placementMask } from "@/game/spirit-bound/shrine/rules";
 import { randomSeed } from "@/game/spirit-bound/shrine/rng";
 import type { PegIndex, Pegs } from "@/game/spirit-bound/shrine/types";
+import { generateChallenge } from "@/game/spirit-bound/reason/generator";
 import { playSfx, startDoctrinePuzzleMusic, startGrasslandsMusic } from "@/game/spirit-bound/shrine/audio";
+import { cn } from "@/lib/utils";
 import { GameBoard } from "@/components/game/spirit-bound/shrine/GameBoard";
+import { FeedbackLayer } from "@/components/game/spirit-bound/reason/FeedbackLayer";
+import { SceneRenderer } from "@/components/game/spirit-bound/reason/SceneRenderer";
+import { StatementCard } from "@/components/game/spirit-bound/reason/StatementCard";
 
 type Props = {
   /** Paper order 1–11 — drives path-length target and music variation. */
@@ -13,15 +18,22 @@ type Props = {
   onAbort: () => void;
 };
 
-type Phase = "play" | "cleared" | "failed";
+type Phase = "play" | "verbal" | "cleared" | "failed";
+
+const ACCESS = {
+  highContrast: false,
+  colorblind: false,
+  reducedMotion: false,
+  dyslexia: false,
+  textSize: "sm" as const,
+  narration: false,
+};
 
 /**
- * Extreme Executive Accumen (living-tree peg puzzle) gate for doctrine scraps.
- * Single mural maxes ~19 optimal moves, so we chain extreme puzzles until
- * cumulative optimal path length reaches 50+ (scales with scrap order).
+ * Extreme Executive Accumen peg gauntlet, then one easy verbal TRUE/FALSE seal.
  */
 export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
-  const targetPath = 50 + (paperOrder - 1) * 5; // 50 … 100
+  const targetPath = 70 + (paperOrder - 1) * 8;
   const variation = Math.max(0, Math.min(10, paperOrder - 1));
 
   const [seed, setSeed] = useState(randomSeed);
@@ -31,13 +43,24 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
   const [pegs, setPegs] = useState<Pegs>([[], [], []]);
   const [selected, setSelected] = useState<PegIndex | null>(null);
   const [moves, setMoves] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(30);
   const [shakePeg, setShakePeg] = useState<PegIndex | null>(null);
+  const [verbalSeed, setVerbalSeed] = useState(randomSeed);
+  const [verbalLocked, setVerbalLocked] = useState(false);
+  const [feedback, setFeedback] = useState<{ correct: boolean; key: number } | null>(null);
   const movesRef = useRef(0);
   const finished = useRef(false);
+  const verbalLockedRef = useRef(false);
 
   const puzzle = useMemo(
     () => generatePuzzle("extreme", seed ^ (paperOrder * 997) ^ (round * 131), round),
     [seed, paperOrder, round],
+  );
+
+  // Single easy watch note after pegs clear.
+  const verbalChallenge = useMemo(
+    () => generateChallenge(verbalSeed, paperOrder * 17 + 3, 1),
+    [verbalSeed, paperOrder],
   );
 
   useEffect(() => {
@@ -49,8 +72,31 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
     movesRef.current = 0;
     setMoves(0);
     setSelected(null);
+    setSecondsLeft(puzzle.timeLimit);
     setPegs(puzzle.start.map((p) => [...p]) as Pegs);
   }, [puzzle]);
+
+  useEffect(() => {
+    if (phase !== "play") return;
+    const id = window.setInterval(() => {
+      setSecondsLeft((s) => {
+        const next = s - 1;
+        if (next <= 10 && next > 0) playSfx("tick");
+        if (next <= 0) {
+          window.setTimeout(() => {
+            if (finished.current) return;
+            finished.current = true;
+            playSfx("fail");
+            setPhase("failed");
+            startGrasslandsMusic();
+          }, 0);
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [phase, puzzle.id]);
 
   const access = useMemo(
     () => ({
@@ -69,13 +115,38 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
       setPathDone(nextPath);
       playSfx("success");
       if (nextPath >= targetPath) {
-        setPhase("cleared");
+        setVerbalSeed(randomSeed());
+        verbalLockedRef.current = false;
+        setVerbalLocked(false);
+        setFeedback(null);
+        setPhase("verbal");
         return;
       }
       setRound((r) => r + 1);
       setSeed(randomSeed());
     },
     [pathDone, targetPath],
+  );
+
+  const answerVerbal = useCallback(
+    (saidTrue: boolean) => {
+      if (phase !== "verbal" || verbalLockedRef.current) return;
+      verbalLockedRef.current = true;
+      setVerbalLocked(true);
+      const correct = saidTrue === verbalChallenge.answer;
+      setFeedback({ correct, key: 1 });
+      if (correct) {
+        playSfx("success");
+        window.setTimeout(() => setPhase("cleared"), 420);
+        return;
+      }
+      playSfx("fail");
+      window.setTimeout(() => {
+        setPhase("failed");
+        startGrasslandsMusic();
+      }, 420);
+    },
+    [phase, verbalChallenge.answer],
   );
 
   const trySelect = useCallback(
@@ -131,6 +202,18 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
         onAbort();
         return;
       }
+      if (phase === "verbal") {
+        if (verbalLocked) return;
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+          e.preventDefault();
+          answerVerbal(true);
+        }
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+          e.preventDefault();
+          answerVerbal(false);
+        }
+        return;
+      }
       if (phase !== "play") return;
       const map: Record<string, PegIndex> = { "1": 0, "2": 1, "3": 2 };
       if (e.key in map) {
@@ -152,14 +235,14 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, trySelect, onAbort]);
+  }, [phase, trySelect, onAbort, answerVerbal, verbalLocked]);
 
   if (phase === "cleared") {
     return (
       <section className="flex min-h-[420px] flex-col items-center justify-center gap-4 border-4 border-game-yellow bg-game-bg p-6 text-center font-pixel text-[#f8f0c8] shadow-[0_0_0_4px_#181010]">
         <p className="text-[10px] text-game-yellow">EXECUTIVE ACCUMEN · SEAL BROKEN</p>
         <p className="text-[9px] leading-relaxed">
-          Path weight {pathDone}/{targetPath}
+          Path weight {pathDone}/{targetPath} · watch note verified
           <br />
           Scrap {paperOrder} unseals.
         </p>
@@ -178,6 +261,7 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
     return (
       <section className="flex min-h-[420px] flex-col items-center justify-center gap-4 border-4 border-game-yellow bg-game-bg p-6 text-center font-pixel text-[#f8f0c8] shadow-[0_0_0_4px_#181010]">
         <p className="text-[10px] text-game-hp">ROOTS HOLD</p>
+        <p className="text-[8px] text-[#a88828]">Extreme murals or the final watch note failed.</p>
         <button
           type="button"
           onClick={onAbort}
@@ -189,16 +273,68 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
     );
   }
 
+  if (phase === "verbal") {
+    return (
+      <section className="relative overflow-hidden border-4 border-game-yellow bg-game-bg p-3 font-pixel text-[#f8f0c8] shadow-[0_0_0_4px_#181010] sm:p-4">
+        <FeedbackLayer
+          feedback={feedback ? { ...feedback, rankUp: null, legendary: false } : null}
+          access={ACCESS}
+        />
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[9px]">
+          <span className="text-game-yellow">FINAL WATCH · EASY</span>
+          <span className="text-game-orange">PATH {pathDone}/{targetPath} · 1 NOTE</span>
+        </div>
+        <p className="mb-2 text-[8px] text-[#a88828]">
+          Scrap {paperOrder} · one easy TRUE / FALSE · ← TRUE / → FALSE · ESC abort
+        </p>
+        <div className={cn(verbalLocked && "pointer-events-none opacity-80")}>
+          <StatementCard
+            source={verbalChallenge.source}
+            statement={verbalChallenge.statement}
+            access={ACCESS}
+          />
+          <div className="mt-3">
+            <SceneRenderer
+              scene={verbalChallenge.scene}
+              access={ACCESS}
+              pulse={Boolean(feedback?.correct)}
+            />
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            disabled={verbalLocked}
+            onClick={() => answerVerbal(true)}
+            className="flex-1 border-2 border-[#38c060] px-3 py-3 text-[11px] text-[#38c060] hover:bg-[#38c060] hover:text-game-bg disabled:opacity-40"
+          >
+            TRUE
+            <span className="mt-1 block text-[7px]">← / A</span>
+          </button>
+          <button
+            type="button"
+            disabled={verbalLocked}
+            onClick={() => answerVerbal(false)}
+            className="flex-1 border-2 border-game-hp px-3 py-3 text-[11px] text-game-hp hover:bg-game-hp hover:text-game-bg disabled:opacity-40"
+          >
+            FALSE
+            <span className="mt-1 block text-[7px]">→ / D</span>
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative overflow-hidden border-4 border-game-yellow bg-game-bg p-3 font-pixel text-[#f8f0c8] shadow-[0_0_0_4px_#181010] sm:p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[9px]">
         <span className="text-game-yellow">EXTREME · EXECUTIVE ACCUMEN</span>
-        <span className="text-game-orange">
-          PATH {pathDone}/{targetPath} · OPT {puzzle.optimal} · MOVES {moves}
+        <span className={secondsLeft <= 10 ? "animate-pulse text-game-hp" : "text-game-orange"}>
+          {secondsLeft}s · PATH {pathDone}/{targetPath} · OPT {puzzle.optimal} · MOVES {moves}
         </span>
       </div>
       <p className="mb-2 text-[8px] text-[#a88828]">
-        Scrap {paperOrder} · chain extreme peg murals until path ≥ {targetPath} · ESC abort
+        Scrap {paperOrder} · 30s per mural · then one easy watch note · ESC abort
       </p>
       <div className="grid gap-3 md:grid-cols-2">
         <div>

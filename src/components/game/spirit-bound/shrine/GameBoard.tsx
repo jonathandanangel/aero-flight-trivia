@@ -18,6 +18,7 @@ type Props = {
 };
 
 const LINE = "#2f6b6b";
+const EMPTY_TRI = "0,-10 10,6 -10,6";
 
 export const GameBoard = memo(function GameBoard({
   pegs,
@@ -66,10 +67,10 @@ export const GameBoard = memo(function GameBoard({
             style={{ cursor: target ? "default" : "pointer" }}
           >
             {!occupied ? (
-              <circle
-                r={target ? 8 : 10}
+              <polygon
+                points={EMPTY_TRI}
                 fill="#071616"
-                stroke={selected === peg ? "#f8d030" : LINE}
+                stroke={selected === peg ? "#ff2d95" : LINE}
                 strokeWidth="2"
                 {...(label === 0 ? { strokeDasharray: "2 2" } : {})}
               />
