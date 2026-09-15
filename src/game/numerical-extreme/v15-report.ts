@@ -238,26 +238,67 @@ export const COMPOSITE_FORMULAS = [
   "  I ≈ (3h/8) [f₀ + fₙ + 3 Σ f_{i∉3ℤ} + 2 Σ f_{i∈3ℤ}]",
 ].join("\n");
 
-export function buildMethodFormulation(eq1: string, eq2: string, x0: string, y0: string): {
+export function buildMethodFormulation(
+  equations: string[],
+  initial: string[],
+): {
   workflow: string;
   jacobian: string;
   split: string;
   pseudocode: string;
 } {
+  const n = equations.length;
+  if (n !== 2 && n !== 3) {
+    throw new Error("Method formulation supports 2×2 or 3×3 only.");
+  }
+  const variables = (n === 3 ? ["x", "y", "z"] : ["x", "y"]).slice(0, n);
+  const varList = variables.join(", ");
+  const x0 = initial.slice(0, n).map((v) => v || "0");
+
+  const residualLines = equations.map(
+    (eq, i) => `  f${i + 1}(${varList}) = ${eq} = 0`,
+  );
+
+  const jacobianMatrix =
+    n === 3
+      ? [
+          "             [ ∂f1/∂x   ∂f1/∂y   ∂f1/∂z ]",
+          " J(X^(k)) = [ ∂f2/∂x   ∂f2/∂y   ∂f2/∂z ]",
+          "             [ ∂f3/∂x   ∂f3/∂y   ∂f3/∂z ]",
+        ]
+      : [
+          "             [ ∂f1/∂x   ∂f1/∂y ]",
+          " J(X^(k)) = [ ∂f2/∂x   ∂f2/∂y ]",
+        ];
+
+  const componentForm =
+    n === 3
+      ? [
+          "Component form (3×3):",
+          "  s1^(m+1) = (b1 − J12 s2^(m) − J13 s3^(m)) / J11",
+          "  s2^(m+1) = (b2 − J21 s1^(m) − J23 s3^(m)) / J22",
+          "  s3^(m+1) = (b3 − J31 s1^(m) − J32 s2^(m)) / J33",
+        ]
+      : [
+          "Component form (2×2):",
+          "  s1^(m+1) = (b1 − J12 s2^(m)) / J11",
+          "  s2^(m+1) = (b2 − J21 s1^(m)) / J22",
+        ];
+
   return {
     workflow: [
       "TWO RELATED NONLINEAR PROCESSES (V11 Neon Method Builder)",
-      "Dimension: 2 unknowns · variables: x, y",
-      `Initial approximation: [${x0}; ${y0}]`,
+      `Dimension: ${n} unknowns · variables: ${varList}`,
+      `Initial approximation: [${x0.join("; ")}]`,
       "",
       "Residual system:",
-      `  f1(x,y) = ${eq1} = 0`,
-      `  f2(x,y) = ${eq2} = 0`,
+      ...residualLines,
       "",
       "PROCESS A: NONLINEAR JACOBI / DIAGONAL NEWTON",
       "  Evaluate F(X^(k)) and J(X^(k)).",
       "  Let D_k = diag(diag(J(X^(k)))).",
       "  X^(k+1) = X^(k) − D_k⁻¹ F(X^(k)).",
+      "  All components use values from the same outer iterate.",
       "",
       "PROCESS B: INEXACT NEWTON WITH INNER JACOBI",
       "  1. Evaluate F(X^(k))",
@@ -270,11 +311,11 @@ export function buildMethodFormulation(eq1: string, eq2: string, x0: string, y0:
     jacobian: [
       "JACOBIAN MATRIX STRUCTURE",
       "",
-      "             [ ∂f1/∂x   ∂f1/∂y ]",
-      " J(X^(k)) = [ ∂f2/∂x   ∂f2/∂y ]",
+      "The entries are partial derivatives evaluated at X^(k):",
       "",
-      `  Row 1 from: ${eq1}`,
-      `  Row 2 from: ${eq2}`,
+      ...jacobianMatrix,
+      "",
+      ...equations.map((eq, i) => `  Row ${i + 1} from: ${eq}`),
       "",
       "Entries are numerical central finite differences in this port",
       "(SymPy symbolic Jacobians in the Octave V15/V11 session).",
@@ -289,16 +330,15 @@ export function buildMethodFormulation(eq1: string, eq2: string, x0: string, y0:
       "Vector form:",
       "  s^(m+1) = −D⁻¹(L+U)s^(m) + D⁻¹ b",
       "",
-      "Component form (2×2):",
-      "  s1^(m+1) = (b1 − J12 s2^(m)) / J11",
-      "  s2^(m+1) = (b2 − J21 s1^(m)) / J22",
+      ...componentForm,
       "",
       "Inner stop: ||J s − b||_∞ ≤ innerTol",
+      "A common justification is ρ(−D⁻¹(L+U)) < 1, or strict diagonal dominance.",
     ].join("\n"),
     pseudocode: [
       "GENERAL PSEUDOCODE",
       "",
-      "Choose X^(0).",
+      `Choose X^(0) ∈ R^${n}.`,
       "for k = 0,1,2,...",
       "    Fk = F(Xk)",
       "    if norm(Fk,inf) <= outerTol: stop",

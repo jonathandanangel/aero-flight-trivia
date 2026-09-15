@@ -671,9 +671,11 @@ function VectorPanel() {
 }
 
 function MethodPanel() {
-  const [eq1, setEq1] = React.useState("5*x + sin(y) - 1");
-  const [eq2, setEq2] = React.useState("x^2 + 6*y - 1");
-  const [initial, setInitial] = React.useState("0, 0");
+  const [systemSize, setSystemSize] = React.useState<2 | 3>(3);
+  const [eq1, setEq1] = React.useState("5*x + sin(y) + z^2 - 1");
+  const [eq2, setEq2] = React.useState("x^2 + 6*y - cos(z)");
+  const [eq3, setEq3] = React.useState("x - y + 4*z - 2");
+  const [initial, setInitial] = React.useState("0, 0, 0");
   const [outerTol, setOuterTol] = React.useState(1e-8);
   const [outerMax, setOuterMax] = React.useState(30);
   const [innerTol, setInnerTol] = React.useState(1e-10);
@@ -684,13 +686,27 @@ function MethodPanel() {
   const [result, setResult] = React.useState<NonlinearSystemResult | null>(null);
   const [error, setError] = React.useState("");
 
+  const equations =
+    systemSize === 3 ? [eq1, eq2, eq3] : [eq1, eq2];
   const guessParts = initial.split(/[,;\s]+/).filter(Boolean);
-  const formulation = buildMethodFormulation(
-    eq1,
-    eq2,
-    guessParts[0] ?? "0",
-    guessParts[1] ?? "0",
-  );
+  const formulation = buildMethodFormulation(equations, guessParts);
+
+  function applySize(next: 2 | 3) {
+    setSystemSize(next);
+    setResult(null);
+    setPage("workflow");
+    if (next === 3) {
+      setEq1("5*x + sin(y) + z^2 - 1");
+      setEq2("x^2 + 6*y - cos(z)");
+      setEq3("x - y + 4*z - 2");
+      setInitial("0, 0, 0");
+    } else {
+      setEq1("5*x + sin(y) - 1");
+      setEq2("x^2 + 6*y - 1");
+      setEq3("x - y + 4*z - 2");
+      setInitial("0, 0");
+    }
+  }
 
   function run(event: React.FormEvent) {
     event.preventDefault();
@@ -698,9 +714,13 @@ function MethodPanel() {
     setPage("solve");
     try {
       const guess = parseNumberList(initial);
-      if (guess.length !== 2) throw new Error("Initial vector must contain exactly 2 values.");
+      if (guess.length !== systemSize) {
+        throw new Error(`Initial vector must contain exactly ${systemSize} values.`);
+      }
+      const system =
+        systemSize === 3 ? [eq1, eq2, eq3] : [eq1, eq2];
       setResult(
-        solveNonlinearSystem([eq1, eq2], guess, outerTol, outerMax, innerTol, innerMax),
+        solveNonlinearSystem(system, guess, outerTol, outerMax, innerTol, innerMax),
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "System solve failed.");
@@ -713,6 +733,7 @@ function MethodPanel() {
     ? Math.max(jacobi?.history.length ?? 0, newton?.history.length ?? 0)
     : 0;
   const traceX = Array.from({ length: traceLen }, (_, i) => i);
+  const varHint = systemSize === 3 ? "x, y, z" : "x, y";
 
   const pages = [
     ["workflow", "WORKFLOW"],
@@ -727,13 +748,34 @@ function MethodPanel() {
       <form onSubmit={run} className="space-y-3">
         <Panel title="Problem input" eyebrow="Newton–Jacobi method builder">
           <div className="space-y-3">
-            <Field label="f₁(x,y) = 0">
+            <Field label="System size">
+              <Select
+                value={String(systemSize)}
+                onChange={(e) => applySize(Number(e.target.value) as 2 | 3)}
+              >
+                <option value="3">3 × 3</option>
+                <option value="2">2 × 2</option>
+              </Select>
+            </Field>
+            <Field label={`f₁(${varHint}) = 0`}>
               <TextInput value={eq1} onChange={(e) => setEq1(e.target.value)} spellCheck={false} />
             </Field>
-            <Field label="f₂(x,y) = 0">
+            <Field label={`f₂(${varHint}) = 0`}>
               <TextInput value={eq2} onChange={(e) => setEq2(e.target.value)} spellCheck={false} />
             </Field>
-            <Field label="Initial X⁽⁰⁾" hint="comma-separated">
+            {systemSize === 3 && (
+              <Field label="f₃(x, y, z) = 0">
+                <TextInput
+                  value={eq3}
+                  onChange={(e) => setEq3(e.target.value)}
+                  spellCheck={false}
+                />
+              </Field>
+            )}
+            <Field
+              label="Initial X⁽⁰⁾"
+              hint={systemSize === 3 ? "three values, comma-separated" : "two values, comma-separated"}
+            >
               <TextInput value={initial} onChange={(e) => setInitial(e.target.value)} />
             </Field>
             <div className="grid grid-cols-2 gap-2">
@@ -768,23 +810,24 @@ function MethodPanel() {
               <GhostButton
                 type="button"
                 onClick={() => {
-                  setEq1("5*x + sin(y) - 1");
-                  setEq2("x^2 + 6*y - 1");
-                  setInitial("0, 0");
+                  applySize(3);
                   setPage("workflow");
                 }}
               >
-                Load problem A
+                Load 3×3 (problem 3)
               </GhostButton>
               <GhostButton
                 type="button"
                 onClick={() => {
+                  setSystemSize(2);
+                  setResult(null);
                   setEq1("4*x + sin(y) - 1");
                   setEq2("x^2 + 5*y - 1");
                   setInitial("0, 0");
+                  setPage("workflow");
                 }}
               >
-                Load problem B
+                Load 2×2
               </GhostButton>
             </div>
             <RunButton>Run optional analysis</RunButton>
@@ -808,7 +851,7 @@ function MethodPanel() {
         </div>
 
         {page === "workflow" && (
-          <Panel title="Workflow" eyebrow="Formulation only">
+          <Panel title="Workflow" eyebrow={`${systemSize} × ${systemSize} formulation`}>
             <EquationBox>{formulation.workflow}</EquationBox>
           </Panel>
         )}
@@ -831,7 +874,8 @@ function MethodPanel() {
           (!result ? (
             <Panel title="Optional analysis" eyebrow="METHOD">
               <p className="font-mono text-xs text-muted-foreground">
-                Build the method tabs first, then press Run optional analysis for residual history.
+                Build the method tabs first, then press Run optional analysis for residual history
+                on the selected {systemSize}×{systemSize} system.
               </p>
             </Panel>
           ) : (
@@ -849,9 +893,9 @@ function MethodPanel() {
                   accent="magenta"
                 />
               </div>
-              <Panel title="Estimates" eyebrow="X*">
+              <Panel title="Estimates" eyebrow={`${result.dimension}×${result.dimension} · X*`}>
                 <pre className="font-mono text-[11px] text-mint whitespace-pre-wrap">
-                  {`Jacobi:  [${(jacobi?.estimate ?? []).map((v) => formatNumber(v, 8)).join(", ")}]\nNewton:  [${(newton?.estimate ?? []).map((v) => formatNumber(v, 8)).join(", ")}]\n\n${jacobi?.message ?? ""}\n${newton?.message ?? ""}`}
+                  {`variables: ${result.variables.join(", ")}\nJacobi:  [${(jacobi?.estimate ?? []).map((v) => formatNumber(v, 8)).join(", ")}]\nNewton:  [${(newton?.estimate ?? []).map((v) => formatNumber(v, 8)).join(", ")}]\n\n${jacobi?.message ?? ""}\n${newton?.message ?? ""}`}
                 </pre>
               </Panel>
               {traceLen > 0 && (
