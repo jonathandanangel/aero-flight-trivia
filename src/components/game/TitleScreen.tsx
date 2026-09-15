@@ -107,6 +107,10 @@ export function TitleScreen(p: TitleScreenProps) {
         Photosensitivity notice: this game uses neon flashes and light trails. Reduced-motion mode is
         available in Settings.
       </p>
+      <div className="flex w-full max-w-sm justify-between px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span>WOZKAF</span>
+        <span>Jonathan Angel</span>
+      </div>
     </div>
   );
 }
