@@ -762,6 +762,16 @@
   filter: drop-shadow(0 0 28px color-mix(in srgb, var(--amber) 28%, transparent));
 }
 
+.numerical-extreme-menu-item {
+  border-color: color-mix(in srgb, var(--neon-cyan, #22d3ee) 82%, transparent);
+  color: var(--neon-cyan, #22d3ee);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--neon-cyan, #22d3ee) 78%, transparent);
+}
+
+.numerical-extreme-shell {
+  filter: drop-shadow(0 0 32px color-mix(in srgb, var(--neon-cyan, #22d3ee) 32%, transparent));
+}
+
 .font-pixel {
   font-family: var(--font-pixel);
   letter-spacing: 0.05em;

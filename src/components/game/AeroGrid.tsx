@@ -39,6 +39,7 @@ import { Interaction } from "./Interactions";
 import { LightCycleGame } from "./LightCycleGame";
 import { NeonMazeGame } from "./NeonMazeGame";
 import { SettingsPanel } from "./SettingsPanel";
+import { NumericalExtremeGame } from "./NumericalExtremeGame";
 import { SaltburgGame } from "./SaltburgGame";
 import { TitleScreen } from "./TitleScreen";
 import { ValidationPanel } from "./ValidationPanel";
@@ -59,7 +60,8 @@ type Screen =
   | "ht-review"
   | "hti-review"
   | "ht-chapter-jump"
-  | "saltburg";
+  | "saltburg"
+  | "numerical-extreme";
 type Mode =
   | "campaign"
   | "practice"
@@ -70,7 +72,8 @@ type Mode =
   | "extreme-v2"
   | "ht-extreme"
   | "ht-intro"
-  | "saltburg";
+  | "saltburg"
+  | "numerical-extreme";
 type Phase = "answering" | "revealed" | "recall";
 type IntermissionGame = "lightcycle" | "maze";
 
@@ -178,6 +181,7 @@ export function AeroGrid() {
       case "ht-intro":
         return heatTransferIntroQuestions;
       case "saltburg":
+      case "numerical-extreme":
         return [];
       case "mastery":
         return stableShuffle(allQuestions, "mastery");
@@ -266,7 +270,7 @@ export function AeroGrid() {
     if (mode === "ht-intro" || mode === "ht-extreme") {
       return undefined;
     }
-    if (mode === "saltburg") {
+    if (mode === "saltburg" || mode === "numerical-extreme") {
       audio.setGenre("supersonic", 1);
       audio.setExtremeTrack(1);
       audio.setTempoMultiplier(1.4);
@@ -740,6 +744,25 @@ export function AeroGrid() {
             setSaltburgStats({ level: 1, gold: 0, exp: 0 });
             setScreen("saltburg");
           }}
+          onNumericalExtreme={() => {
+            startAudio();
+            setMode("numerical-extreme");
+            setReviewIds([]);
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setExtremeCorrectCount(0);
+            setV2Log([]);
+            setHtLog([]);
+            setHtiLog([]);
+            setPendingIntermission(null);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setScreen("numerical-extreme");
+          }}
           onSettings={() => setScreen("settings")}
           onValidate={() => setScreen("validate")}
         />
@@ -753,6 +776,10 @@ export function AeroGrid() {
             setScreen("finale");
           }}
         />
+      )}
+
+      {screen === "numerical-extreme" && (
+        <NumericalExtremeGame onMenu={() => setScreen("title")} />
       )}
 
       {screen === "settings" && <SettingsPanel onBack={() => setScreen("title")} />}
