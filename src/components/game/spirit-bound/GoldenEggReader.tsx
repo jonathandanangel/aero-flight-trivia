@@ -1,4 +1,8 @@
 type Props = {
+  title: string;
+  subtitle: string;
+  text: string;
+  accent?: "gold" | "hawk";
   onClose: () => void;
 };
 
@@ -37,33 +41,79 @@ Thou shalt be still as Thou wert before
 And knew no change, when time shall be no more.
 Oh! endless thought, divine ETERNITY."`;
 
-export function GoldenEggReader({ onClose }: Props) {
+export const HAWK_EGG_TEXT = `Ra is shown like Brahma gestating in the Egg of the Universe. The deceased is "resplendent in the Egg
+of the land of mysteries" (xxii., 1). For, this is "the Egg to which is given life among the gods" (xlii.,
+11). "It is the Egg of the great clucking Hen, the Egg of Seb, who issues from it like a hawk" (lxiv., 1,
+2, 3; lxxvii., 1).`;
+
+const ACCENT = {
+  gold: {
+    box: "border-game-yellow shadow-[0_0_0_4px_#181010,inset_0_0_0_2px_#705018]",
+    rule: "border-game-yellow/40",
+    title: "text-game-yellow",
+    btn: "border-game-yellow text-game-yellow hover:bg-game-yellow hover:text-game-bg",
+  },
+  hawk: {
+    box: "border-[#c87838] shadow-[0_0_0_4px_#181010,inset_0_0_0_2px_#804828]",
+    rule: "border-[#c87838]/40",
+    title: "text-[#e8a858]",
+    btn: "border-[#c87838] text-[#e8a858] hover:bg-[#c87838] hover:text-game-bg",
+  },
+} as const;
+
+export function EggReader({ title, subtitle, text, accent = "gold", onClose }: Props) {
+  const a = ACCENT[accent];
+  const titleId = `${title.toLowerCase().replace(/\s+/g, "-")}-title`;
   return (
     <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/55 p-3">
       <div
-        className="pointer-events-auto flex max-h-[min(92%,520px)] w-full max-w-lg flex-col border-4 border-game-yellow bg-[#201808] shadow-[0_0_0_4px_#181010,inset_0_0_0_2px_#705018]"
+        className={`pointer-events-auto flex max-h-[min(92%,520px)] w-full max-w-lg flex-col border-4 bg-[#201808] ${a.box}`}
         role="dialog"
-        aria-labelledby="golden-egg-title"
+        aria-labelledby={titleId}
       >
-        <header className="border-b-2 border-game-yellow/40 px-4 py-3">
-          <p id="golden-egg-title" className="text-[10px] tracking-[0.28em] text-game-yellow">
-            GOLDEN EGG
+        <header className={`border-b-2 px-4 py-3 ${a.rule}`}>
+          <p id={titleId} className={`text-[10px] tracking-[0.28em] ${a.title}`}>
+            {title}
           </p>
-          <p className="mt-1 text-[9px] text-game-orange">Stanzas of Dzyan · The Secret Doctrine</p>
+          <p className="mt-1 text-[9px] text-game-orange">{subtitle}</p>
         </header>
         <pre className="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap px-4 py-3 font-pixel text-[9px] leading-relaxed text-[#f8f0c8]">
-          {SECRET_DOCTRINE_EGG}
+          {text}
         </pre>
-        <footer className="border-t-2 border-game-yellow/40 px-4 py-3">
+        <footer className={`border-t-2 px-4 py-3 ${a.rule}`}>
           <button
             type="button"
             onClick={onClose}
-            className="w-full border-2 border-game-yellow px-3 py-2 font-pixel text-[10px] text-game-yellow transition-colors hover:bg-game-yellow hover:text-game-bg"
+            className={`w-full border-2 px-3 py-2 font-pixel text-[10px] transition-colors ${a.btn}`}
           >
             CLOSE (Z / ESC)
           </button>
         </footer>
       </div>
     </div>
+  );
+}
+
+export function GoldenEggReader({ onClose }: { onClose: () => void }) {
+  return (
+    <EggReader
+      title="GOLDEN EGG"
+      subtitle="Stanzas of Dzyan · The Secret Doctrine"
+      text={SECRET_DOCTRINE_EGG}
+      accent="gold"
+      onClose={onClose}
+    />
+  );
+}
+
+export function HawkEggReader({ onClose }: { onClose: () => void }) {
+  return (
+    <EggReader
+      title="HAWK EGG"
+      subtitle="Egg of Seb · Ra among the gods"
+      text={HAWK_EGG_TEXT}
+      accent="hawk"
+      onClose={onClose}
+    />
   );
 }

@@ -5,6 +5,7 @@ import {
   GRASS_NPCS,
   GRASS_TILE,
   GRASS_W,
+  HAWK_EGG,
   grassSolid,
   grassTileAt,
   type GrassNpc,
@@ -23,6 +24,7 @@ type Props = {
   onVine: (at: { x: number; y: number }) => void;
   onWildGrass: (at: { x: number; y: number }) => void;
   onGoldenEgg: () => void;
+  onHawkEgg: () => void;
 };
 
 const W = GRASS_W * GRASS_TILE;
@@ -40,6 +42,7 @@ export function GrasslandsOverworld({
   onVine,
   onWildGrass,
   onGoldenEgg,
+  onHawkEgg,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pos = useRef({ ...spawn });
@@ -51,8 +54,8 @@ export function GrasslandsOverworld({
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
 
-  const cb = useRef({ onTalk, onBush, onVine, onWildGrass, onGoldenEgg });
-  cb.current = { onTalk, onBush, onVine, onWildGrass, onGoldenEgg };
+  const cb = useRef({ onTalk, onBush, onVine, onWildGrass, onGoldenEgg, onHawkEgg });
+  cb.current = { onTalk, onBush, onVine, onWildGrass, onGoldenEgg, onHawkEgg };
 
   const facingTile = (): { tx: number; ty: number } => {
     const cx = pos.current.x + GRASS_TILE / 2;
@@ -73,11 +76,20 @@ export function GrasslandsOverworld({
     return tx === GOLDEN_EGG.tx && ty === GOLDEN_EGG.ty;
   };
 
+  const facingHawkEgg = (): boolean => {
+    const { tx, ty } = facingTile();
+    return tx === HAWK_EGG.tx && ty === HAWK_EGG.ty;
+  };
+
   const held = useKeys((key) => {
     if (pausedRef.current) return;
     if (["z", "Z", "Enter", " "].includes(key)) {
       if (facingGoldenEgg()) {
         cb.current.onGoldenEgg();
+        return;
+      }
+      if (facingHawkEgg()) {
+        cb.current.onHawkEgg();
         return;
       }
       if (night) return;
@@ -196,6 +208,13 @@ export function GrasslandsOverworld({
         ctx,
         GOLDEN_EGG.tx * GRASS_TILE,
         GOLDEN_EGG.ty * GRASS_TILE,
+        frame.current,
+        night,
+      );
+      drawHawkEgg(
+        ctx,
+        HAWK_EGG.tx * GRASS_TILE,
+        HAWK_EGG.ty * GRASS_TILE,
         frame.current,
         night,
       );
@@ -336,6 +355,28 @@ function drawGoldenEgg(
   px(ctx, cx - 4, cy - 7, 8, 10, night ? "#887018" : "#e8b820");
   px(ctx, cx - 2, cy - 5, 4, 5, `rgba(255,255,200,${0.35 + pulse * 0.25})`);
   pixelTriangle(ctx, cx - 3, cy - 13, 6, hi, "up");
+}
+
+function drawHawkEgg(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  frame: number,
+  night: boolean,
+) {
+  const pulse = 0.5 + 0.5 * Math.sin(frame / 12);
+  const shell = night ? "#8a5030" : "#c87838";
+  const hi = night ? "#b87848" : "#e8a858";
+  const bob = Math.sin(frame / 16) * 1.5;
+  const cx = x + GRASS_TILE / 2;
+  const cy = y + GRASS_TILE / 2 + bob;
+  px(ctx, cx - 7, cy - 9, 14, 16, shell);
+  px(ctx, cx - 5, cy - 11, 10, 4, hi);
+  px(ctx, cx - 4, cy - 7, 8, 10, night ? "#6a3820" : "#a85828");
+  px(ctx, cx - 2, cy - 5, 4, 5, `rgba(255,200,140,${0.3 + pulse * 0.25})`);
+  // hawk beak hint on top
+  pixelTriangle(ctx, cx - 2, cy - 14, 4, night ? "#d8a040" : "#f0c060", "up");
+  px(ctx, cx + 4, cy - 6, 3, 2, night ? "#403018" : "#201808");
 }
 
 function drawGrassNpc(

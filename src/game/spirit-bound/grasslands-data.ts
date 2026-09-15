@@ -98,3 +98,6 @@ export const VINE_MIN_LEVEL = 7;
 
 /** Golden egg easter egg — northwest edge of the grasslands path ring. */
 export const GOLDEN_EGG = { tx: 1, ty: 2 };
+
+/** Hawk egg easter egg — northeast edge, opposite the golden egg. */
+export const HAWK_EGG = { tx: 26, ty: 2 };

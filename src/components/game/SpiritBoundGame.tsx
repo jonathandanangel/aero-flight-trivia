@@ -2,7 +2,7 @@ import * as React from "react";
 import { Battle, type BattleResult } from "@/components/game/spirit-bound/Battle";
 import { DialogueBox } from "@/components/game/spirit-bound/DialogueBox";
 import { Overworld } from "@/components/game/spirit-bound/Overworld";
-import { GoldenEggReader } from "@/components/game/spirit-bound/GoldenEggReader";
+import { GoldenEggReader, HawkEggReader } from "@/components/game/spirit-bound/GoldenEggReader";
 import { GrasslandsOverworld } from "@/components/game/spirit-bound/GrasslandsOverworld";
 import { SplashIntro } from "@/components/game/spirit-bound/SplashIntro";
 import { ArcadeTree } from "@/components/game/spirit-bound/shrine/ArcadeTree";
@@ -60,6 +60,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   const [pendingBushKey, setPendingBushKey] = React.useState<string | null>(null);
   const [afterDialogue, setAfterDialogue] = React.useState<"none" | "vine">("none");
   const [goldenEggOpen, setGoldenEggOpen] = React.useState(false);
+  const [hawkEggOpen, setHawkEggOpen] = React.useState(false);
   const [shrineCleared, setShrineCleared] = React.useState(false);
 
   const maxHp = MAX_HP_BY_LEVEL(level);
@@ -160,19 +161,26 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   }, []);
 
   React.useEffect(() => {
-    if (!goldenEggOpen) return;
+    if (!goldenEggOpen && !hawkEggOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (["Escape", "x", "X", "z", "Z", "Enter", " "].includes(e.key)) {
         e.preventDefault();
         setGoldenEggOpen(false);
+        setHawkEggOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [goldenEggOpen]);
+  }, [goldenEggOpen, hawkEggOpen]);
 
   const onGoldenEgg = React.useCallback(() => {
+    setHawkEggOpen(false);
     setGoldenEggOpen(true);
+  }, []);
+
+  const onHawkEgg = React.useCallback(() => {
+    setGoldenEggOpen(false);
+    setHawkEggOpen(true);
   }, []);
 
   const onGrassTalk = React.useCallback((npc: GrassNpc) => {
@@ -303,6 +311,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     setPendingBushKey(null);
     setAfterDialogue("none");
     setGoldenEggOpen(false);
+    setHawkEggOpen(false);
     setShrineCleared(false);
     setSpawn({ x: 2 * TILE, y: 1 * TILE });
     setMode("overworld");
@@ -434,7 +443,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
             ) : (
               <GrasslandsOverworld
                 spawn={spawn}
-                paused={mode !== "overworld" || goldenEggOpen}
+                paused={mode !== "overworld" || goldenEggOpen || hawkEggOpen}
                 night={vinePurged}
                 burntBushes={burntBushes}
                 vineDefeated={vinePurged}
@@ -443,10 +452,14 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
                 onVine={onGrassVine}
                 onWildGrass={onGrassWild}
                 onGoldenEgg={onGoldenEgg}
+                onHawkEgg={onHawkEgg}
               />
             )}
             {goldenEggOpen && mapId === "grasslands" && (
               <GoldenEggReader onClose={() => setGoldenEggOpen(false)} />
+            )}
+            {hawkEggOpen && mapId === "grasslands" && (
+              <HawkEggReader onClose={() => setHawkEggOpen(false)} />
             )}
             {mode === "dialogue" && dialogue && (
               <DialogueBox
