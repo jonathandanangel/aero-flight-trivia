@@ -350,7 +350,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         lines: [
           "* LORD PETER KING DE MI URGOS DE LOS CHRISTOS crumbles.",
           "* The triangle eye dims. The hat falls sideways.",
-          "* Adoni Je Hovah your old poisonous ivy laurel vine will be stopped by Paul Barnabus the Nazarene. Mark my words!",
+          "* Adoni Je Hovah your old fruitful grape vine will be stopped by Paul Barnabus the Nazarene. Mark my words!",
           "* Demonic laughter echoes through the shrine...",
           "* The gold door blazes open. A pastoral field waits beyond.",
           "* Scraps of doctrine scatter across GREENVALE — bind them in order into",
@@ -370,7 +370,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
       startBurnLoop();
       setDialogue({
         lines: [
-          "* The POISONOUS IVY LAUREL VINE shrivels.",
+          "* The FRUITFUL GRAPE VINE shrivels.",
           "* Flames race across every meadow. Night falls.",
           "* Trees, houses, and the vine itself burn in the distance.",
           "* No enemies remain. The grasslands crackle under a burning sky.",
@@ -632,7 +632,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
               <p className="text-[22px]">▲</p>
               <p className="-mt-1 text-[22px] tracking-[0.4em]">▲ ▲</p>
             </div>
-            <p className="text-[14px] text-game-yellow">THE VINE IS PURGED</p>
+            <p className="text-[14px] text-game-yellow">THE FRUITFUL GRAPE VINE IS PURGED</p>
             <p className="max-w-sm text-[10px] leading-relaxed">
               * The grasslands burn into a peaceful night.
               <br />* You finished at LV {level} with {gold} R.

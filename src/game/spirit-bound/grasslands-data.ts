@@ -88,9 +88,9 @@ export const GRASS_NPCS: GrassNpc[] = [
     tx: 6,
     ty: 12,
     lines: [
-      "* The massive grape vine sleeps at the eastern path.",
+      "* The FRUITFUL GRAPE VINE sleeps at the eastern path.",
       "* It fed on LORD PETER's crown for centuries.",
-      "* You need LV 7 before its thorns even notice you.",
+      "* You need LV 7 before its grapes even notice you.",
     ],
   },
 ];
