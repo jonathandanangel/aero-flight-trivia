@@ -17,7 +17,11 @@ type Props = {
   spawn: { x: number; y: number };
   paused: boolean;
   night: boolean;
+  /** Random bush positions as "tx,ty" keys. */
+  bushTiles: Set<string>;
   burntBushes: Set<string>;
+  /** Bush key currently playing flame animation (just defeated). */
+  burningBushKey: string | null;
   vineDefeated: boolean;
   onTalk: (npc: GrassNpc) => void;
   onBush: (at: { x: number; y: number }, key: string) => void;
@@ -35,7 +39,9 @@ export function GrasslandsOverworld({
   spawn,
   paused,
   night,
+  bushTiles,
   burntBushes,
+  burningBushKey,
   vineDefeated,
   onTalk,
   onBush,
@@ -51,8 +57,15 @@ export function GrasslandsOverworld({
   const budget = useRef(80 + Math.floor(Math.random() * 90));
   const frame = useRef(0);
   const burnFlash = useRef(0);
+  const bushBurnFrame = useRef(0);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
+  const bushRef = useRef(bushTiles);
+  bushRef.current = bushTiles;
+  const burntRef = useRef(burntBushes);
+  burntRef.current = burntBushes;
+  const burningRef = useRef(burningBushKey);
+  burningRef.current = burningBushKey;
 
   const cb = useRef({ onTalk, onBush, onVine, onWildGrass, onGoldenEgg, onHawkEgg });
   cb.current = { onTalk, onBush, onVine, onWildGrass, onGoldenEgg, onHawkEgg };
@@ -109,6 +122,10 @@ export function GrasslandsOverworld({
   }, [night]);
 
   useEffect(() => {
+    if (burningBushKey) bushBurnFrame.current = 0;
+  }, [burningBushKey]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -126,7 +143,7 @@ export function GrasslandsOverworld({
       return corners.some(([cx, cy]) => {
         const tx = Math.floor((cx ?? 0) / GRASS_TILE);
         const ty = Math.floor((cy ?? 0) / GRASS_TILE);
-        return grassSolid(tx, ty, burntBushes);
+        return grassSolid(tx, ty, burntRef.current);
       });
     };
 
@@ -134,6 +151,7 @@ export function GrasslandsOverworld({
       raf = requestAnimationFrame(loop);
       frame.current += 1;
       if (burnFlash.current > 0 && burnFlash.current < 9000) burnFlash.current += 1;
+      if (burningRef.current) bushBurnFrame.current += 1;
 
       const keys = held.current;
       if (!pausedRef.current) {
@@ -168,10 +186,11 @@ export function GrasslandsOverworld({
             steps.current += 1;
             const tx = Math.floor((p.x + GRASS_TILE / 2) / GRASS_TILE);
             const ty = Math.floor((p.y + GRASS_TILE / 2) / GRASS_TILE);
+            const key = `${tx},${ty}`;
             const t = grassTileAt(tx, ty);
 
-            if (t === "B" && !burntBushes.has(`${tx},${ty}`)) {
-              cb.current.onBush({ x: p.x, y: p.y }, `${tx},${ty}`);
+            if (bushRef.current.has(key) && !burntRef.current.has(key)) {
+              cb.current.onBush({ x: p.x, y: p.y }, key);
               return;
             }
             if (t === "V" && !vineDefeated) {
@@ -199,13 +218,46 @@ export function GrasslandsOverworld({
 
       for (let ty = 0; ty < GRASS_H; ty++) {
         for (let tx = 0; tx < GRASS_W; tx++) {
-          drawGrassTile(ctx, tx, ty, frame.current, night, burntBushes);
+          drawGrassTile(ctx, tx, ty, frame.current, night, burntRef.current, bushRef.current);
+        }
+      }
+
+      // Live / burning / ash bushes overlaid on grass
+      for (const key of bushRef.current) {
+        const [tsx, tsy] = key.split(",").map(Number);
+        const tx = tsx ?? 0;
+        const ty = tsy ?? 0;
+        const x = tx * GRASS_TILE;
+        const y = ty * GRASS_TILE;
+        const isBurning = burningRef.current === key;
+        const isBurnt = burntRef.current.has(key);
+        if (isBurning) {
+          drawBushOnFire(ctx, x, y, bushBurnFrame.current);
+        } else if (isBurnt || night) {
+          drawBushAsh(ctx, x, y, night);
+          if (night) drawFireFlicker(ctx, x, y, frame.current + tx * 7);
+        } else {
+          drawLiveBush(ctx, x, y, frame.current);
         }
       }
 
       if (!night) {
         for (const n of GRASS_NPCS) {
           drawGrassNpc(ctx, n.tx * GRASS_TILE, n.ty * GRASS_TILE, n.id, frame.current);
+        }
+      } else {
+        // Houses/cliffs smolder at night
+        for (let ty = 0; ty < GRASS_H; ty++) {
+          for (let tx = 0; tx < GRASS_W; tx++) {
+            const t = grassTileAt(tx, ty);
+            if (t === "h" || t === "r" || t === "c") {
+              drawFireFlicker(ctx, tx * GRASS_TILE, ty * GRASS_TILE, frame.current + tx * 3 + ty);
+            }
+          }
+        }
+        if (vineDefeated) {
+          // vine burns in the distance (east)
+          drawBurningVineDistant(ctx, 20 * GRASS_TILE, 15 * GRASS_TILE, frame.current);
         }
       }
 
@@ -237,7 +289,7 @@ export function GrasslandsOverworld({
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [held, night, burntBushes, vineDefeated]);
+  }, [held, night, vineDefeated]);
 
   return (
     <canvas
@@ -256,12 +308,12 @@ function drawGrassTile(
   ty: number,
   frame: number,
   night: boolean,
-  burnt: Set<string>,
+  _burnt: Set<string>,
+  _bushes: Set<string>,
 ) {
   const t = grassTileAt(tx, ty);
   const x = tx * GRASS_TILE;
   const y = ty * GRASS_TILE;
-  const key = `${tx},${ty}`;
 
   const grass = night ? "#1a2838" : "#58c838";
   const grassHi = night ? "#243048" : "#78e858";
@@ -314,21 +366,6 @@ function drawGrassTile(
     return;
   }
 
-  if (t === "B") {
-    if (burnt.has(key)) {
-      px(ctx, x, y, GRASS_TILE, GRASS_TILE, night ? "#1a2838" : grass);
-      px(ctx, x + 6, y + 12, 12, 8, "#181010");
-      px(ctx, x + 8, y + 8, 8, 4, "#402818");
-      return;
-    }
-    px(ctx, x, y, GRASS_TILE, GRASS_TILE, grass);
-    px(ctx, x + 4, y + 10, 16, 10, "#287818");
-    px(ctx, x + 6, y + 6, 12, 8, "#48a828");
-    px(ctx, x + 8, y + 4, 8, 6, "#68c848");
-    pixelTriangle(ctx, x + 10, y + 2, 6, "#78d858");
-    return;
-  }
-
   if (t === "V" && !night) {
     px(ctx, x, y, GRASS_TILE, GRASS_TILE, grass);
     px(ctx, x + 8, y + 2, 8, 20, "#481868");
@@ -340,6 +377,44 @@ function drawGrassTile(
   }
 
   px(ctx, x, y, GRASS_TILE, GRASS_TILE, grass);
+}
+
+function drawLiveBush(ctx: CanvasRenderingContext2D, x: number, y: number, frame: number) {
+  const sway = Math.sin(frame / 14) * 1;
+  px(ctx, x + 4 + sway, y + 10, 16, 10, "#287818");
+  px(ctx, x + 6 + sway, y + 6, 12, 8, "#48a828");
+  px(ctx, x + 8 + sway, y + 4, 8, 6, "#68c848");
+  pixelTriangle(ctx, x + 10 + sway, y + 2, 6, "#78d858");
+}
+
+function drawBushAsh(ctx: CanvasRenderingContext2D, x: number, y: number, night: boolean) {
+  px(ctx, x + 6, y + 14, 12, 6, "#181010");
+  px(ctx, x + 8, y + 10, 8, 5, "#402818");
+  px(ctx, x + 10, y + 8, 4, 3, night ? "#503828" : "#604028");
+}
+
+function drawBushOnFire(ctx: CanvasRenderingContext2D, x: number, y: number, f: number) {
+  drawBushAsh(ctx, x, y, false);
+  const flicker = Math.sin(f / 3) * 2;
+  px(ctx, x + 8, y + 4 + flicker, 8, 10, "#f86020");
+  px(ctx, x + 10, y + 1 + flicker, 4, 8, "#f8d030");
+  px(ctx, x + 6, y + 8, 3, 6, "#f04010");
+  px(ctx, x + 15, y + 7, 3, 5, "#f87828");
+  pixelTriangle(ctx, x + 9, y - 2 + flicker, 6, "#fff060", "up");
+}
+
+function drawFireFlicker(ctx: CanvasRenderingContext2D, x: number, y: number, f: number) {
+  const flicker = Math.sin(f / 4) * 2;
+  px(ctx, x + 8, y + 6 + flicker, 6, 8, "#f85018");
+  px(ctx, x + 10, y + 3 + flicker, 3, 6, "#f8c030");
+}
+
+function drawBurningVineDistant(ctx: CanvasRenderingContext2D, x: number, y: number, f: number) {
+  px(ctx, x + 8, y + 2, 8, 18, "#2a1020");
+  px(ctx, x + 2, y + 8, 20, 5, "#3a1830");
+  drawFireFlicker(ctx, x, y, f);
+  drawFireFlicker(ctx, x + 8, y - 4, f + 9);
+  drawFireFlicker(ctx, x + 4, y + 6, f + 17);
 }
 
 function drawGoldenEgg(

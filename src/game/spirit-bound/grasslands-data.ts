@@ -1,23 +1,25 @@
 import { TILE } from "./data";
 
-/** EarthBound-style pastoral map — grass, paths, cliffs, houses, bushes, vine boss. */
+/** EarthBound-style pastoral map — grass, paths, cliffs, houses, vine boss.
+ * Bushes (B) are spawned randomly onto grass tiles at runtime — not fixed here.
+ */
 export const GRASS_ROWS = [
   "############################",
   "#pppppppppppppppppppppppppp#",
   "#p..rrrr....gggggg....rrrrp#",
   "#p..rhr.....gggggg.....rhrp#",
-  "#p..rrrr.....ggBgg.....rrrrp#",
+  "#p..rrrr.....ggggg.....rrrrp#",
   "#p..........gggggg.........p#",
   "#p..ccccc...gggggg...ccccc.p#",
-  "#p..c...c...ggBgg...c...c.p#",
+  "#p..c...c...ggggg...c...c.p#",
   "#p..c.g.c...gggggg...c.g.c.p#",
-  "#p..c...c...ggBgg...c...c.p#",
+  "#p..c...c...ggggg...c...c.p#",
   "#p..ccccc...gggggg...ccccc.p#",
   "#p..........gggggg.........p#",
-  "#p..rrrr....ggBgg....rrrr..p#",
+  "#p..rrrr....ggggg....rrrr..p#",
   "#p..rhr.....gggggg.....rhrp#",
   "#p..rrrr....gggggg....rrrr.p#",
-  "#p..........ggBgg..........p#",
+  "#p..........ggggg..........p#",
   "#p..........gggggg....V...p#",
   "#pppppppppppppppppppppppppp#",
   "############################",
@@ -33,10 +35,9 @@ export function grassTileAt(tx: number, ty: number): string {
   return GRASS_ROWS[ty]?.[tx] ?? "#";
 }
 
-export function grassSolid(tx: number, ty: number, burnt: Set<string>): boolean {
+export function grassSolid(tx: number, ty: number, _burnt: Set<string>): boolean {
   const t = grassTileAt(tx, ty);
   if (t === "#" || t === "c" || t === "r" || t === "h" || t === "w") return true;
-  if (t === "B" && burnt.has(`${tx},${ty}`)) return false;
   return false;
 }
 
@@ -101,3 +102,29 @@ export const GOLDEN_EGG = { tx: 1, ty: 2 };
 
 /** Hawk egg easter egg — northeast edge, opposite the golden egg. */
 export const HAWK_EGG = { tx: 26, ty: 2 };
+
+/** Scatter angry bushes onto grass tiles (random each grasslands visit / new game). */
+export function generateRandomBushKeys(count = 14): Set<string> {
+  const blocked = new Set<string>([
+    `${GOLDEN_EGG.tx},${GOLDEN_EGG.ty}`,
+    `${HAWK_EGG.tx},${HAWK_EGG.ty}`,
+    ...GRASS_NPCS.map((n) => `${n.tx},${n.ty}`),
+    "2,3", // spawn
+  ]);
+  const candidates: string[] = [];
+  for (let ty = 0; ty < GRASS_H; ty++) {
+    for (let tx = 0; tx < GRASS_W; tx++) {
+      if (grassTileAt(tx, ty) !== "g") continue;
+      const key = `${tx},${ty}`;
+      if (blocked.has(key)) continue;
+      candidates.push(key);
+    }
+  }
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const a = candidates[i]!;
+    candidates[i] = candidates[j]!;
+    candidates[j] = a;
+  }
+  return new Set(candidates.slice(0, Math.min(count, candidates.length)));
+}

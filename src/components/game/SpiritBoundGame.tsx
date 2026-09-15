@@ -19,7 +19,7 @@ import {
   stopBurnLoop,
 } from "@/game/spirit-bound/shrine/audio";
 import { ENEMIES, TILE, type Npc } from "@/game/spirit-bound/data";
-import { GRASS_TILE, VINE_MIN_LEVEL, type GrassNpc } from "@/game/spirit-bound/grasslands-data";
+import { GRASS_TILE, VINE_MIN_LEVEL, generateRandomBushKeys, type GrassNpc } from "@/game/spirit-bound/grasslands-data";
 import {
   JEHOVAH_BOOK_TITLE,
   nextPaperToCollect,
@@ -71,6 +71,8 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   const [exitDoorOpen, setExitDoorOpen] = React.useState(false);
   const [mapId, setMapId] = React.useState<"greenvale" | "grasslands">("greenvale");
   const [burntBushes, setBurntBushes] = React.useState<Set<string>>(() => new Set());
+  const [bushTiles, setBushTiles] = React.useState<Set<string>>(() => new Set());
+  const [burningBushKey, setBurningBushKey] = React.useState<string | null>(null);
   const [vinePurged, setVinePurged] = React.useState(false);
   const [pendingBushKey, setPendingBushKey] = React.useState<string | null>(null);
   const [afterDialogue, setAfterDialogue] = React.useState<"none" | "vine">("none");
@@ -213,8 +215,15 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   const onExitToGrasslands = React.useCallback((_at: { x: number; y: number }) => {
     setMapId("grasslands");
     setSpawn({ x: 2 * GRASS_TILE, y: 3 * GRASS_TILE });
+    setBushTiles((prev) => (prev.size > 0 ? prev : generateRandomBushKeys(14)));
     setBanner("IVY LAUREL GRASSLANDS");
   }, []);
+
+  React.useEffect(() => {
+    if (!burningBushKey) return;
+    const id = window.setTimeout(() => setBurningBushKey(null), 1400);
+    return () => window.clearTimeout(id);
+  }, [burningBushKey]);
 
   const onPaper = React.useCallback(
     (paper: ScatteredPaper) => {
@@ -327,6 +336,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
 
     if (wasBush && (r.outcome === "win" || r.outcome === "spare") && bushKey) {
       setBurntBushes((prev) => new Set(prev).add(bushKey));
+      setBurningBushKey(bushKey);
       playBurnSfx();
       setBanner("BUSH BURNED");
     }
@@ -383,6 +393,8 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     setExitDoorOpen(false);
     setMapId("greenvale");
     setBurntBushes(new Set());
+    setBushTiles(new Set());
+    setBurningBushKey(null);
     setVinePurged(false);
     setPendingBushKey(null);
     setAfterDialogue("none");
@@ -523,7 +535,9 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
                 spawn={spawn}
                 paused={mode !== "overworld" || goldenEggOpen || hawkEggOpen || bookOpen}
                 night={vinePurged}
+                bushTiles={bushTiles}
                 burntBushes={burntBushes}
+                burningBushKey={burningBushKey}
                 vineDefeated={vinePurged}
                 onTalk={onGrassTalk}
                 onBush={onGrassBush}

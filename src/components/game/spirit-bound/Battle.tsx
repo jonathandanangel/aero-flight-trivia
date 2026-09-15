@@ -37,6 +37,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
   const [hurt, setHurt] = useState(0);
   const [attackPos, setAttackPos] = useState(0);
   const [enemyShake, setEnemyShake] = useState(false);
+  const [bushBurning, setBushBurning] = useState(false);
   const finished = useRef(false);
 
   const actOptions = ["Check", enemy.boss ? "Plead" : "Compliment", "Joke"];
@@ -130,9 +131,16 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
     setEnemyShake(true);
     window.setTimeout(() => setEnemyShake(false), 350);
     if (left <= 0) {
-      setMessage(`* ${dmg} damage! ${enemy.name} was defeated.`);
-      setPhase("message");
-      window.setTimeout(() => finish("win", Math.max(0, realHp)), 1200);
+      if (enemy.pattern === "bush") {
+        setBushBurning(true);
+        setMessage(`* ${dmg} damage! The bush catches fire!`);
+        setPhase("message");
+        window.setTimeout(() => finish("win", Math.max(0, realHp)), 1600);
+      } else {
+        setMessage(`* ${dmg} damage! ${enemy.name} was defeated.`);
+        setPhase("message");
+        window.setTimeout(() => finish("win", Math.max(0, realHp)), 1200);
+      }
       return;
     }
     const weak = left / enemy.hp < 0.3;
@@ -168,9 +176,16 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
     }
     if (subIdx === 0) {
       if (spareable) {
-        setMessage(`* You spared ${enemy.name}.\n* You earned 0 EXP and ${enemy.gold} R.`);
-        setPhase("message");
-        window.setTimeout(() => finish("spare", Math.max(0, realHp)), 1300);
+        if (enemy.pattern === "bush") {
+          setBushBurning(true);
+          setMessage(`* You spared the bush.\n* It still burns away.`);
+          setPhase("message");
+          window.setTimeout(() => finish("spare", Math.max(0, realHp)), 1600);
+        } else {
+          setMessage(`* You spared ${enemy.name}.\n* You earned 0 EXP and ${enemy.gold} R.`);
+          setPhase("message");
+          window.setTimeout(() => finish("spare", Math.max(0, realHp)), 1300);
+        }
       } else {
         say(`* ${enemy.name} isn't ready to be spared. (ACT more!)`);
       }
@@ -240,7 +255,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
           className={`relative z-10 flex flex-col items-center transition-transform ${enemyShake ? "translate-x-1" : ""}`}
           style={{ opacity: enemyHp <= 0 ? 0.3 : 1 }}
         >
-          <EnemySprite color={enemy.color} kind={enemy.pattern} />
+          <EnemySprite color={enemy.color} kind={enemy.pattern} burning={bushBurning} />
           <div
             className={`mt-2 max-w-[280px] text-center text-[8px] leading-tight tracking-wide sm:text-[10px] ${spareable ? "text-game-yellow" : ""}`}
           >
@@ -371,11 +386,19 @@ function TriangleField() {
   );
 }
 
-function EnemySprite({ color, kind }: { color: string; kind: Enemy["pattern"] }) {
+function EnemySprite({
+  color,
+  kind,
+  burning = false,
+}: {
+  color: string;
+  kind: Enemy["pattern"];
+  burning?: boolean;
+}) {
   const size = kind === "king" || kind === "vine" ? 108 : 76;
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" style={{ imageRendering: "pixelated" }}>
-      <g fill={color}>
+      <g fill={burning ? "#402818" : color}>
         {kind === "seeds" && (
           <>
             <rect x="7" y="1" width="2" height="2" />
@@ -432,14 +455,29 @@ function EnemySprite({ color, kind }: { color: string; kind: Enemy["pattern"] })
           </>
         )}
       </g>
-      <g fill="#181010">
-        <rect x="5" y={kind === "king" ? 9 : 6} width="2" height="2" />
-        <rect x="9" y={kind === "king" ? 9 : 6} width="2" height="2" />
-      </g>
-      <g fill={kind === "king" ? "#f8f8f8" : "#f8d030"}>
-        <rect x="7" y={kind === "king" ? 6 : 4} width="2" height="2" />
-        {kind === "king" && <rect x="7" y="7" width="2" height="1" fill="#201008" />}
-      </g>
+      {burning && kind === "bush" ? (
+        <g>
+          <rect x="5" y="3" width="6" height="8" fill="#f86020">
+            <animate attributeName="y" values="3;1;3" dur="0.25s" repeatCount="indefinite" />
+          </rect>
+          <rect x="7" y="1" width="3" height="6" fill="#f8d030">
+            <animate attributeName="y" values="1;0;1" dur="0.2s" repeatCount="indefinite" />
+          </rect>
+          <rect x="4" y="6" width="2" height="5" fill="#f04010" />
+          <rect x="11" y="5" width="2" height="5" fill="#f87828" />
+        </g>
+      ) : (
+        <>
+          <g fill="#181010">
+            <rect x="5" y={kind === "king" ? 9 : 6} width="2" height="2" />
+            <rect x="9" y={kind === "king" ? 9 : 6} width="2" height="2" />
+          </g>
+          <g fill={kind === "king" ? "#f8f8f8" : "#f8d030"}>
+            <rect x="7" y={kind === "king" ? 6 : 4} width="2" height="2" />
+            {kind === "king" && <rect x="7" y="7" width="2" height="1" fill="#201008" />}
+          </g>
+        </>
+      )}
     </svg>
   );
 }
