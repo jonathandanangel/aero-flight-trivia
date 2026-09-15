@@ -209,18 +209,153 @@ export function buildVibrationReport(result: VibrationResult): string {
   return lines.join("\n");
 }
 
-export const FUNCTION_PRESETS: Array<{ label: string; expr: string; a: number; b: number }> = [
-  { label: "x−cos(x)", expr: "x - cos(x)", a: 1e-6, b: 2 },
-  { label: "(x−1)³", expr: "(x-1)^3", a: 0, b: 2 },
-  { label: "quintic", expr: "x^5 - 2*x + 0.1", a: -2, b: 2 },
+/** V15 commented f_sym / demo catalogue — clickable MAIN presets. */
+export const FUNCTION_PRESETS: Array<{
+  label: string;
+  expr: string;
+  a: number;
+  b: number;
+  note?: string;
+}> = [
+  { label: "x−cos(x)", expr: "x - cos(x)", a: 1e-6, b: 2, note: "simple root ~0.739" },
+  { label: "(x−1)³", expr: "(x-1)^3", a: 0, b: 2, note: "multiple root at 1" },
+  { label: "quintic A", expr: "x^5 - 2*x + 0.1", a: -2, b: 2, note: "quintic flavor" },
+  { label: "quintic B", expr: "x^5 - 5*x^3 - x^2 + 1", a: -3, b: 3 },
+  { label: "quart (x−2)⁴", expr: "x^4 - 8*x^3 + 24*x^2 - 32*x + 16", a: 0, b: 4 },
+  { label: "x−π−½sin", expr: "x - pi - 0.5*sin(x/2)", a: 0, b: 6 },
+  { label: "quintic C", expr: "x^5 + 5*x^3 - x^2 + 1", a: -2, b: 2 },
   {
-    label: "finance",
+    label: "exp(1)^ mix",
+    expr: "exp(1)^(6*x) + 1.441*exp(1)^(2*x) - 2.079*exp(1)^(4*x) - 0.333",
+    a: -1,
+    b: 0.5,
+  },
+  {
+    label: "exp mix",
+    expr: "exp(6*x) + 1.441*exp(2*x) - 2.079*exp(4*x) - 0.333",
+    a: -1,
+    b: 0.5,
+  },
+  {
+    label: "log(2) exp",
+    expr: "exp(6*x) + 3*(log(2))^2*exp(2*x) - log(8)*exp(4*x) - (log(2))^3",
+    a: -1,
+    b: 0.5,
+    note: "symbolic log(2)/log(8) form without SymPy",
+  },
+  {
+    label: "cos+√2",
+    expr: "cos(x + sqrt(2)) + x*(x/2 + sqrt(2))",
+    a: -2,
+    b: -1,
+    note: "cos(x+√2)+x(x/2+√2)=0 on [−2,−1]",
+  },
+  {
+    label: "finance n=3",
     expr: "-20000 + 7000*((((1+x)^3 - 1) / (x*(1+x)^3))) + 8000 / (1+x)^3",
     a: 1e-4,
     b: 1,
+    note: "default V15 f(x)",
   },
-  { label: "cos+√2", expr: "cos(x + sqrt(2)) + x*(x/2 + sqrt(2))", a: -2, b: -1 },
-  { label: "exp mix", expr: "exp(6*x) + 1.441*exp(2*x) - 2.079*exp(4*x) - 0.333", a: -1, b: 0.5 },
+  {
+    label: "damped osc",
+    expr:
+      "exp(-(0.016316264)*(13.09171215)*x) * ( (0.018)*cos((13.08996939)*x) + (0.000296996)*sin((13.08996939)*x) )",
+    a: 0,
+    b: 25,
+  },
+  {
+    label: "X(r=0.47)",
+    expr: "((30)/(400)) / sqrt( (1 - (0.474341649)^2)^2 + (2*(0.2)*(0.474341649))^2 ) + 0*x",
+    a: 0,
+    b: 1,
+    note: "forced amplitude sample (constant in x)",
+  },
+  {
+    label: "X(r=1)",
+    expr: "((30)/(400)) / sqrt( (1 - (1)^2)^2 + (2*(0.2)*(1))^2 ) + 0*x",
+    a: 0,
+    b: 1,
+    note: "resonance-ratio sample",
+  },
+  {
+    label: "T(r) ζ=0.08",
+    expr: "sqrt( (1 + (2*(0.08)*x)^2) / ( (1 - x^2)^2 + (2*(0.08)*x)^2 ) )",
+    a: 0.05,
+    b: 3,
+    note: "transmissibility vs frequency ratio",
+  },
+  {
+    label: "step resp",
+    expr:
+      "(0.2) * ( 1 - exp(-(0.2)*(10)*x) * ( cos((9.797958971)*x) + ((0.2)/sqrt(1 - (0.2)^2)) * sin((9.797958971)*x) ) )",
+    a: 0,
+    b: 8,
+  },
+  { label: "0.1x²+0.9", expr: "0.1*x^2 + 0.9", a: -2, b: 2 },
+  {
+    label: "NPV cash",
+    expr: "2000 - 500*((1 + x)^(-1)) - 8100*((1 + x)^(-2)) + 6800*((1 + x)^(-3))",
+    a: 1e-4,
+    b: 2,
+  },
+  {
+    label: "Sut poly",
+    expr: "1.24 - (2.25e-3)*x + (1.6e-6)*x^2 - (4.11e-10)*x^3 - sqrt(x)",
+    a: 340,
+    b: 1700,
+    note: "MPa Sut-style curve with √x term",
+  },
+  {
+    label: "Goodman DE",
+    expr:
+      "(( ( (2.2 * ( (32*(70)) / (pi*((x)^3)) )) / (210) ) + ( (2.2 * ( (32*(55)) / (pi*((x)^3)) )) / (700) ) )^(-1)) - 2",
+    a: 10,
+    b: 40,
+    note: "simplified Goodman diameter solve",
+  },
+  {
+    label: "Goodman full",
+    expr:
+      "(( ( ( ( ( (2.2 * ( (32*(70)) / (pi*((x)^3)) ))^2 ) + ( (3)*( ( 1.8 * ( (16)*(45) / ( pi * (x)^3 ) ) )^2 ) ) )^(1/2) ) ) / (210) ) + ( ( ( ( ( (2.2 * ( (32*(55)) / (pi*((x)^3)) ))^2 ) + ( (3) * ( ( 1.8 * ( (16)*(35) / ( pi * (x)^3 ) ) )^2 ) ) )^(1/2) ) ) / (700) ) )^(-1) - 2",
+    a: 10,
+    b: 45,
+    note: "CompletedExampleGoodmanDE",
+  },
+  {
+    label: "finance n=5 A",
+    expr: "-30000 + 9000 * (((1+x)^5 - 1) / (x * (1+x)^5)) + 4000 / (1+x)",
+    a: 1e-4,
+    b: 1,
+  },
+  {
+    label: "finance n=5 B",
+    expr:
+      "(-30000) + (9000*( ( ((1+x)^5) - 1 ) / ( (x) * ((1 + x)^5) ) ) ) + ( 4000*( ( (1)/( (1+x)^5 ) ) ) )",
+    a: 1e-4,
+    b: 1,
+  },
+  {
+    label: "finance n=5 C",
+    expr:
+      "(-21000) + (10000*( ( ((1+x)^5) - 1 ) / ( (x) * ((1 + x)^5) ) ) ) + ( 10000*( ( (1)/( (1+x)^5 ) ) ) )",
+    a: 1e-4,
+    b: 1,
+  },
+  {
+    label: "finance n=3 B",
+    expr:
+      "(-62000) + ( (26000)*( ( ( ((1+x)^3) - 1 ) / ( (x) * ((1 + x)^3) ) )  ) ) + ( (7000)*(( (1)/( (1+x)^3 ) )) )",
+    a: 1e-4,
+    b: 1,
+  },
+  {
+    label: "finance n=3 C",
+    expr:
+      "(-84000) + ( (65000)*( ( ( ((1+x)^3) - 1 ) / ( (x) * ((1 + x)^3) ) )  ) ) + ( (40000)*(( (1)/( (1+x)^3 ) )) )",
+    a: 1e-4,
+    b: 1,
+  },
 ];
 
 export const COMPOSITE_FORMULAS = [

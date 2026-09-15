@@ -26,6 +26,7 @@ import {
   COMPOSITE_FORMULAS,
   downloadJson,
   formatNumber,
+  formatNumerologyReport,
   FUNCTION_PRESETS,
   interpolate,
   parseNumberList,
@@ -35,10 +36,12 @@ import {
   solveNonlinearSystem,
   TOOLBOX_REFERENCES,
   vectorizeExpression,
+  wordToNumerology,
   type FunctionAnalysisResult,
   type IntegrationResult,
   type InterpolationResult,
   type NonlinearSystemResult,
+  type NumerologyResult,
   type VibrationResult,
 } from "@/game/numerical-extreme";
 import { audio } from "@/game/audio";
@@ -52,6 +55,7 @@ type Mode =
   | "composite"
   | "diff"
   | "algorithms"
+  | "numerology"
   | "references";
 
 const MODES: Array<{ id: Mode; label: string }> = [
@@ -61,6 +65,7 @@ const MODES: Array<{ id: Mode; label: string }> = [
   { id: "composite", label: "COMPOSITE" },
   { id: "diff", label: "DIFF" },
   { id: "algorithms", label: "ALGORITHMS" },
+  { id: "numerology", label: "NUMEROLOGY" },
   { id: "references", label: "REFS" },
 ];
 
@@ -333,11 +338,12 @@ function MainPanel() {
               spellCheck={false}
             />
           </Field>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto">
             {FUNCTION_PRESETS.map((preset) => (
               <GhostButton
                 key={preset.label}
                 type="button"
+                title={preset.note ? `${preset.expr}\n${preset.note}` : preset.expr}
                 onClick={() => {
                   setExpression(preset.expr);
                   setA(preset.a);
@@ -348,6 +354,9 @@ function MainPanel() {
               </GhostButton>
             ))}
           </div>
+          <p className="font-mono text-[9px] text-muted-foreground">
+            {FUNCTION_PRESETS.length} V15 demo f(x) samples · hover for expression
+          </p>
           <div className="grid grid-cols-2 gap-2">
             <Field label="a">
               <NumberInput value={a} step="any" onChange={(e) => setA(Number(e.target.value))} />
@@ -1519,6 +1528,149 @@ function AlgorithmsPanel() {
   );
 }
 
+function NumerologyPanel() {
+  const [word, setWord] = React.useState("abc");
+  const compute = React.useContext(NumericalComputeContext);
+
+  const { result, error } = React.useMemo(() => {
+    const trimmed = word.trim();
+    if (!trimmed) {
+      return { result: null as NumerologyResult | null, error: "" };
+    }
+    try {
+      return { result: wordToNumerology(trimmed), error: "" };
+    } catch (caught) {
+      return {
+        result: null as NumerologyResult | null,
+        error: caught instanceof Error ? caught.message : "Numerology failed.",
+      };
+    }
+  }, [word]);
+
+  function downloadReport() {
+    if (!result) return;
+    compute();
+    downloadJson(`numerology-${result.normalized || "word"}.json`, {
+      ...result,
+      report: formatNumerologyReport(result),
+    });
+  }
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      <div className="space-y-3">
+        <Panel title="Word → number" eyebrow="NUMEROLOGY lab · A=1 … Z=26">
+          <div className="space-y-3">
+            <Field
+              label="Type any word or phrase"
+              hint="letters only count · live update · mod 9 with 0→9"
+            >
+              <TextInput
+                value={word}
+                onChange={(e) => setWord(e.target.value)}
+                placeholder="e.g. greenvale"
+                spellCheck={false}
+                autoFocus
+              />
+            </Field>
+            <div className="flex flex-wrap gap-1.5">
+              {["abc", "love", "king", "greenvale", "jonathan", "triangle"].map((sample) => (
+                <GhostButton key={sample} type="button" onClick={() => setWord(sample)}>
+                  {sample}
+                </GhostButton>
+              ))}
+            </div>
+            {error && <ErrorBanner message={error} />}
+            <p className="font-mono text-[10px] text-mint/80">
+              READY | Enter letters for a detailed Pythagorean readout.
+            </p>
+          </div>
+        </Panel>
+
+        {result && (
+          <Panel title={`Number ${result.number}`} eyebrow={result.title}>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                <Metric label="Number" value={String(result.number)} />
+                <Metric label="Σ letters" value={String(result.sumPositions)} />
+                <Metric label="Letters" value={String(result.letterCount)} />
+                <Metric label="mod 9" value={String(result.remainder)} />
+              </div>
+              <p className="font-mono text-[11px] leading-relaxed text-moon">{result.note}</p>
+              <p className="font-mono text-[10px] text-amber">
+                Traits · {result.traits.join(" · ")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <RunButton type="button" onClick={downloadReport}>
+                  Download JSON report
+                </RunButton>
+              </div>
+            </div>
+          </Panel>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        {!result ? (
+          <Panel title="Ready" eyebrow="NUMEROLOGY">
+            <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+              Type a word. Each letter maps to its alphabet position, the positions sum, then
+              reduce with mod 9 (zero becomes nine) — same rule as the MATLAB{" "}
+              <span className="text-cyan">word_to_numerology</span> routine.
+            </p>
+          </Panel>
+        ) : (
+          <>
+            <Panel title="Letter ledger" eyebrow="Running sum">
+              <div className="max-h-64 overflow-auto rounded-lg border border-cyan/20 bg-black/40">
+                <table className="w-full font-mono text-[10px] text-mint">
+                  <thead className="sticky top-0 bg-deepblue text-amber">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left">#</th>
+                      <th className="px-2 py-1.5 text-left">Char</th>
+                      <th className="px-2 py-1.5 text-right">Pos</th>
+                      <th className="px-2 py-1.5 text-left">Kind</th>
+                      <th className="px-2 py-1.5 text-right">Σ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.letters.map((row, i) => (
+                      <tr key={`${row.char}-${i}`} className="border-t border-cyan/10">
+                        <td className="px-2 py-1 opacity-70">{i + 1}</td>
+                        <td className="px-2 py-1 text-cyan">{row.char}</td>
+                        <td className="px-2 py-1 text-right">{row.position}</td>
+                        <td className="px-2 py-1 opacity-80">{row.kind}</td>
+                        <td className="px-2 py-1 text-right">{row.runningSum}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Metric label="Vowel Σ" value={String(result.vowelSum)} />
+                <Metric label="Consonant Σ" value={String(result.consonantSum)} />
+              </div>
+              {result.ignored.length > 0 && (
+                <p className="mt-2 font-mono text-[10px] text-magenta">
+                  Ignored: {result.ignored.map((c) => `'${c}'`).join(" ")}
+                </p>
+              )}
+            </Panel>
+
+            <Panel title="Reduction & report" eyebrow="Digital root">
+              <p className="mb-2 font-mono text-[11px] text-moon">
+                Path: {result.reductionSteps.join(" → ")} →{" "}
+                <span className="text-cyan">{result.number}</span>
+              </p>
+              <EquationBox label="Full telemetry">{formatNumerologyReport(result)}</EquationBox>
+            </Panel>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ReferencesPanel() {
   return (
     <div className="space-y-4">
@@ -1638,6 +1790,7 @@ export function NumericalExtremeGame({ onMenu }: NumericalExtremeGameProps) {
           {mode === "composite" && <CompositePanel />}
           {mode === "diff" && <DiffPanel />}
           {mode === "algorithms" && <AlgorithmsPanel />}
+          {mode === "numerology" && <NumerologyPanel />}
           {mode === "references" && <ReferencesPanel />}
         </main>
       </div>
