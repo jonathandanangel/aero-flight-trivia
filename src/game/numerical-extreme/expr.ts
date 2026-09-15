@@ -72,8 +72,8 @@ export function normalizeExpression(raw: string): string {
   if (!expression) {
     throw new ExpressionError("Expression cannot be empty.");
   }
-  if (expression.length > 500) {
-    throw new ExpressionError("Expression is limited to 500 characters.");
+  if (expression.length > 8000) {
+    throw new ExpressionError("Expression is limited to 8000 characters.");
   }
   return expression;
 }
