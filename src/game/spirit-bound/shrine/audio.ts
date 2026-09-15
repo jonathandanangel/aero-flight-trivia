@@ -76,23 +76,55 @@ export function playBurnSfx() {
 }
 
 /**
- * Original strolling overworld loop — bright C-major square lead + soft bass,
- * EarthBound-town *feel* (happy walk, ~118 BPM feel), not a licensed theme.
+ * Greenvale stroll — one optimistic EarthBound-town *feel* loop (original, not licensed).
  */
-const LEAD = [
-  523, 587, 659, 523, 0, 659, 698, 784, 698, 659, 587, 523, 0, 0, 392, 440, 523, 587, 659, 523, 587, 659, 784, 659, 587, 523, 440, 392, 523, 0, 0, 0,
-];
-const BASS = [
-  130, 0, 130, 0, 196, 0, 196, 0, 146, 0, 146, 0, 220, 0, 196, 0, 174, 0, 174, 0, 130, 0, 196, 0, 164, 0, 196, 0, 130, 0, 98, 0,
-];
-const STEP = 0.255; // ~117 BPM eighth notes
+const GREENVALE = {
+  lead: [523, 587, 659, 523, 0, 659, 698, 784, 698, 659, 587, 523, 0, 0, 392, 440, 523, 587, 659, 523, 587, 659, 784, 659, 587, 523, 440, 392, 523, 0, 0, 0],
+  bass: [130, 0, 130, 0, 196, 0, 196, 0, 146, 0, 146, 0, 220, 0, 196, 0, 174, 0, 174, 0, 130, 0, 196, 0, 164, 0, 196, 0, 130, 0, 98, 0],
+  step: 0.255,
+};
 
-export function startMusic() {
+/** Five optimistic grasslands themes — pick one at random when entering the grape-vine world. */
+const GRASSLAND_THEMES = [
+  {
+    // sunny meadow bounce
+    lead: [523, 659, 784, 659, 587, 659, 523, 0, 440, 523, 659, 523, 392, 440, 523, 0, 587, 659, 784, 880, 784, 659, 587, 0, 523, 587, 659, 523, 440, 392, 523, 0],
+    bass: [131, 0, 196, 0, 165, 0, 196, 0, 147, 0, 220, 0, 196, 0, 131, 0, 175, 0, 220, 0, 196, 0, 165, 0, 131, 0, 196, 0, 110, 0, 131, 0],
+    step: 0.24,
+  },
+  {
+    // cheerful stroll (higher lead)
+    lead: [659, 698, 784, 880, 784, 698, 659, 0, 523, 587, 659, 784, 659, 587, 523, 0, 784, 880, 988, 880, 784, 698, 659, 0, 587, 659, 523, 440, 523, 587, 659, 0],
+    bass: [165, 0, 165, 0, 247, 0, 220, 0, 131, 0, 196, 0, 165, 0, 131, 0, 196, 0, 247, 0, 220, 0, 165, 0, 147, 0, 196, 0, 131, 0, 165, 0],
+    step: 0.22,
+  },
+  {
+    // soft pastoral waltz-ish
+    lead: [392, 523, 659, 523, 440, 523, 659, 784, 659, 523, 440, 0, 349, 440, 523, 0, 523, 587, 659, 587, 523, 440, 392, 0, 440, 523, 587, 659, 523, 440, 392, 0],
+    bass: [98, 0, 0, 147, 0, 0, 131, 0, 0, 196, 0, 0, 110, 0, 0, 165, 0, 0, 147, 0, 0, 196, 0, 0, 98, 0, 0, 131, 0, 0, 98, 0],
+    step: 0.28,
+  },
+  {
+    // bright picnic
+    lead: [784, 659, 523, 659, 784, 880, 784, 0, 698, 784, 880, 784, 659, 587, 523, 0, 880, 784, 698, 659, 587, 659, 784, 0, 523, 659, 784, 988, 784, 659, 523, 0],
+    bass: [196, 0, 131, 0, 196, 0, 247, 0, 175, 0, 220, 0, 165, 0, 131, 0, 220, 0, 175, 0, 165, 0, 196, 0, 131, 0, 196, 0, 247, 0, 196, 0],
+    step: 0.23,
+  },
+  {
+    // hopeful sunrise
+    lead: [440, 494, 523, 587, 659, 587, 523, 0, 523, 587, 659, 698, 784, 698, 659, 0, 587, 659, 784, 880, 784, 659, 587, 0, 523, 440, 392, 440, 523, 587, 659, 0],
+    bass: [110, 0, 131, 0, 147, 0, 165, 0, 131, 0, 165, 0, 196, 0, 220, 0, 147, 0, 196, 0, 220, 0, 165, 0, 131, 0, 110, 0, 98, 0, 131, 0],
+    step: 0.26,
+  },
+];
+
+function startThemeLoop(lead: number[], bass: number[], stepMs: number) {
   const ac = context();
   if (!ac) return;
   void ac.resume();
   stopBurnLoop();
-  if (music) return;
+  stopAmbient();
+
   const gain = ac.createGain();
   gain.gain.value = 0.04;
   gain.connect(ac.destination);
@@ -100,39 +132,38 @@ export function startMusic() {
   let step = 0;
   const tick = () => {
     const t = ac.currentTime;
-    const lead = LEAD[step % LEAD.length] ?? 0;
-    const bass = BASS[step % BASS.length] ?? 0;
-    if (lead > 0) {
+    const L = lead[step % lead.length] ?? 0;
+    const B = bass[step % bass.length] ?? 0;
+    if (L > 0) {
       const o = ac.createOscillator();
       const g = ac.createGain();
       o.type = "square";
-      o.frequency.value = lead;
+      o.frequency.value = L;
       g.gain.setValueAtTime(0.038, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + STEP * 0.85);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + stepMs * 0.85);
       o.connect(g);
       g.connect(gain);
       o.start(t);
-      o.stop(t + STEP);
+      o.stop(t + stepMs);
     }
-    if (bass > 0) {
+    if (B > 0) {
       const o = ac.createOscillator();
       const g = ac.createGain();
       o.type = "triangle";
-      o.frequency.value = bass;
+      o.frequency.value = B;
       g.gain.setValueAtTime(0.045, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + STEP * 1.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + stepMs * 1.05);
       o.connect(g);
       g.connect(gain);
       o.start(t);
-      o.stop(t + STEP * 1.1);
+      o.stop(t + stepMs * 1.1);
     }
-    // soft pulse "clap" every 4 bars — town stroll feel
     if (step % 8 === 0) {
       const o = ac.createOscillator();
       const g = ac.createGain();
       o.type = "triangle";
       o.frequency.value = 180;
-      g.gain.setValueAtTime(0.02, t);
+      g.gain.setValueAtTime(0.018, t);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
       o.connect(g);
       g.connect(gain);
@@ -143,7 +174,7 @@ export function startMusic() {
   };
 
   tick();
-  const timer = window.setInterval(tick, STEP * 1000);
+  const timer = window.setInterval(tick, stepMs * 1000);
   music = {
     gain,
     timer,
@@ -151,6 +182,16 @@ export function startMusic() {
       window.clearInterval(timer);
     },
   };
+}
+
+export function startMusic() {
+  startThemeLoop(GREENVALE.lead, GREENVALE.bass, GREENVALE.step);
+}
+
+/** Entering the grasslands door — random optimistic EarthBound-feel theme (1 of 5). */
+export function startGrasslandsMusic() {
+  const theme = GRASSLAND_THEMES[Math.floor(Math.random() * GRASSLAND_THEMES.length)] ?? GRASSLAND_THEMES[0]!;
+  startThemeLoop(theme.lead, theme.bass, theme.step);
 }
 
 export function startAmbient() {

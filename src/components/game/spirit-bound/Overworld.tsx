@@ -441,33 +441,32 @@ function drawGreekStatue(ctx: CanvasRenderingContext2D, x: number, y: number, id
   }
 }
 
-/** Paul Atreides — figure + large high-contrast name plaque (clearly readable). */
+/** Paul Atreides — name carved on a forehead band (clearly readable). */
 function drawPaulAtreidesStatue(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  // figure (raised so plaque has room)
+  // pedestal + body
   px(ctx, x + 5, y + TILE - 2, TILE - 10, 2, "rgba(0,0,0,0.35)");
-  px(ctx, x + 7, y + 2, 10, 10, "#c8b898");
-  px(ctx, x + 8, y - 1, 8, 4, "#a89878");
-  px(ctx, x + 9, y + 1, 2, 2, "#201008");
-  px(ctx, x + 13, y + 1, 2, 2, "#201008");
-  px(ctx, x + 17, y + 4, 2, 8, "#705838");
-  // wide stone pedestal
-  px(ctx, x - 4, y + 12, TILE + 8, 12, "#706858");
-  px(ctx, x - 3, y + 13, TILE + 6, 10, "#908878");
-  // gold-framed name plaque — wider than the tile
-  const px0 = x - 8;
-  const py0 = y + 13;
-  const pw = TILE + 16;
-  const ph = 11;
+  px(ctx, x - 2, y + 16, TILE + 4, 8, "#706858");
+  px(ctx, x - 1, y + 17, TILE + 2, 6, "#908878");
+  px(ctx, x + 7, y + 8, 10, 10, "#c8b898");
+  px(ctx, x + 17, y + 10, 2, 8, "#705838");
+  // head / hood
+  px(ctx, x + 8, y + 1, 8, 6, "#a89878");
+  px(ctx, x + 9, y + 3, 2, 2, "#201008");
+  px(ctx, x + 13, y + 3, 2, 2, "#201008");
+  // forehead name band — tight under the brow line
+  const px0 = x - 6;
+  const py0 = y - 1;
+  const pw = TILE + 12;
+  const ph = 10;
   px(ctx, px0, py0, pw, ph, "#f8d030");
   px(ctx, px0 + 1, py0 + 1, pw - 2, ph - 2, "#181010");
   px(ctx, px0 + 2, py0 + 2, pw - 4, ph - 4, "#fff8e0");
-  // chunky pixel letters (stay sharp under canvas upscale)
-  drawPixelWord(ctx, "PAUL", x + TILE / 2 - 10, py0 + 3, "#100808", 1);
-  drawPixelWord(ctx, "ATREIDES", x + TILE / 2 - 18, py0 + 7, "#100808", 1);
-  // note tucked under the plaque
-  px(ctx, x + TILE, y + 22, 8, 4, "#f0e8c8");
-  px(ctx, x + TILE + 1, y + 23, 6, 1, "#201008");
-  px(ctx, x + TILE + 1, y + 25, 5, 1, "#201008");
+  drawPixelWord(ctx, "PAUL", x + TILE / 2 - 10, py0 + 2, "#100808", 1);
+  drawPixelWord(ctx, "ATREIDES", x + TILE / 2 - 18, py0 + 6, "#100808", 1);
+  // crumpled note at feet
+  px(ctx, x + TILE - 1, y + 20, 8, 4, "#f0e8c8");
+  px(ctx, x + TILE, y + 21, 6, 1, "#201008");
+  px(ctx, x + TILE, y + 23, 5, 1, "#201008");
 }
 
 /** 3×5 block capitals for statue plaques. */
