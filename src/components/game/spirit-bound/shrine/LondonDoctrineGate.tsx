@@ -334,7 +334,7 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
         </span>
       </div>
       <p className="mb-2 text-[8px] text-[#a88828]">
-        Scrap {paperOrder} · ~20s ±5/10 per mural · then one easy watch note · ESC abort
+        Scrap {paperOrder} · 20s / 25s alternating · then one easy watch note · ESC abort
       </p>
       <div className="grid gap-3 md:grid-cols-2">
         <div>

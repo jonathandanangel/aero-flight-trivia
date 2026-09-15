@@ -14,7 +14,7 @@ export const DIFFICULTY: Record<Difficulty, DifficultyBand> = {
   medium: { id: "medium", label: "MEDIUM", minMoves: 6, maxMoves: 9, timeLimit: 90, scramble: 12 },
   hard: { id: "hard", label: "HARD", minMoves: 10, maxMoves: 14, timeLimit: 120, scramble: 18 },
   expert: { id: "expert", label: "EXPERT", minMoves: 15, maxMoves: 20, timeLimit: 150, scramble: 26 },
-  /** Doctrine scraps — hardest Executive Accumen band; ~20s ±5/10 per mural. */
+  /** Doctrine scraps — hardest Executive Accumen band; murals alternate 20s / 25s. */
   extreme: { id: "extreme", label: "EXTREME", minMoves: 19, maxMoves: 19, timeLimit: 20, scramble: 40 },
 };
 
