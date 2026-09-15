@@ -9,11 +9,13 @@ import { JehovahBook } from "@/components/game/spirit-bound/JehovahBook";
 import { SplashIntro } from "@/components/game/spirit-bound/SplashIntro";
 import { ArcadeTree } from "@/components/game/spirit-bound/shrine/ArcadeTree";
 import { ReasonTrial } from "@/components/game/spirit-bound/reason/ReasonTrial";
+import { DoctrineExtremeGate } from "@/components/game/spirit-bound/reason/DoctrineExtremeGate";
 import { ShrineTrial } from "@/components/game/spirit-bound/shrine/ShrineTrial";
 import {
   startMusic,
   startGrasslandsMusic,
   startVineBattleMusic,
+  startKingBattleMusic,
   playDemonicLaugh,
   playBurnSfx,
   stopAmbient,
@@ -37,6 +39,7 @@ type Mode =
   | "reason"
   | "reasonEndless"
   | "reasonCampaign"
+  | "doctrine"
   | "battle"
   | "gameover"
   | "ending";
@@ -80,6 +83,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   const [bookOpen, setBookOpen] = React.useState(false);
   const [bookTabId, setBookTabId] = React.useState<string | null>(null);
   const [shrineCleared, setShrineCleared] = React.useState(false);
+  const [pendingPaper, setPendingPaper] = React.useState<ScatteredPaper | null>(null);
   const demonicLaughPlayedRef = React.useRef(false);
 
   const maxHp = MAX_HP_BY_LEVEL(level);
@@ -203,6 +207,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
       }
       if (shrineCleared) {
         setEnemyId("saltking");
+        startKingBattleMusic();
         setMode("battle");
         return;
       }
@@ -230,9 +235,22 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
 
   const onPaper = React.useCallback((paper: ScatteredPaper) => {
     if (collectedPapersRef.current.has(paper.id)) return;
+    setPendingPaper(paper);
+    setMode("doctrine");
+  }, []);
+
+  const onDoctrineSolved = React.useCallback(() => {
+    const paper = pendingPaper;
+    setPendingPaper(null);
+    if (!paper) {
+      startGrasslandsMusic();
+      setMode("overworld");
+      return;
+    }
     const next = new Set(collectedPapersRef.current).add(paper.id);
     collectedPapersRef.current = next;
     setCollectedPapers(next);
+    startGrasslandsMusic();
     if (allPapersCollected(next)) {
       setBanner("Press B");
       setDialogue({
@@ -251,6 +269,12 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
       });
     }
     setMode("dialogue");
+  }, [pendingPaper]);
+
+  const onDoctrineAbort = React.useCallback(() => {
+    setPendingPaper(null);
+    startGrasslandsMusic();
+    setMode("overworld");
   }, []);
 
   const onGoldenEgg = React.useCallback(() => {
@@ -354,6 +378,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
       setBossBeaten(true);
       setExitDoorOpen(true);
       demonicLaughPlayedRef.current = false;
+      startMusic();
       setDialogue({
         name: "FATES",
         lines: [
@@ -424,6 +449,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     setGold((g) => g + rupees);
     setBanner(`SHRINE SEALED  +${rupees} R`);
     setEnemyId("saltking");
+    startKingBattleMusic();
     setMode("battle");
   };
 
@@ -602,6 +628,14 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         )}
 
         {mode === "shrine" && <ShrineTrial onSolved={onShrineSolved} />}
+
+        {mode === "doctrine" && pendingPaper && (
+          <DoctrineExtremeGate
+            paperOrder={pendingPaper.order}
+            onSolved={onDoctrineSolved}
+            onAbort={onDoctrineAbort}
+          />
+        )}
 
         {mode === "sprint" && <ArcadeTree kind="sprint" onExit={() => setMode("title")} />}
 

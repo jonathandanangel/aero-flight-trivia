@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { TILE } from "@/game/spirit-bound/data";
+import { drawLegendHero } from "@/game/spirit-bound/hero";
 import { pixelTriangle, px } from "@/game/spirit-bound/pixel";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
@@ -157,17 +158,5 @@ function drawEgg(
 }
 
 function drawHeroSprite(ctx: CanvasRenderingContext2D, x: number, y: number, frame: number) {
-  const step = Math.floor(frame / 6) % 2 === 0 ? -1 : 1;
-  px(ctx, x + 5, y + TILE - 3, TILE - 10, 3, "rgba(0,0,0,0.35)");
-  px(ctx, x + 8, y + 16, 3, 6, "#703818");
-  px(ctx, x + 13, y + 16, 3, 6, "#703818");
-  px(ctx, x + 8 + step, y + 20, 3, 2, "#502010");
-  px(ctx, x + 6, y + 10, 12, 8, "#20a838");
-  px(ctx, x + 5, y + 11, 2, 6, "#187828");
-  px(ctx, x + 17, y + 11, 2, 6, "#187828");
-  px(ctx, x + 8, y + 6, 8, 6, "#f0c090");
-  px(ctx, x + 9, y + 8, 2, 2, "#201008");
-  px(ctx, x + 13, y + 8, 2, 2, "#201008");
-  px(ctx, x + 7, y + 2, 10, 5, "#187828");
-  pixelTriangle(ctx, x + 9, y - 1, 6, "#20a838");
+  drawLegendHero(ctx, x, y, "down", frame, { tile: TILE });
 }

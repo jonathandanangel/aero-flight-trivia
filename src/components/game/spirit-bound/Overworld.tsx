@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { isSolid, MAP_H, MAP_W, NPCS, TILE, tileAt, WILD_POOL, type Npc } from "@/game/spirit-bound/data";
 import { drawTriForce, pixelTriangle, px } from "@/game/spirit-bound/pixel";
+import { drawLegendHero } from "@/game/spirit-bound/hero";
 import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 
 type Props = {
@@ -252,28 +253,7 @@ function drawHero(
   dir: "up" | "down" | "left" | "right",
   frame: number,
 ) {
-  px(ctx, x + 5, y + TILE - 3, TILE - 10, 3, "rgba(0,0,0,0.35)");
-  const step = frame ? (Math.floor(frame / 6) % 2 === 0 ? -1 : 1) : 0;
-
-  px(ctx, x + 8, y + 16, 3, 6, "#703818");
-  px(ctx, x + 13, y + 16, 3, 6, "#703818");
-  if (step) px(ctx, x + 8 + step, y + 20, 3, 2, "#502010");
-
-  px(ctx, x + 6, y + 10, 12, 8, "#20a838");
-  px(ctx, x + 5, y + 11, 2, 6, "#187828");
-  px(ctx, x + 17, y + 11, 2, 6, "#187828");
-
-  px(ctx, x + 8, y + 6, 8, 6, "#f0c090");
-  if (dir !== "up") {
-    const ex = dir === "left" ? 9 : dir === "right" ? 13 : 9;
-    px(ctx, x + ex, y + 8, 2, 2, "#201008");
-    if (dir === "down") px(ctx, x + 13, y + 8, 2, 2, "#201008");
-  }
-
-  px(ctx, x + 7, y + 2, 10, 5, "#187828");
-  pixelTriangle(ctx, x + 9, y - 1, 6, "#20a838");
-  if (dir === "left") px(ctx, x + 5, y + 3, 4, 3, "#187828");
-  if (dir === "right") px(ctx, x + 15, y + 3, 4, 3, "#187828");
+  drawLegendHero(ctx, x, y, dir, frame, { tile: TILE });
 }
 
 function drawNpc(ctx: CanvasRenderingContext2D, x: number, y: number, id: string, color: string) {

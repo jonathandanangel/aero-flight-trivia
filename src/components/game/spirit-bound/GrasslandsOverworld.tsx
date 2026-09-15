@@ -11,6 +11,7 @@ import {
   type GrassNpc,
 } from "@/game/spirit-bound/grasslands-data";
 import { SCATTERED_PAPERS, paperAt, type ScatteredPaper } from "@/game/spirit-bound/scattered-papers";
+import { drawLegendHero } from "@/game/spirit-bound/hero";
 import { pixelTriangle, px } from "@/game/spirit-bound/pixel";
 import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 
@@ -539,18 +540,5 @@ function drawHero(
   frame: number,
   night: boolean,
 ) {
-  px(ctx, x + 5, y + GRASS_TILE - 3, GRASS_TILE - 10, 3, "rgba(0,0,0,0.35)");
-  const step = frame ? (Math.floor(frame / 6) % 2 === 0 ? -1 : 1) : 0;
-  const shirt = night ? "#284878" : "#20a838";
-  px(ctx, x + 8, y + 16, 3, 6, "#703818");
-  px(ctx, x + 13, y + 16, 3, 6, "#703818");
-  if (step) px(ctx, x + 8 + step, y + 20, 3, 2, "#502010");
-  px(ctx, x + 6, y + 10, 12, 8, shirt);
-  px(ctx, x + 8, y + 6, 8, 6, "#f0c090");
-  if (dir !== "up") {
-    px(ctx, x + 9, y + 8, 2, 2, "#201008");
-    if (dir === "down") px(ctx, x + 13, y + 8, 2, 2, "#201008");
-  }
-  px(ctx, x + 7, y + 2, 10, 5, shirt);
-  pixelTriangle(ctx, x + 9, y - 1, 6, shirt);
+  drawLegendHero(ctx, x, y, dir, frame, { night, tile: GRASS_TILE });
 }

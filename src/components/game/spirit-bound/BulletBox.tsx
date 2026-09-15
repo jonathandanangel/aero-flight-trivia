@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { pixelTriangle } from "@/game/spirit-bound/pixel";
 import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 
 type Bullet = { x: number; y: number; vx: number; vy: number; r: number; kind: "dot" | "bar" };
@@ -178,25 +179,20 @@ export function BulletBox({ pattern, duration, damage, onHit, onDone }: Props) {
           ctx.fillRect(b.x - 2, b.y - 5, 4, 10);
           ctx.fillStyle = "#f8f0c8";
         } else {
-          const r = Math.max(4, b.r);
-          ctx.fillStyle = "#f8d030";
-          ctx.fillRect(b.x - 1, b.y - r, 2, 2);
-          ctx.fillRect(b.x - 2, b.y - r + 2, 4, 2);
-          ctx.fillRect(b.x - 3, b.y - r + 4, 6, 2);
-          ctx.fillRect(b.x - r + 1, b.y, r * 2 - 2, 2);
-          ctx.fillStyle = "#f8f0c8";
+          // Upward gold attack triangles
+          const size = Math.max(8, b.r * 2);
+          pixelTriangle(ctx, b.x - size / 2, b.y - size / 2, size, "#f8d030", "up");
         }
       }
 
       const flash = invuln > 0 && Math.floor(elapsed / 80) % 2 === 0;
-      // Inverted red triangle (point down) — contrasts upward gold attack triangles.
-      ctx.fillStyle = flash ? "#7a1b2b" : "#e83828";
-      ctx.fillRect(heart.x - 6, heart.y - 4, 12, 2);
-      ctx.fillRect(heart.x - 5, heart.y - 2, 10, 2);
-      ctx.fillRect(heart.x - 3, heart.y, 6, 2);
-      ctx.fillRect(heart.x - 1, heart.y + 2, 2, 2);
-      ctx.fillStyle = flash ? "#7a1b2b" : "#f8d030";
-      ctx.fillRect(heart.x - 1, heart.y - 2, 2, 2);
+      // Player soul: inverted (point-down) red triangle — opposite of attack triangles.
+      const soul = 14;
+      const sx = heart.x - soul / 2;
+      const sy = heart.y - soul / 2;
+      pixelTriangle(ctx, sx - 1, sy - 1, soul + 2, "#181010", "down");
+      pixelTriangle(ctx, sx, sy, soul, flash ? "#7a1b2b" : "#e83828", "down");
+      pixelTriangle(ctx, sx + 4, sy + 2, soul - 8, flash ? "#501018" : "#f86048", "down");
 
       if (elapsed >= duration && !done) {
         done = true;
