@@ -778,10 +778,11 @@
 }
 
 .splash-root {
-  position: fixed;
-  inset: 0;
+  position: relative;
   z-index: 50;
   display: flex;
+  width: 100%;
+  min-height: 100dvh;
   cursor: pointer;
   align-items: center;
   justify-content: center;

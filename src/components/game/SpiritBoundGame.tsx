@@ -454,7 +454,14 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   };
 
   return (
-    <div className="spirit-bound-shell extreme-shell mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-2 py-4 font-pixel">
+    <div
+      className={cn(
+        "spirit-bound-shell mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-2 py-4 font-pixel",
+        mode === "splash" || mode === "hatch" || mode === "title"
+          ? "min-h-[100dvh] justify-center"
+          : "extreme-shell",
+      )}
+    >
       {mode === "splash" && <SplashIntro onDone={finishSplash} />}
 
       {mode === "hatch" && <EggHatchIntro onDone={finishHatch} />}
@@ -471,8 +478,12 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         </div>
       )}
 
-      <div className="relative w-full max-w-[640px]">
-        {mode === "title" && (
+      <div
+        className={cn(
+          "relative w-full max-w-[640px]",
+          mode === "title" && "flex flex-col items-center",
+        )}
+      >        {mode === "title" && (
           <section className="flex min-h-[420px] flex-col items-center justify-center gap-5 rounded-lg border-4 border-game-yellow bg-game-bg p-8 text-center text-[#f8f0c8] shadow-[0_0_0_4px_#181010]">
             <div className="flex flex-col items-center leading-none text-game-yellow">
               <span className="text-[28px]">▲</span>
