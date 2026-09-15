@@ -136,7 +136,7 @@ export function GrasslandsOverworld({
       if (burnFlash.current > 0 && burnFlash.current < 9000) burnFlash.current += 1;
 
       const keys = held.current;
-      if (!pausedRef.current && !night) {
+      if (!pausedRef.current) {
         let dx = 0;
         let dy = 0;
         if (isDown(keys, "ArrowLeft", "a")) {
@@ -160,30 +160,35 @@ export function GrasslandsOverworld({
         if (dx && !blocked(p.x + dx, p.y)) p.x += dx;
         if (dy && !blocked(p.x, p.y + dy)) p.y += dy;
 
+        // Night explore: walk the burning world, but no bush/vine/wild fights.
         if (dx || dy) {
-          steps.current += 1;
-          const tx = Math.floor((p.x + GRASS_TILE / 2) / GRASS_TILE);
-          const ty = Math.floor((p.y + GRASS_TILE / 2) / GRASS_TILE);
-          const t = grassTileAt(tx, ty);
+          if (night) {
+            // movement only
+          } else {
+            steps.current += 1;
+            const tx = Math.floor((p.x + GRASS_TILE / 2) / GRASS_TILE);
+            const ty = Math.floor((p.y + GRASS_TILE / 2) / GRASS_TILE);
+            const t = grassTileAt(tx, ty);
 
-          if (t === "B" && !burntBushes.has(`${tx},${ty}`)) {
-            cb.current.onBush({ x: p.x, y: p.y }, `${tx},${ty}`);
-            return;
-          }
-          if (t === "V" && !vineDefeated) {
-            cb.current.onVine({ x: p.x, y: p.y });
-            return;
-          }
-          if (t === "g") {
-            steps.current += 2;
-            if (steps.current >= budget.current) {
-              steps.current = 0;
-              budget.current = 80 + Math.floor(Math.random() * 90);
-              cb.current.onWildGrass({ x: p.x, y: p.y });
+            if (t === "B" && !burntBushes.has(`${tx},${ty}`)) {
+              cb.current.onBush({ x: p.x, y: p.y }, `${tx},${ty}`);
               return;
             }
-          } else if (steps.current > 0) {
-            steps.current -= 0.15;
+            if (t === "V" && !vineDefeated) {
+              cb.current.onVine({ x: p.x, y: p.y });
+              return;
+            }
+            if (t === "g") {
+              steps.current += 2;
+              if (steps.current >= budget.current) {
+                steps.current = 0;
+                budget.current = 80 + Math.floor(Math.random() * 90);
+                cb.current.onWildGrass({ x: p.x, y: p.y });
+                return;
+              }
+            } else if (steps.current > 0) {
+              steps.current -= 0.15;
+            }
           }
         }
       }

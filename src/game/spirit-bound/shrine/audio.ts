@@ -2,6 +2,7 @@ type Sfx = "select" | "move" | "invalid" | "success" | "fail" | "tick" | "burn" 
 
 let ctx: AudioContext | null = null;
 let music: { gain: GainNode; timer: number; stop: () => void } | null = null;
+let burnLoop: { gain: GainNode; timer: number; stop: () => void } | null = null;
 
 function context(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -74,17 +75,26 @@ export function playBurnSfx() {
   playSfx("burn");
 }
 
-/** Original 8-bit loop — adventure square lead + warm bass, not a licensed theme. */
-const LEAD = [523, 659, 784, 659, 698, 784, 880, 784, 659, 587, 523, 392, 523, 659, 587, 523];
-const BASS = [130, 130, 196, 0, 146, 146, 196, 0, 174, 174, 220, 0, 130, 196, 164, 0];
-const STEP = 0.18;
+/**
+ * Original strolling overworld loop — bright C-major square lead + soft bass,
+ * EarthBound-town *feel* (happy walk, ~118 BPM feel), not a licensed theme.
+ */
+const LEAD = [
+  523, 587, 659, 523, 0, 659, 698, 784, 698, 659, 587, 523, 0, 0, 392, 440, 523, 587, 659, 523, 587, 659, 784, 659, 587, 523, 440, 392, 523, 0, 0, 0,
+];
+const BASS = [
+  130, 0, 130, 0, 196, 0, 196, 0, 146, 0, 146, 0, 220, 0, 196, 0, 174, 0, 174, 0, 130, 0, 196, 0, 164, 0, 196, 0, 130, 0, 98, 0,
+];
+const STEP = 0.255; // ~117 BPM eighth notes
 
 export function startMusic() {
   const ac = context();
-  if (!ac || music) return;
+  if (!ac) return;
   void ac.resume();
+  stopBurnLoop();
+  if (music) return;
   const gain = ac.createGain();
-  gain.gain.value = 0.045;
+  gain.gain.value = 0.04;
   gain.connect(ac.destination);
 
   let step = 0;
@@ -97,8 +107,8 @@ export function startMusic() {
       const g = ac.createGain();
       o.type = "square";
       o.frequency.value = lead;
-      g.gain.setValueAtTime(0.04, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + STEP * 0.9);
+      g.gain.setValueAtTime(0.038, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + STEP * 0.85);
       o.connect(g);
       g.connect(gain);
       o.start(t);
@@ -109,12 +119,25 @@ export function startMusic() {
       const g = ac.createGain();
       o.type = "triangle";
       o.frequency.value = bass;
-      g.gain.setValueAtTime(0.05, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + STEP * 1.1);
+      g.gain.setValueAtTime(0.045, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + STEP * 1.05);
       o.connect(g);
       g.connect(gain);
       o.start(t);
-      o.stop(t + STEP * 1.15);
+      o.stop(t + STEP * 1.1);
+    }
+    // soft pulse "clap" every 4 bars — town stroll feel
+    if (step % 8 === 0) {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = "triangle";
+      o.frequency.value = 180;
+      g.gain.setValueAtTime(0.02, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+      o.connect(g);
+      g.connect(gain);
+      o.start(t);
+      o.stop(t + 0.1);
     }
     step += 1;
   };
@@ -138,7 +161,7 @@ export function fadeAmbient(on: boolean) {
   const ac = context();
   if (!ac || !music) return;
   music.gain.gain.cancelScheduledValues(ac.currentTime);
-  music.gain.gain.linearRampToValueAtTime(on ? 0.045 : 0.012, ac.currentTime + 0.35);
+  music.gain.gain.linearRampToValueAtTime(on ? 0.04 : 0.01, ac.currentTime + 0.35);
 }
 
 export function stopAmbient() {
@@ -149,4 +172,66 @@ export function stopAmbient() {
     /* already stopped */
   }
   music = null;
+}
+
+/** Continuous crackle/hiss for the burning grasslands night — no music. */
+export function startBurnLoop() {
+  const ac = context();
+  if (!ac) return;
+  void ac.resume();
+  stopAmbient();
+  if (burnLoop) return;
+
+  const gain = ac.createGain();
+  gain.gain.value = 0.035;
+  gain.connect(ac.destination);
+
+  const tick = () => {
+    const t = ac.currentTime;
+    // low rumble
+    const o1 = ac.createOscillator();
+    const g1 = ac.createGain();
+    o1.type = "sawtooth";
+    o1.frequency.value = 45 + Math.random() * 25;
+    g1.gain.setValueAtTime(0.04, t);
+    g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.35 + Math.random() * 0.2);
+    o1.connect(g1);
+    g1.connect(gain);
+    o1.start(t);
+    o1.stop(t + 0.55);
+    // crackle pops
+    for (let i = 0; i < 3; i++) {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = "square";
+      o.frequency.value = 200 + Math.random() * 900;
+      const at = t + Math.random() * 0.2;
+      g.gain.setValueAtTime(0.012 + Math.random() * 0.02, at);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.04 + Math.random() * 0.06);
+      o.connect(g);
+      g.connect(gain);
+      o.start(at);
+      o.stop(at + 0.12);
+    }
+  };
+
+  tick();
+  const timer = window.setInterval(tick, 280);
+  burnLoop = {
+    gain,
+    timer,
+    stop: () => {
+      window.clearInterval(timer);
+    },
+  };
+}
+
+export function stopBurnLoop() {
+  if (!burnLoop) return;
+  try {
+    burnLoop.stop();
+  } catch {
+    /* already stopped */
+  }
+  burnLoop = null;
 }

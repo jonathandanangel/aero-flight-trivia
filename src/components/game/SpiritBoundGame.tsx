@@ -2,20 +2,35 @@ import * as React from "react";
 import { Battle, type BattleResult } from "@/components/game/spirit-bound/Battle";
 import { DialogueBox } from "@/components/game/spirit-bound/DialogueBox";
 import { Overworld } from "@/components/game/spirit-bound/Overworld";
+import { EggHatchIntro } from "@/components/game/spirit-bound/EggHatchIntro";
 import { GoldenEggReader, HawkEggReader } from "@/components/game/spirit-bound/GoldenEggReader";
 import { GrasslandsOverworld } from "@/components/game/spirit-bound/GrasslandsOverworld";
+import { JehovahBook } from "@/components/game/spirit-bound/JehovahBook";
 import { SplashIntro } from "@/components/game/spirit-bound/SplashIntro";
 import { ArcadeTree } from "@/components/game/spirit-bound/shrine/ArcadeTree";
 import { ReasonTrial } from "@/components/game/spirit-bound/reason/ReasonTrial";
 import { ShrineTrial } from "@/components/game/spirit-bound/shrine/ShrineTrial";
-import { startMusic, playDemonicLaugh, playBurnSfx } from "@/game/spirit-bound/shrine/audio";
+import {
+  startMusic,
+  playDemonicLaugh,
+  playBurnSfx,
+  stopAmbient,
+  startBurnLoop,
+  stopBurnLoop,
+} from "@/game/spirit-bound/shrine/audio";
 import { ENEMIES, TILE, type Npc } from "@/game/spirit-bound/data";
 import { GRASS_TILE, VINE_MIN_LEVEL, type GrassNpc } from "@/game/spirit-bound/grasslands-data";
+import {
+  JEHOVAH_BOOK_TITLE,
+  nextPaperToCollect,
+  type ScatteredPaper,
+} from "@/game/spirit-bound/scattered-papers";
 import { cn } from "@/lib/utils";
 
 type Mode =
   | "splash"
   | "title"
+  | "hatch"
   | "overworld"
   | "dialogue"
   | "shrine"
@@ -61,10 +76,25 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   const [afterDialogue, setAfterDialogue] = React.useState<"none" | "vine">("none");
   const [goldenEggOpen, setGoldenEggOpen] = React.useState(false);
   const [hawkEggOpen, setHawkEggOpen] = React.useState(false);
+  const [collectedPapers, setCollectedPapers] = React.useState<Set<string>>(() => new Set());
+  const [bookOpen, setBookOpen] = React.useState(false);
+  const [bookTabId, setBookTabId] = React.useState<string | null>(null);
   const [shrineCleared, setShrineCleared] = React.useState(false);
 
   const maxHp = MAX_HP_BY_LEVEL(level);
+  const goMenu = React.useCallback(() => {
+    stopBurnLoop();
+    onMenu();
+  }, [onMenu]);
   const finishSplash = React.useCallback(() => setMode("title"), []);
+  const startGreenvaleQuest = React.useCallback(() => {
+    startMusic();
+    setMode("hatch");
+  }, []);
+  const finishHatch = React.useCallback(() => {
+    startMusic();
+    setMode("overworld");
+  }, []);
   const btn =
     "rounded-lg border border-cyan/50 bg-deepblue/70 px-5 py-3 font-display text-sm uppercase tracking-[0.22em] text-cyan transition-colors hover:bg-cyan/20 hover:text-moon";
   const menuBtn =
@@ -81,8 +111,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     const onKey = (e: KeyboardEvent) => {
       if (["Enter", "z", "Z", " "].includes(e.key)) {
         e.preventDefault();
-        startMusic();
-        setMode("overworld");
+        startGreenvaleQuest();
       }
       if (e.key === "t" || e.key === "T") {
         e.preventDefault();
@@ -112,7 +141,34 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mode]);
+  }, [mode, startGreenvaleQuest]);
+
+  React.useEffect(() => {
+    if (!goldenEggOpen && !hawkEggOpen && !bookOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (["Escape", "x", "X", "z", "Z", "Enter", " "].includes(e.key)) {
+        e.preventDefault();
+        setGoldenEggOpen(false);
+        setHawkEggOpen(false);
+        setBookOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goldenEggOpen, hawkEggOpen, bookOpen]);
+
+  React.useEffect(() => {
+    if (mode !== "overworld" || bookOpen || goldenEggOpen || hawkEggOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "b" || e.key === "B") {
+        if (collectedPapers.size === 0) return;
+        e.preventDefault();
+        setBookOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mode, bookOpen, goldenEggOpen, hawkEggOpen, collectedPapers.size]);
 
   const onTalk = React.useCallback(
     (npc: Npc) => {
@@ -151,7 +207,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
       }
       setMode("shrine");
     },
-    [bossBeaten, shrineCleared],
+    [bossBeaten, exitDoorOpen, shrineCleared],
   );
 
   const onExitToGrasslands = React.useCallback((_at: { x: number; y: number }) => {
@@ -160,18 +216,26 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     setBanner("IVY LAUREL GRASSLANDS");
   }, []);
 
-  React.useEffect(() => {
-    if (!goldenEggOpen && !hawkEggOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (["Escape", "x", "X", "z", "Z", "Enter", " "].includes(e.key)) {
-        e.preventDefault();
-        setGoldenEggOpen(false);
-        setHawkEggOpen(false);
+  const onPaper = React.useCallback(
+    (paper: ScatteredPaper) => {
+      const next = nextPaperToCollect(collectedPapers);
+      if (!next || paper.id !== next.id) {
+        setDialogue({
+          lines: [
+            "* The ink on this scrap is sealed.",
+            "* Bind an earlier tab into the book first — in order.",
+          ],
+        });
+        setMode("dialogue");
+        return;
       }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [goldenEggOpen, hawkEggOpen]);
+      setCollectedPapers((prev) => new Set(prev).add(paper.id));
+      setBanner(paper.tab);
+      setBookTabId(paper.id);
+      setBookOpen(true);
+    },
+    [collectedPapers],
+  );
 
   const onGoldenEgg = React.useCallback(() => {
     setHawkEggOpen(false);
@@ -188,13 +252,16 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     setMode("dialogue");
   }, []);
 
-  const onGrassBush = React.useCallback((at: { x: number; y: number }, key: string) => {
-    if (vinePurged || burntBushes.has(key)) return;
-    setSpawn(at);
-    setPendingBushKey(key);
-    setEnemyId("wildbush");
-    setMode("battle");
-  }, [vinePurged, burntBushes]);
+  const onGrassBush = React.useCallback(
+    (at: { x: number; y: number }, key: string) => {
+      if (vinePurged || burntBushes.has(key)) return;
+      setSpawn(at);
+      setPendingBushKey(key);
+      setEnemyId("wildbush");
+      setMode("battle");
+    },
+    [vinePurged, burntBushes],
+  );
 
   const onGrassVine = React.useCallback(
     (at: { x: number; y: number }) => {
@@ -216,12 +283,15 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     [level, vinePurged],
   );
 
-  const onGrassWild = React.useCallback((at: { x: number; y: number }) => {
-    if (vinePurged) return;
-    setSpawn(at);
-    setEnemyId("wildbush");
-    setMode("battle");
-  }, [vinePurged]);
+  const onGrassWild = React.useCallback(
+    (at: { x: number; y: number }) => {
+      if (vinePurged) return;
+      setSpawn(at);
+      setEnemyId("wildbush");
+      setMode("battle");
+    },
+    [vinePurged],
+  );
 
   const onBattleEnd = (r: BattleResult) => {
     setItems(r.items);
@@ -273,6 +343,9 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
           "* Adoni Je Hovah your old poisonous ivy laurel vine will be stopped by Paul Barnabus the Nazarene. Mark my words!",
           "* Demonic laughter echoes through the shrine...",
           "* The gold door blazes open. A pastoral field waits beyond.",
+          "* Scraps of doctrine scatter across GREENVALE — bind them in order into",
+          `* ${JEHOVAH_BOOK_TITLE}.`,
+          "* That hunt is harder than the vine. The door still opens.",
         ],
       });
       setMode("dialogue");
@@ -282,12 +355,15 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     if (wasVine && (r.outcome === "win" || r.outcome === "spare")) {
       setVinePurged(true);
       setAfterDialogue("vine");
+      stopAmbient();
       playBurnSfx();
+      startBurnLoop();
       setDialogue({
         lines: [
           "* The POISONOUS IVY LAUREL VINE shrivels.",
           "* Flames race across every meadow. Night falls.",
-          "* No enemies remain. The grasslands are still.",
+          "* Trees, houses, and the vine itself burn in the distance.",
+          "* No enemies remain. The grasslands crackle under a burning sky.",
         ],
       });
       setMode("dialogue");
@@ -312,8 +388,13 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     setAfterDialogue("none");
     setGoldenEggOpen(false);
     setHawkEggOpen(false);
+    setCollectedPapers(new Set());
+    setBookOpen(false);
+    setBookTabId(null);
     setShrineCleared(false);
     setSpawn({ x: 2 * TILE, y: 1 * TILE });
+    stopBurnLoop();
+    startMusic();
     setMode("overworld");
   };
 
@@ -330,13 +411,15 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     <div className="spirit-bound-shell extreme-shell mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-2 py-4 font-pixel">
       {mode === "splash" && <SplashIntro onDone={finishSplash} />}
 
-      {mode !== "splash" && (
+      {mode === "hatch" && <EggHatchIntro onDone={finishHatch} />}
+
+      {mode !== "splash" && mode !== "hatch" && (
         <div className="flex w-full items-center justify-between gap-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-magenta">ZEUS AMMON-RA 11</p>
             <h2 className="font-display text-xl text-cyan text-glow sm:text-2xl">THE LEGEND OF TRIANGLES</h2>
           </div>
-          <button type="button" className={btn} onClick={onMenu}>
+          <button type="button" className={btn} onClick={goMenu}>
             Main menu
           </button>
         </div>
@@ -359,14 +442,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
               </p>
             </div>
             <div className="mt-2 flex w-full max-w-[420px] flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  startMusic();
-                  setMode("overworld");
-                }}
-                className={menuBtn}
-              >
+              <button type="button" onClick={startGreenvaleQuest} className={menuBtn}>
                 Z · GREENVALE QUEST
               </button>
               <button
@@ -433,17 +509,19 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
             {mapId === "greenvale" ? (
               <Overworld
                 spawn={spawn}
-                paused={mode !== "overworld"}
+                paused={mode !== "overworld" || bookOpen}
                 exitDoorOpen={exitDoorOpen}
+                collectedPaperIds={collectedPapers}
                 onTalk={onTalk}
                 onEncounter={onEncounter}
                 onBossDoor={onBossDoor}
                 onExitToGrasslands={onExitToGrasslands}
+                onPaper={onPaper}
               />
             ) : (
               <GrasslandsOverworld
                 spawn={spawn}
-                paused={mode !== "overworld" || goldenEggOpen || hawkEggOpen}
+                paused={mode !== "overworld" || goldenEggOpen || hawkEggOpen || bookOpen}
                 night={vinePurged}
                 burntBushes={burntBushes}
                 vineDefeated={vinePurged}
@@ -460,6 +538,13 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
             )}
             {hawkEggOpen && mapId === "grasslands" && (
               <HawkEggReader onClose={() => setHawkEggOpen(false)} />
+            )}
+            {bookOpen && (
+              <JehovahBook
+                collectedIds={collectedPapers}
+                initialTabId={bookTabId}
+                onClose={() => setBookOpen(false)}
+              />
             )}
             {mode === "dialogue" && dialogue && (
               <DialogueBox
@@ -520,7 +605,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
               <button type="button" onClick={restart} className={cn(menuBtn, "w-auto px-4")}>
                 RESTART?
               </button>
-              <button type="button" className={btn} onClick={onMenu}>
+              <button type="button" className={btn} onClick={goMenu}>
                 Main menu
               </button>
             </div>
@@ -550,7 +635,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
               <button type="button" onClick={restart} className={cn(menuBtn, "w-auto px-4")}>
                 NEW GAME
               </button>
-              <button type="button" className={btn} onClick={onMenu}>
+              <button type="button" className={btn} onClick={goMenu}>
                 Main menu
               </button>
             </div>
@@ -561,6 +646,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
       {mode !== "battle" &&
         mode !== "title" &&
         mode !== "splash" &&
+        mode !== "hatch" &&
         mode !== "shrine" &&
         mode !== "sprint" &&
         mode !== "endless" &&
@@ -570,7 +656,8 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         mode !== "ending" && (
           <div className="flex w-full max-w-[640px] flex-wrap items-center justify-between gap-3 font-mono text-[10px] text-muted-foreground">
             <span className="text-game-yellow">
-              {mapId === "grasslands" ? (vinePurged ? "GRASSLANDS · NIGHT" : "GRASSLANDS") : "GREENVALE"} · LV {level}
+              {mapId === "grasslands" ? (vinePurged ? "GRASSLANDS · NIGHT" : "GRASSLANDS") : "GREENVALE"} · LV{" "}
+              {level}
             </span>
             <span>
               HP {Math.max(0, hp)} / {maxHp}
@@ -580,6 +667,15 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
             <span>
               Heart x{items.cookie} · Fairy x{items.hotdog}
             </span>
+            {exitDoorOpen && collectedPapers.size > 0 && (
+              <button
+                type="button"
+                className="border border-game-yellow px-2 py-1 font-pixel text-[9px] text-game-yellow hover:bg-game-yellow hover:text-game-bg"
+                onClick={() => setBookOpen(true)}
+              >
+                B · BOOK
+              </button>
+            )}
           </div>
         )}
     </div>

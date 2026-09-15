@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { isSolid, MAP_H, MAP_W, NPCS, TILE, tileAt, WILD_POOL, type Npc } from "@/game/spirit-bound/data";
+import { SCATTERED_PAPERS, paperAt, type ScatteredPaper } from "@/game/spirit-bound/scattered-papers";
 import { drawTriForce, pixelTriangle, px } from "@/game/spirit-bound/pixel";
 import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 
@@ -7,17 +8,30 @@ type Props = {
   spawn: { x: number; y: number };
   paused: boolean;
   exitDoorOpen?: boolean;
+  collectedPaperIds?: Set<string>;
   onTalk: (npc: Npc) => void;
   onEncounter: (enemyId: string, at: { x: number; y: number }) => void;
   onBossDoor: (at: { x: number; y: number }) => void;
   onExitToGrasslands?: (at: { x: number; y: number }) => void;
+  /** Interact with a paper scrap (in-order collect, or sealed hint). */
+  onPaper?: (paper: ScatteredPaper) => void;
 };
 
 const W = MAP_W * TILE;
 const H = MAP_H * TILE;
 const SPEED = 1.9;
 
-export function Overworld({ spawn, paused, exitDoorOpen = false, onTalk, onEncounter, onBossDoor, onExitToGrasslands }: Props) {
+export function Overworld({
+  spawn,
+  paused,
+  exitDoorOpen = false,
+  collectedPaperIds,
+  onTalk,
+  onEncounter,
+  onBossDoor,
+  onExitToGrasslands,
+  onPaper,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pos = useRef({ ...spawn });
   const dir = useRef<"up" | "down" | "left" | "right">("down");
@@ -26,22 +40,50 @@ export function Overworld({ spawn, paused, exitDoorOpen = false, onTalk, onEncou
   const frame = useRef(0);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
+  const collectedRef = useRef(collectedPaperIds ?? new Set<string>());
+  collectedRef.current = collectedPaperIds ?? new Set<string>();
+  const papersVisible = exitDoorOpen;
 
-  const cb = useRef({ onTalk, onEncounter, onBossDoor, onExitToGrasslands });
-  cb.current = { onTalk, onEncounter, onBossDoor, onExitToGrasslands };
+  const paperImg = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/spirit-bound/scattered-paper.jpg";
+    paperImg.current = img;
+  }, []);
 
-  const facingNpc = (): Npc | undefined => {
+  const cb = useRef({ onTalk, onEncounter, onBossDoor, onExitToGrasslands, onPaper });
+  cb.current = { onTalk, onEncounter, onBossDoor, onExitToGrasslands, onPaper };
+
+  const facingTile = (): { tx: number; ty: number } => {
     const cx = pos.current.x + TILE / 2;
     const cy = pos.current.y + TILE / 2;
     const d = dir.current;
     const tx = Math.floor((cx + (d === "left" ? -TILE : d === "right" ? TILE : 0)) / TILE);
     const ty = Math.floor((cy + (d === "up" ? -TILE : d === "down" ? TILE : 0)) / TILE);
+    return { tx, ty };
+  };
+
+  const facingNpc = (): Npc | undefined => {
+    const { tx, ty } = facingTile();
     return NPCS.find((n) => n.tx === tx && n.ty === ty);
+  };
+
+  const facingPaper = (): ScatteredPaper | undefined => {
+    if (!papersVisible) return undefined;
+    const { tx, ty } = facingTile();
+    const p = paperAt(tx, ty);
+    if (!p || collectedRef.current.has(p.id)) return undefined;
+    return p;
   };
 
   const held = useKeys((key) => {
     if (pausedRef.current) return;
     if (["z", "Z", "Enter", " "].includes(key)) {
+      const paper = facingPaper();
+      if (paper) {
+        cb.current.onPaper?.(paper);
+        return;
+      }
       const npc = facingNpc();
       if (npc) cb.current.onTalk(npc);
     }
@@ -139,6 +181,20 @@ export function Overworld({ spawn, paused, exitDoorOpen = false, onTalk, onEncou
         }
       }
 
+      if (papersVisible) {
+        for (const paper of SCATTERED_PAPERS) {
+          if (collectedRef.current.has(paper.id)) continue;
+          drawScatteredPaper(
+            ctx,
+            paper.tx * TILE,
+            paper.ty * TILE,
+            frame.current,
+            paperImg.current,
+            paper.order,
+          );
+        }
+      }
+
       for (const n of NPCS) {
         const bob = Math.sin((frame.current + n.tx * 17) / 25) * 1.5;
         drawNpc(ctx, n.tx * TILE, n.ty * TILE + bob, n.id, n.color);
@@ -152,7 +208,7 @@ export function Overworld({ spawn, paused, exitDoorOpen = false, onTalk, onEncou
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [held, exitDoorOpen]);
+  }, [held, exitDoorOpen, papersVisible]);
 
   return (
     <canvas
@@ -163,6 +219,32 @@ export function Overworld({ spawn, paused, exitDoorOpen = false, onTalk, onEncou
       style={{ imageRendering: "pixelated" }}
     />
   );
+}
+
+function drawScatteredPaper(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  frame: number,
+  img: HTMLImageElement | null,
+  order: number,
+) {
+  const bob = Math.sin((frame + order * 9) / 16) * 1.2;
+  const dx = x + 2;
+  const dy = y + 2 + bob;
+  if (img && img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, dx, dy, 20, 20);
+  } else {
+    // pixel fallback matching the paper sprite
+    px(ctx, dx + 2, dy + 1, 14, 18, "#181010");
+    px(ctx, dx + 3, dy + 2, 12, 16, "#d8d8d8");
+    px(ctx, dx + 11, dy + 2, 4, 4, "#181010");
+    px(ctx, dx + 11, dy + 3, 3, 3, "#b0b0b0");
+    px(ctx, dx + 5, dy + 6, 8, 1, "#606060");
+    px(ctx, dx + 5, dy + 9, 6, 1, "#606060");
+    px(ctx, dx + 5, dy + 12, 9, 1, "#606060");
+    px(ctx, dx + 5, dy + 15, 5, 1, "#606060");
+  }
 }
 
 function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: number, openDoor = false) {
@@ -266,6 +348,11 @@ function drawHero(
 function drawNpc(ctx: CanvasRenderingContext2D, x: number, y: number, id: string, color: string) {
   px(ctx, x + 5, y + TILE - 3, TILE - 10, 3, "rgba(0,0,0,0.35)");
 
+  if (id.startsWith("statue-")) {
+    drawGreekStatue(ctx, x, y, id);
+    return;
+  }
+
   if (id === "nurse") {
     px(ctx, x + 8, y + 16, 8, 6, "#f8b0d8");
     px(ctx, x + 6, y + 8, 12, 10, "#f8e8f8");
@@ -295,5 +382,131 @@ function drawNpc(ctx: CanvasRenderingContext2D, x: number, y: number, id: string
     pixelTriangle(ctx, x + 8, y - 2, 8, "#f8d030");
   } else {
     pixelTriangle(ctx, x + 9, y + 1, 6, "#20a838");
+  }
+}
+
+/** Ancient marble god statues — pedestal + classic silhouette props. */
+function drawGreekStatue(ctx: CanvasRenderingContext2D, x: number, y: number, id: string) {
+  if (id === "statue-atreides") {
+    drawPaulAtreidesStatue(ctx, x, y);
+    return;
+  }
+
+  const marble = "#e8e0d0";
+  const shade = "#b8b0a0";
+  const base = "#908878";
+  // pedestal
+  px(ctx, x + 4, y + 18, 16, 4, base);
+  px(ctx, x + 6, y + 16, 12, 3, shade);
+  // body
+  px(ctx, x + 8, y + 8, 8, 9, marble);
+  px(ctx, x + 7, y + 10, 2, 6, shade);
+  // head
+  px(ctx, x + 9, y + 4, 6, 5, marble);
+  px(ctx, x + 10, y + 5, 2, 2, "#201008");
+  px(ctx, x + 13, y + 5, 1, 2, "#201008");
+
+  if (id === "statue-heracles") {
+    // club
+    px(ctx, x + 16, y + 6, 3, 12, "#705838");
+    px(ctx, x + 15, y + 4, 5, 3, "#887048");
+  } else if (id === "statue-athena") {
+    // helmet crest + shield
+    px(ctx, x + 8, y + 1, 8, 3, shade);
+    px(ctx, x + 11, y - 1, 2, 3, marble);
+    px(ctx, x + 3, y + 8, 5, 7, "#c8c0b0");
+    px(ctx, x + 4, y + 10, 3, 3, "#f8d030");
+  } else if (id === "statue-zeus") {
+    // thunderbolt
+    px(ctx, x + 16, y + 7, 2, 8, "#f8d030");
+    px(ctx, x + 15, y + 9, 4, 2, "#fff8a0");
+    px(ctx, x + 7, y + 2, 10, 2, shade); // beard hint
+  } else if (id === "statue-apollo") {
+    // lyre
+    px(ctx, x + 3, y + 8, 4, 8, "#d8b868");
+    px(ctx, x + 4, y + 9, 2, 6, "#f8e8c0");
+    px(ctx, x + 8, y + 2, 8, 2, "#f8d030"); // sun band
+  } else if (id === "statue-artemis") {
+    // bow + crescent
+    px(ctx, x + 3, y + 6, 2, 10, "#887858");
+    px(ctx, x + 4, y + 7, 3, 1, "#887858");
+    px(ctx, x + 4, y + 14, 3, 1, "#887858");
+    px(ctx, x + 10, y + 2, 4, 2, "#f0f0f8");
+  } else if (id === "statue-poseidon") {
+    // trident
+    px(ctx, x + 17, y + 4, 2, 14, "#58a0c8");
+    px(ctx, x + 15, y + 4, 6, 2, "#88c8e8");
+    px(ctx, x + 15, y + 3, 2, 2, "#88c8e8");
+    px(ctx, x + 19, y + 3, 2, 2, "#88c8e8");
+  }
+}
+
+/** Paul Atreides — figure + large high-contrast name plaque (clearly readable). */
+function drawPaulAtreidesStatue(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  // figure (raised so plaque has room)
+  px(ctx, x + 5, y + TILE - 2, TILE - 10, 2, "rgba(0,0,0,0.35)");
+  px(ctx, x + 7, y + 2, 10, 10, "#c8b898");
+  px(ctx, x + 8, y - 1, 8, 4, "#a89878");
+  px(ctx, x + 9, y + 1, 2, 2, "#201008");
+  px(ctx, x + 13, y + 1, 2, 2, "#201008");
+  px(ctx, x + 17, y + 4, 2, 8, "#705838");
+  // wide stone pedestal
+  px(ctx, x - 4, y + 12, TILE + 8, 12, "#706858");
+  px(ctx, x - 3, y + 13, TILE + 6, 10, "#908878");
+  // gold-framed name plaque — wider than the tile
+  const px0 = x - 8;
+  const py0 = y + 13;
+  const pw = TILE + 16;
+  const ph = 11;
+  px(ctx, px0, py0, pw, ph, "#f8d030");
+  px(ctx, px0 + 1, py0 + 1, pw - 2, ph - 2, "#181010");
+  px(ctx, px0 + 2, py0 + 2, pw - 4, ph - 4, "#fff8e0");
+  // chunky pixel letters (stay sharp under canvas upscale)
+  drawPixelWord(ctx, "PAUL", x + TILE / 2 - 10, py0 + 3, "#100808", 1);
+  drawPixelWord(ctx, "ATREIDES", x + TILE / 2 - 18, py0 + 7, "#100808", 1);
+  // note tucked under the plaque
+  px(ctx, x + TILE, y + 22, 8, 4, "#f0e8c8");
+  px(ctx, x + TILE + 1, y + 23, 6, 1, "#201008");
+  px(ctx, x + TILE + 1, y + 25, 5, 1, "#201008");
+}
+
+/** 3×5 block capitals for statue plaques. */
+const PIXEL_GLYPHS: Record<string, string[]> = {
+  A: ["010", "101", "111", "101", "101"],
+  D: ["110", "101", "101", "101", "110"],
+  E: ["111", "100", "111", "100", "111"],
+  I: ["111", "010", "010", "010", "111"],
+  L: ["100", "100", "100", "100", "111"],
+  P: ["111", "101", "111", "100", "100"],
+  R: ["110", "101", "110", "101", "101"],
+  S: ["111", "100", "111", "001", "111"],
+  T: ["111", "010", "010", "010", "010"],
+  U: ["101", "101", "101", "101", "111"],
+};
+
+function drawPixelWord(
+  ctx: CanvasRenderingContext2D,
+  word: string,
+  ox: number,
+  oy: number,
+  color: string,
+  scale: number,
+) {
+  let cursor = 0;
+  for (const ch of word) {
+    const g = PIXEL_GLYPHS[ch];
+    if (!g) {
+      cursor += 2 * scale;
+      continue;
+    }
+    for (let row = 0; row < g.length; row++) {
+      const line = g[row] ?? "";
+      for (let col = 0; col < line.length; col++) {
+        if (line[col] === "1") {
+          px(ctx, ox + cursor + col * scale, oy + row * scale, scale, scale, color);
+        }
+      }
+    }
+    cursor += 4 * scale;
   }
 }
