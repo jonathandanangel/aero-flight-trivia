@@ -240,7 +240,7 @@ function startThemeLoop(
   lead: number[],
   bass: number[],
   stepMs: number,
-  opts?: { loopForever?: boolean; onComplete?: () => void },
+  opts?: { loopForever?: boolean; onComplete?: () => void; hitEvery?: number },
 ) {
   const ac = context();
   if (!ac) return;
@@ -261,6 +261,7 @@ function startThemeLoop(
   gain.connect(ac.destination);
 
   const loopForever = opts?.loopForever ?? true;
+  const hitEvery = opts?.hitEvery ?? 8;
   const totalSteps = lead.length;
   let step = 0;
   let finished = false;
@@ -295,12 +296,12 @@ function startThemeLoop(
       o.start(t);
       o.stop(t + stepMs * 1.1);
     }
-    if (step % 8 === 0) {
+    if (step % hitEvery === 0) {
       const o = ac.createOscillator();
       const g = ac.createGain();
       o.type = "triangle";
-      o.frequency.value = 180;
-      g.gain.setValueAtTime(0.018, t);
+      o.frequency.value = hitEvery <= 4 ? 140 : 180;
+      g.gain.setValueAtTime(hitEvery <= 4 ? 0.028 : 0.018, t);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
       o.connect(g);
       g.connect(gain);
@@ -339,6 +340,24 @@ function playGrasslandsThemeAt(index: number) {
   });
 }
 
+/**
+ * Measured from the reference battle-theme MP3 (~240.5 BPM sixteenth grid).
+ * Slightly faster original chiptune for FRUITFUL GRAPE VINE — not a licensed copy.
+ */
+const VINE_BATTLE_BPM = 240.5 * 1.06; // ~254.9 — same pulse family, edged faster
+const VINE_BATTLE_STEP = 60 / VINE_BATTLE_BPM / 4; // sixteenth notes
+
+const VINE_BATTLE: Theme = {
+  // tense minor ostinato + climbing lead (original)
+  lead: [
+    0, 0, 294, 0, 0, 0, 349, 0, 0, 0, 392, 0, 0, 0, 349, 0, 294, 0, 349, 0, 392, 0, 466, 0, 523, 0, 466, 0, 392, 0, 349, 0, 0, 0, 392, 0, 0, 0, 466, 0, 0, 0, 523, 0, 466, 392, 349, 0, 294, 0, 262, 0, 294, 0, 349, 0, 392, 0, 349, 0, 294, 0, 0, 0, 523, 0, 466, 0, 392, 0, 349, 0, 466, 0, 392, 0, 349, 0, 294, 0, 392, 0, 349, 0, 294, 0, 262, 0, 294, 349, 392, 0, 466, 0, 523, 0, 0, 0, 587, 0, 523, 0, 466, 0, 392, 0, 466, 0, 523, 0, 466, 0, 392, 0, 349, 0, 294, 0, 349, 0, 392, 0, 0, 0, 294, 0, 0, 0,
+  ],
+  bass: [
+    110, 0, 110, 0, 110, 0, 146, 0, 138, 0, 123, 0, 110, 0, 123, 138, 110, 0, 110, 0, 110, 0, 146, 0, 165, 0, 146, 0, 138, 0, 123, 0, 98, 0, 98, 0, 98, 0, 123, 0, 110, 0, 98, 0, 110, 0, 123, 0, 110, 0, 110, 0, 146, 0, 138, 0, 123, 0, 110, 123, 138, 0, 146, 0, 82, 0, 82, 0, 98, 0, 110, 0, 123, 0, 110, 0, 98, 0, 82, 0, 110, 0, 110, 0, 110, 0, 146, 0, 138, 0, 123, 0, 110, 0, 0, 0, 73, 0, 82, 0, 98, 0, 110, 0, 123, 0, 146, 0, 138, 0, 123, 0, 110, 0, 110, 0, 146, 0, 165, 0, 146, 138, 123, 0, 110, 0, 0, 0,
+  ],
+  step: VINE_BATTLE_STEP,
+};
+
 export function startMusic() {
   startThemeLoop(GREENVALE.lead, GREENVALE.bass, GREENVALE.step, { loopForever: true });
 }
@@ -346,6 +365,14 @@ export function startMusic() {
 /** Entering grasslands — cycle all Onett-feel town themes (~152s / ~117.75 BPM each), then repeat. */
 export function startGrasslandsMusic() {
   playGrasslandsThemeAt(0);
+}
+
+/** FRUITFUL GRAPE VINE fight — fast battle loop on measured pulse, slightly sped up. */
+export function startVineBattleMusic() {
+  startThemeLoop(VINE_BATTLE.lead, VINE_BATTLE.bass, VINE_BATTLE.step, {
+    loopForever: true,
+    hitEvery: 4,
+  });
 }
 
 export function startAmbient() {

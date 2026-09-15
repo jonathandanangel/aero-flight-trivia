@@ -13,6 +13,7 @@ import { ShrineTrial } from "@/components/game/spirit-bound/shrine/ShrineTrial";
 import {
   startMusic,
   startGrasslandsMusic,
+  startVineBattleMusic,
   playDemonicLaugh,
   playBurnSfx,
   stopAmbient,
@@ -293,6 +294,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         return;
       }
       setEnemyId("grapevine");
+      startVineBattleMusic();
       setMode("battle");
     },
     [level, vinePurged],
@@ -319,6 +321,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     setPendingBushKey(null);
 
     if (r.outcome === "dead") {
+      stopAmbient();
       setMode("gameover");
       return;
     }
