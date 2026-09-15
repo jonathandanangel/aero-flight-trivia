@@ -28,6 +28,7 @@ export {
 } from "./common";
 
 export { compositeIntegration } from "./integration";
+export { adaptiveSimpson } from "./integration";
 export { interpolate } from "./interpolation";
 export { analyzeFunction } from "./function-analysis";
 export { analyzeVibration } from "./vibrations";

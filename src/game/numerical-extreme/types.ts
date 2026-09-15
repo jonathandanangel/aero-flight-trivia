@@ -73,6 +73,7 @@ export interface TheoremPoint {
 export interface TaylorResult {
   degree: number;
   valid: boolean;
+  about?: number;
   coefficients: number[];
   polynomial: string | null;
   message: string;
@@ -149,10 +150,11 @@ export interface FunctionAnalysisResult {
   integralMeanValueTheorem: TheoremPoint;
   taylor: TaylorResult[];
   iterations: {
-    coordinateSystem: "shifted-y" | "x";
+    coordinateSystem: string;
     shift: number;
     newton: RootSolverResult;
     secant: RootSolverResult[];
+    multiStartNewton?: RootSolverResult[];
   };
   warnings: string[];
 }

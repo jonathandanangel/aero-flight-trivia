@@ -18,7 +18,7 @@ function methodResult(
 }
 
 /** Adaptive Simpson quadrature (pure TS stand-in for SciPy quad). */
-function adaptiveSimpson(
+export function adaptiveSimpson(
   fn: (x: number) => number,
   a: number,
   b: number,

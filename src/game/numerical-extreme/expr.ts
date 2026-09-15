@@ -25,12 +25,15 @@ const ALLOWED_FUNCTIONS = new Set([
   "exp",
   "log",
   "ln",
+  "log10",
   "sqrt",
   "abs",
   "floor",
   "ceil",
   "sign",
   "pow",
+  "erf",
+  "erfc",
 ]);
 
 const CONSTANTS: Record<string, number> = {
@@ -65,9 +68,10 @@ export function normalizeExpression(raw: string): string {
     .replace(/−/g, "-")
     .replace(/×/g, "*")
     .replace(/÷/g, "/")
-    .replace(/\.\^/g, "^")
-    .replace(/\.\*/g, "*")
-    .replace(/\.\//g, "/")
+    // Octave/MATLAB element-wise ops, including spaced forms: .^  .*  ./
+    .replace(/\s*\.\s*\^\s*/g, "^")
+    .replace(/\s*\.\s*\*\s*/g, "*")
+    .replace(/\s*\.\s*\/\s*/g, "/")
     .replace(/\*\*/g, "^");
   if (!expression) {
     throw new ExpressionError("Expression cannot be empty.");
@@ -190,7 +194,8 @@ class Parser {
 
   private bump(): void {
     this.nodeCount += 1;
-    if (this.nodeCount > 200) {
+    // Large multi-term V15 demo f(x) can exceed several hundred AST nodes.
+    if (this.nodeCount > 8000) {
       throw new ExpressionError("Expression is too complex.");
     }
   }
@@ -335,6 +340,8 @@ function callMath(name: string, args: number[]): number {
     case "log":
     case "ln":
       return Math.log(args[0]!);
+    case "log10":
+      return Math.log10(args[0]!);
     case "sqrt":
       return Math.sqrt(args[0]!);
     case "abs":
@@ -347,9 +354,29 @@ function callMath(name: string, args: number[]): number {
       return Math.sign(args[0]!);
     case "pow":
       return Math.pow(args[0]!, args[1]!);
+    case "erf":
+      return errorFunction(args[0]!);
+    case "erfc":
+      return 1 - errorFunction(args[0]!);
     default:
-      return Number.NaN;
+      throw new ExpressionError(`Unsupported function '${name}'.`);
   }
+}
+
+/**
+ * Abramowitz & Stegun 7.1.26 approximation for erf(x).
+ * Max absolute error ~1.5e-7 — enough for NA demos and f(x) plotting.
+ */
+function errorFunction(x: number): number {
+  if (!Number.isFinite(x)) return Number.NaN;
+  const sign = Math.sign(x);
+  const ax = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * ax);
+  const poly =
+    (((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t +
+      0.254829592) *
+      t);
+  return sign * (1 - poly * Math.exp(-ax * ax));
 }
 
 function evalAst(node: AstNode, env: Record<string, number>): number {

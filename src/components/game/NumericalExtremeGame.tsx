@@ -1361,16 +1361,19 @@ function AlgorithmsPanel() {
           },
         ]);
       } else if (algo === "talbot") {
-        const result = runTalbot(preset, time, digits, 0, 0.1, 5, 80);
+        const result = runTalbot(preset, time, digits, 6, 0.1, 5, 80);
         setLog(
           [
-            "=== TALBOT INVERSION ===",
+            "=== TALBOT INVERSION (Alg 682) ===",
             result.description,
             `t = ${formatNumber(result.time)}`,
             `value = ${formatNumber(result.value)}`,
             `exact = ${formatNumber(result.expected)}`,
             `|error| = ${formatNumber(result.absoluteError)}`,
+            `λ=${formatNumber(result.parameters.lambda)}  σ=${formatNumber(result.parameters.sigma)}  ν=${formatNumber(result.parameters.nu)}`,
+            `H (contourParameter) = ${result.parameters.contourParameter}`,
             `quadrature points = ${result.parameters.quadraturePoints}`,
+            `ier = ${result.errorCode}`,
           ].join("\n"),
         );
         setChartX(result.plot.time);

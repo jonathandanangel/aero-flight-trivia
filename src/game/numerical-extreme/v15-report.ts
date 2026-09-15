@@ -75,19 +75,24 @@ export function buildFunctionReport(result: FunctionAnalysisResult): string {
     `6) MVT for integrals (average value) on [${formatNumber(result.domain.a)}, ${formatNumber(result.domain.b)}]:`,
     `   integral ≈ ${formatNumber(result.integralMeanValueTheorem.integral, 12)}`,
     `   Average(f) = ${formatNumber(result.integralMeanValueTheorem.average, 12)}`,
+    `   estimated |error| ≈ ${formatNumber(result.integralMeanValueTheorem.estimatedError, 6)}`,
     `   c with f(c)=average ≈ ${formatNumber(result.integralMeanValueTheorem.c, 12)}`,
+    result.integralMeanValueTheorem.message
+      ? `   note: ${result.integralMeanValueTheorem.message}`
+      : "",
     "",
-    "7) Taylor polynomials (numeric finite-diff) about x = 0:",
+    "7) Taylor polynomials (numeric finite-diff):",
   );
 
   for (const item of result.taylor) {
+    const about = item.about ?? 0;
     if (item.valid) {
-      lines.push(`   Taylor degree ${item.degree}: ${item.polynomial}`);
+      lines.push(`   Taylor degree ${item.degree} about x=${formatNumber(about, 8)}: ${item.polynomial}`);
       lines.push(
         `     coefficients c0..c${item.degree}: [${item.coefficients.map((c) => formatNumber(c, 8)).join(", ")}]`,
       );
     } else {
-      lines.push(`   Taylor degree ${item.degree}: ${item.message || "unavailable (possible singularity)"}`);
+      lines.push(`   Taylor degree ${item.degree} about x=${formatNumber(about, 8)}: ${item.message || "unavailable"}`);
     }
   }
 
@@ -198,10 +203,32 @@ export function buildVibrationReport(result: VibrationResult): string {
     if (result.coefficientA !== undefined) {
       lines.push(`A = ${formatNumber(result.coefficientA, 10)}, B = ${formatNumber(result.coefficientB, 10)}`);
     }
+    if (result.characteristicRoots) {
+      lines.push(
+        `characteristic roots r1,r2 = ${result.characteristicRoots.map((r) => formatNumber(r, 10)).join(", ")}`,
+      );
+    }
+    if (result.coefficients) {
+      lines.push(`C1,C2 = ${result.coefficients.map((c) => formatNumber(c, 10)).join(", ")}`);
+    }
+    const energyRaw = result.plot["mechanicalEnergy"];
+    const energy = Array.isArray(energyRaw)
+      ? energyRaw.filter((v): v is number => typeof v === "number" && Number.isFinite(v))
+      : [];
+    if (energy.length) {
+      lines.push(`max mechanical energy ≈ ${formatNumber(Math.max(...energy), 10)}`);
+    }
   } else {
+    const zeta = result.dampingRatio;
+    const rPeak = zeta < Math.SQRT1_2 ? Math.sqrt(1 - 2 * zeta * zeta) : null;
     lines.push(
-      `r = ω/wn · magnification M = ${formatNumber(result.magnification, 10)}`,
-      `X = ${formatNumber(result.amplitude, 10)} m · φ = ${formatNumber(result.phase, 10)} rad`,
+      `r = ω/wn = ${formatNumber(result.forcing?.frequencyRatio, 10)}`,
+      `M(r) = 1/√((1−r²)²+(2ζr)²) = ${formatNumber(result.magnification, 10)}`,
+      `X = (F0/k)·M = ${formatNumber(result.amplitude, 10)} m`,
+      `φ = atan2(2ζr, 1−r²) = ${formatNumber(result.phase, 10)} rad`,
+      rPeak != null
+        ? `r_peak (max M for ζ<1/√2) ≈ ${formatNumber(rPeak, 10)}`
+        : "r_peak undefined (ζ ≥ 1/√2 → M decreases for r>0)",
     );
   }
   if (result.notes?.length) lines.push("", ...result.notes.map((n) => `note: ${n}`));
@@ -355,6 +382,21 @@ export const FUNCTION_PRESETS: Array<{
       "(-84000) + ( (65000)*( ( ( ((1+x)^3) - 1 ) / ( (x) * ((1 + x)^3) ) )  ) ) + ( (40000)*(( (1)/( (1+x)^3 ) )) )",
     a: 1e-4,
     b: 1,
+  },
+  {
+    label: "mega Octave",
+    expr:
+      "exp( - x ./ 11) .* sin(53 .* x) + cos(x .^ 2) + sin(x .^ 3) + cos(x .^ 5) - tanh(x ./ 9) + atan(x) + log(x .^ 2 + 1) + sqrt(abs(x) + 0.0001) + exp( - 0.05 .* x .^ 2) .* cos(31 .* x) + ((x .^ 9 - 36 .* x .^ 7 + 378 .* x .^ 5 - 1260 .* x .^ 3 + 945 .* x) ./ (1 + x .^ 2 + x .^ 4 + x .^ 6 + x .^ 8)) + 0.001 .* sin(2000 .* x) + 0.0001 .* cos(20000 .* x) + 0.00001 .* sin(100000 .* x) + erf(x ./ 5) + ((1200 .* ((1.08) .^ 20 - 1) ./ 0.08 - 5000 ./ (1.06 .^ 12) + 2500 .* (0.09 .* (1.09) .^ 15) ./ ((1.09) .^ 15 - 1)) ./ 10000) .* exp( - 0.005 .* x) + (500 .* (1 - exp( - x ./ 5)) ./ (0.1 + x .^ 2)) + ((x .^ 3 - 27 .* x + 5) .^ 2) ./ (1000 + x .^ 6) + exp(sin(cos(x))) - log(log(x .^ 2 + 3) + 2) + sin(exp(sin(exp(cos(x))))) + cos(exp(sin(x .^ 2))) + ((x - 1) .* (x - 2) .* (x - 3) .* (x - 4) .* (x - 5) .* (x - 6)) ./ 1000000 - 0.123456789",
+    a: -2,
+    b: 2,
+    note: "Full Octave .* ./ .^ mega demo with erf(x/5)",
+  },
+  {
+    label: "erf(x/5)",
+    expr: "erf(x/5)",
+    a: -4,
+    b: 4,
+    note: "Abramowitz–Stegun erf",
   },
 ];
 

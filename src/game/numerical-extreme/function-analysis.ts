@@ -9,6 +9,7 @@ import {
   listWithNulls,
   rootsFromGrid,
 } from "./common";
+import { adaptiveSimpson } from "./integration";
 import type {
   FunctionAnalysisResult,
   RootSolverResult,
@@ -121,7 +122,8 @@ function dampedNewton(
   };
 }
 
-function secant(
+/** Secant with residual-decreasing damping (mirrors V15 damped Newton line search). */
+function dampedSecant(
   fn: ScalarFn,
   first: number,
   second: number,
@@ -150,10 +152,21 @@ function secant(
       message = "Secant denominator is zero or numerically unreliable.";
       break;
     }
-    const candidate = current - (fCurrent * (current - previous)) / denominator;
-    const candidateValue = fn(candidate);
+    const rawStep = -(fCurrent * (current - previous)) / denominator;
+    let damping = 1;
+    let candidate = current + rawStep;
+    let candidateValue = fn(candidate);
+    while (
+      damping > 1e-4 &&
+      (!Number.isFinite(candidateValue) ||
+        Math.abs(candidateValue) > (1 - 0.5 * damping) * Math.abs(fCurrent))
+    ) {
+      damping /= 2;
+      candidate = current + damping * rawStep;
+      candidateValue = fn(candidate);
+    }
     if (!Number.isFinite(candidate) || !Number.isFinite(candidateValue)) {
-      message = "Secant iterate became non-finite.";
+      message = "Secant line search could not find a finite iterate.";
       break;
     }
     const step = Math.abs(candidate - current);
@@ -163,18 +176,19 @@ function secant(
       y: candidate - shift,
       residual: Math.abs(candidateValue),
       step,
+      damping,
     });
     if (Math.abs(candidateValue) <= tolerance) {
       current = candidate;
       converged = true;
-      message = "Converged by residual tolerance.";
+      message = "Converged by residual tolerance (damped secant).";
       break;
     }
     if (step <= tolerance * (1 + Math.abs(candidate))) {
       current = candidate;
       converged = Math.abs(candidateValue) <= Math.sqrt(tolerance);
       message = converged
-        ? "Converged by weighted step tolerance."
+        ? "Converged by weighted step tolerance (damped secant)."
         : "Step stagnated before reaching a small residual.";
       break;
     }
@@ -191,6 +205,26 @@ function secant(
     history,
     message,
   };
+}
+
+function mapShiftedSolver(result: RootSolverResult, shift: number): RootSolverResult {
+  if (shift === 0) return result;
+  const mapped: RootSolverResult = {
+    converged: result.converged,
+    root: result.root !== null ? result.root + shift : null,
+    residual: result.residual,
+    iterations: result.iterations,
+    history: result.history.map((h) => ({
+      ...h,
+      x: h.x + shift,
+      y: h.x,
+    })),
+    message: result.message,
+  };
+  if (result.seeds) {
+    mapped.seeds = [result.seeds[0] + shift, result.seeds[1] + shift];
+  }
+  return mapped;
 }
 
 function secantPairs(
@@ -240,12 +274,16 @@ function theoremPoint(fn: ScalarFn, x: number[], tolerance: number): TheoremPoin
   };
 }
 
-function taylorSeries(fn: ScalarFn, degrees: number[]): TaylorResult[] {
+function formatTerm(value: number): string {
+  return Number(value.toPrecision(10)).toString();
+}
+
+function taylorSeries(fn: ScalarFn, degrees: number[], about: number): TaylorResult[] {
   return degrees.map((degree) => {
     const coefficients: number[] = [];
     let valid = true;
     for (let order = 0; order <= degree; order += 1) {
-      const deriv = finiteDifferenceDerivative(fn, 0, order);
+      const deriv = finiteDifferenceDerivative(fn, about, order);
       const coefficient = deriv / factorial(order);
       if (!Number.isFinite(coefficient)) {
         valid = false;
@@ -255,31 +293,104 @@ function taylorSeries(fn: ScalarFn, degrees: number[]): TaylorResult[] {
     }
     let polynomial: string | null = null;
     if (valid) {
+      const u = about === 0 ? "x" : `(x-${formatTerm(about)})`;
       const terms = coefficients.map((c, order) => {
         if (order === 0) return formatTerm(c);
-        if (order === 1) return `${formatTerm(c)}*x`;
-        return `${formatTerm(c)}*x**${order}`;
+        if (order === 1) return `${formatTerm(c)}*${u}`;
+        return `${formatTerm(c)}*${u}**${order}`;
       });
       polynomial = terms.join(" + ");
     }
     return {
       degree,
       valid,
+      about,
       coefficients: valid ? coefficients : [],
       polynomial,
       message: valid
-        ? "Computed from finite-difference derivatives at x = 0 (no SymPy)."
-        : "The function or a derivative is not finite at x = 0.",
+        ? `Finite-difference Taylor about x = ${formatTerm(about)} (no SymPy).`
+        : `The function or a derivative is not finite at x = ${formatTerm(about)}.`,
     };
   });
 }
 
-function formatTerm(value: number): string {
-  return Number(value.toPrecision(10)).toString();
+/** V15 shiftExprString: replace bare x with (y+c). */
+function shiftExprString(expr: string, c: number): string {
+  const cStr = Number(c.toPrecision(12)).toString();
+  return expr.replace(/(?<![A-Za-z0-9_])x(?![A-Za-z0-9_])/g, `(y+${cStr})`);
 }
 
-function shiftedExpressionNote(normalized: string, shift: number): string {
-  return `(${normalized}) with x → y + ${shift} (numeric shift around midpoint; no symbolic expand)`;
+/** Synthetic division by (x − r). Returns quotient coeffs + remainder. */
+function syntheticDivide(coeffs: number[], root: number): { quotient: number[]; remainder: number } {
+  const quotient: number[] = [];
+  let acc = 0;
+  for (const c of coeffs) {
+    acc = c + acc * root;
+    quotient.push(acc);
+  }
+  const remainder = quotient.pop() ?? 0;
+  return { quotient, remainder };
+}
+
+/**
+ * Attempt rational-root factorization for low-degree polynomials recovered by FD at 0.
+ */
+function tryFactorPolynomial(fn: ScalarFn, normalized: string): string | null {
+  const looksPoly = /^[\d\s.+\-*/^()x]+$/i.test(normalized.replace(/\s+/g, ""));
+  if (!looksPoly || /sin|cos|exp|log|tan|sqrt|abs|pi/i.test(normalized)) return null;
+
+  const maxDeg = 8;
+  const coeffs: number[] = [];
+  for (let k = 0; k <= maxDeg; k += 1) {
+    const c = finiteDifferenceDerivative(fn, 0, k) / factorial(k);
+    if (!Number.isFinite(c)) return null;
+    coeffs.push(Math.abs(c) < 1e-10 ? 0 : Number(c.toPrecision(10)));
+  }
+  while (coeffs.length > 1 && coeffs[coeffs.length - 1] === 0) coeffs.pop();
+  const degree = coeffs.length - 1;
+  if (degree < 1 || degree > 6) return null;
+
+  let high = [...coeffs].reverse();
+  const leading = high[0]!;
+  const constant = high[high.length - 1]!;
+  const factors: string[] = [];
+  const candidateRoots: number[] = [];
+  for (let p = 1; p <= Math.max(1, Math.round(Math.abs(constant))); p += 1) {
+    for (let q = 1; q <= Math.max(1, Math.round(Math.abs(leading))); q += 1) {
+      candidateRoots.push(p / q, -p / q);
+    }
+  }
+  const uniqueRoots = [...new Set(candidateRoots.map((r) => Number(r.toPrecision(8))))];
+
+  for (let guard = 0; guard < 8 && high.length > 2; guard += 1) {
+    let found = false;
+    for (const r of uniqueRoots) {
+      const { quotient, remainder } = syntheticDivide(high, r);
+      if (Math.abs(remainder) < 1e-7) {
+        factors.push(`(x-${formatTerm(r)})`);
+        high = quotient;
+        found = true;
+        break;
+      }
+    }
+    if (!found) break;
+  }
+
+  if (factors.length === 0) return null;
+  const rest =
+    high.length === 1
+      ? formatTerm(high[0]!)
+      : high
+          .map((c, i) => {
+            const power = high.length - 1 - i;
+            if (Math.abs(c) < 1e-12) return null;
+            if (power === 0) return formatTerm(c);
+            if (power === 1) return `${formatTerm(c)}*x`;
+            return `${formatTerm(c)}*x^${power}`;
+          })
+          .filter(Boolean)
+          .join(" + ");
+  return `${factors.join("*")}${rest && rest !== "1" ? `*(${rest})` : ""}`;
 }
 
 export function analyzeFunction(
@@ -297,7 +408,7 @@ export function analyzeFunction(
   if (gridPoints < 2) throw new Error("gridPoints must be >= 2.");
 
   const parsed = compileExpression(expression);
-  const fn: ScalarFn = (x) => parsed.evaluate(x);
+  const fn: ScalarFn = (xx) => parsed.evaluate(xx);
   const x = linspace(a, b, gridPoints + 1);
   const y = x.map(fn);
   const finiteCount = y.filter(Number.isFinite).length;
@@ -310,11 +421,16 @@ export function analyzeFunction(
   warnings.push(
     "Numerical scans suggest theorem candidates but cannot prove continuity or differentiability.",
   );
-  warnings.push(
-    "SymPy factorization / symbolic Taylor unavailable — factorized returns the normalized expression; Taylor uses finite differences.",
-  );
 
   const shift = (a + b) / 2;
+  const factorized = tryFactorPolynomial(fn, parsed.normalized);
+  if (!factorized) {
+    warnings.push(
+      "No polynomial factorization recovered (non-polynomial or irrational roots); normalized form retained.",
+    );
+  }
+  const shifted = shiftExprString(parsed.normalized, shift);
+
   const rawBrackets = adjacentSignChanges(x, y).slice(0, 50);
   const bisections = rawBrackets.map(([left, right]) =>
     bisection(fn, left, right, tolerance, Math.min(maxIterations, 200)),
@@ -356,21 +472,12 @@ export function analyzeFunction(
   let integral = Number.NaN;
   let integralMessage = "Average value could not be computed.";
   try {
-    // Composite Simpson with high n as adaptive stand-in
-    const n = Math.min(Math.max(2000, gridPoints * 4), 20000);
-    const evenN = n % 2 === 0 ? n : n + 1;
-    const h = (b - a) / evenN;
-    const nodes = linspace(a, b, evenN + 1);
-    const vals = nodes.map(fn);
-    if (!vals.every(Number.isFinite)) throw new Error("non-finite");
-    let sum = vals[0]! + vals[evenN]!;
-    for (let i = 1; i < evenN; i += 1) {
-      sum += (i % 2 === 1 ? 4 : 2) * vals[i]!;
-    }
-    integral = (h / 3) * sum;
+    const adapt = adaptiveSimpson(fn, a, b, Math.min(1e-10, tolerance), 26);
+    integral = adapt.value;
+    integrationError = adapt.estimatedError;
     average = integral / (b - a);
-    integrationError = Number.NaN;
-    integralMessage = "Average value computed by high-n composite Simpson.";
+    integralMessage =
+      "Average value via adaptive Simpson (Richardson-style local error estimate).";
   } catch {
     integral = Number.NaN;
   }
@@ -393,29 +500,55 @@ export function analyzeFunction(
         message: integralMessage,
       };
 
-  const taylor = taylorSeries(fn, taylorDegrees);
-
   let center = shift;
   const successfulBisection = bisections.find((r) => r.converged && r.root !== null);
   if (successfulBisection?.root != null) {
     center = successfulBisection.root;
   }
+
+  const taylorAboutZero = taylorSeries(fn, taylorDegrees, 0);
+  const taylorAboutCenter =
+    Math.abs(center) > tolerance ? taylorSeries(fn, taylorDegrees, center) : [];
+  const taylor = [...taylorAboutZero, ...taylorAboutCenter];
+
   const algorithmShift = shiftToZero ? center : 0;
-  const newtonInitial =
+  const newtonInitialX =
     rawBrackets.length > 0
       ? (rawBrackets[0]![0] + rawBrackets[0]![1]) / 2
       : (a + b) / 2;
-  const newton = dampedNewton(
-    fn,
-    derivative,
-    newtonInitial,
-    tolerance,
-    maxIterations,
+
+  // When SHIFT_TO_ZERO: iterate on g(y)=f(y+c) then map x = y + c (true V15 y-space).
+  const workFn: ScalarFn = shiftToZero ? (yy) => fn(yy + algorithmShift) : fn;
+  const workDeriv: ScalarFn = shiftToZero
+    ? (yy) => derivative(yy + algorithmShift)
+    : derivative;
+  const newtonY0 = newtonInitialX - algorithmShift;
+  const newton = mapShiftedSolver(
+    dampedNewton(workFn, workDeriv, newtonY0, tolerance, maxIterations, 0),
     algorithmShift,
   );
+
   const secantRuns = pairs.map(([p0, p1]) =>
-    secant(fn, p0, p1, tolerance, maxIterations, algorithmShift),
+    mapShiftedSolver(
+      dampedSecant(
+        workFn,
+        p0 - algorithmShift,
+        p1 - algorithmShift,
+        tolerance,
+        maxIterations,
+        0,
+      ),
+      algorithmShift,
+    ),
   );
+
+  const multiStart = rawBrackets.slice(0, 6).map(([left, right]) => {
+    const mid = (left + right) / 2;
+    return mapShiftedSolver(
+      dampedNewton(workFn, workDeriv, mid - algorithmShift, tolerance, maxIterations, 0),
+      algorithmShift,
+    );
+  });
 
   const roots = deduplicate(
     [
@@ -425,6 +558,7 @@ export function analyzeFunction(
         .map((r) => r.root!),
       ...secantRuns.filter((r) => r.converged && r.root !== null).map((r) => r.root!),
       ...(newton.converged && newton.root !== null ? [newton.root] : []),
+      ...multiStart.filter((r) => r.converged && r.root !== null).map((r) => r.root!),
     ],
     tolerance * 10,
   );
@@ -434,9 +568,9 @@ export function analyzeFunction(
       input: expression,
       normalized: parsed.normalized,
       symbolic: parsed.symbolic,
-      factorized: parsed.normalized,
+      factorized: factorized ?? parsed.normalized,
       shift,
-      shifted: shiftedExpressionNote(parsed.normalized, shift),
+      shifted,
     },
     plot: { x, y: listWithNulls(y) },
     domain: {
@@ -456,10 +590,11 @@ export function analyzeFunction(
     integralMeanValueTheorem: integralMvt,
     taylor,
     iterations: {
-      coordinateSystem: shiftToZero ? "shifted-y" : "x",
+      coordinateSystem: shiftToZero ? "shifted-y (g(y)=f(y+c))" : "x",
       shift: algorithmShift,
       newton,
       secant: secantRuns,
+      multiStartNewton: multiStart,
     },
     warnings,
   };
