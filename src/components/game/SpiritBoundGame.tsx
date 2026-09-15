@@ -360,7 +360,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         lines: [
           "* LORD PETER KING DE MI URGOS DE LOS CHRISTOS crumbles.",
           "* The triangle eye dims. The hat falls sideways.",
-          "* Adoni Je Hovah your old fruitful grape vine will be stopped by Paul Barnabus the Nazarene. Mark my words!",
+          "* Adoni Je Hovah your old ivy laurel leaves will be stopped by Paul Barnabus the Nazarene. Mark my words!",
           "* Demonic laughter echoes through the shrine...",
           "* The gold door blazes open. A pastoral field waits beyond.",
           "* Scraps of doctrine scatter across the grasslands — find them all.",
