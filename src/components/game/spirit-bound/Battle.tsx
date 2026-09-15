@@ -177,7 +177,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
       return;
     }
     if (enemy.boss) {
-      say("* You can't run from THE TRIANGLE KING!");
+      say(`* You can't run from ${enemy.name}!`);
     } else {
       setMessage("* You escaped!");
       setPhase("message");
@@ -242,7 +242,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
         >
           <EnemySprite color={enemy.color} kind={enemy.pattern} />
           <div
-            className={`mt-2 text-[10px] tracking-widest ${spareable ? "text-game-yellow" : ""}`}
+            className={`mt-2 max-w-[280px] text-center text-[8px] leading-tight tracking-wide sm:text-[10px] ${spareable ? "text-game-yellow" : ""}`}
           >
             {enemy.name}
             {spareable ? " ▲" : ""}
@@ -372,7 +372,7 @@ function TriangleField() {
 }
 
 function EnemySprite({ color, kind }: { color: string; kind: Enemy["pattern"] }) {
-  const size = kind === "king" ? 108 : 76;
+  const size = kind === "king" || kind === "vine" ? 108 : 76;
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" style={{ imageRendering: "pixelated" }}>
       <g fill={color}>
@@ -384,6 +384,25 @@ function EnemySprite({ color, kind }: { color: string; kind: Enemy["pattern"] })
             <rect x="3" y="7" width="10" height="2" />
             <rect x="7" y="9" width="2" height="5" />
             <rect x="5" y="13" width="6" height="2" />
+          </>
+        )}
+        {kind === "bush" && (
+          <>
+            <rect x="3" y="8" width="10" height="6" />
+            <rect x="2" y="6" width="12" height="4" />
+            <rect x="4" y="4" width="8" height="4" />
+            <rect x="6" y="2" width="4" height="3" />
+            <rect x="7" y="12" width="2" height="3" />
+          </>
+        )}
+        {kind === "vine" && (
+          <>
+            <rect x="7" y="0" width="2" height="16" />
+            <rect x="3" y="4" width="10" height="2" />
+            <rect x="2" y="8" width="12" height="2" />
+            <rect x="4" y="12" width="8" height="2" />
+            <rect x="1" y="6" width="3" height="3" />
+            <rect x="12" y="10" width="3" height="3" />
           </>
         )}
         {kind === "salt" && (
@@ -399,11 +418,13 @@ function EnemySprite({ color, kind }: { color: string; kind: Enemy["pattern"] })
         )}
         {kind === "king" && (
           <>
-            <rect x="7" y="0" width="2" height="2" />
-            <rect x="6" y="2" width="4" height="2" />
-            <rect x="4" y="4" width="8" height="2" />
-            <rect x="2" y="6" width="12" height="2" />
-            <rect x="1" y="8" width="14" height="3" />
+            <rect x="5" y="0" width="6" height="1" fill="#181010" />
+            <rect x="4" y="1" width="8" height="1" fill="#181010" />
+            <rect x="6" y="0" width="4" height="2" fill="#181010" />
+            <rect x="7" y="2" width="2" height="2" />
+            <rect x="6" y="4" width="4" height="2" />
+            <rect x="4" y="6" width="8" height="2" />
+            <rect x="2" y="8" width="12" height="3" />
             <rect x="3" y="11" width="4" height="2" />
             <rect x="9" y="11" width="4" height="2" />
             <rect x="2" y="13" width="3" height="3" />
@@ -412,11 +433,12 @@ function EnemySprite({ color, kind }: { color: string; kind: Enemy["pattern"] })
         )}
       </g>
       <g fill="#181010">
-        <rect x="5" y={kind === "king" ? 8 : 6} width="2" height="2" />
-        <rect x="9" y={kind === "king" ? 8 : 6} width="2" height="2" />
+        <rect x="5" y={kind === "king" ? 9 : 6} width="2" height="2" />
+        <rect x="9" y={kind === "king" ? 9 : 6} width="2" height="2" />
       </g>
-      <g fill="#f8d030">
-        <rect x="7" y={kind === "king" ? 5 : 4} width="2" height="2" />
+      <g fill={kind === "king" ? "#f8f8f8" : "#f8d030"}>
+        <rect x="7" y={kind === "king" ? 6 : 4} width="2" height="2" />
+        {kind === "king" && <rect x="7" y="7" width="2" height="1" fill="#201008" />}
       </g>
     </svg>
   );

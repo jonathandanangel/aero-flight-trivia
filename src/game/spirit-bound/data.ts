@@ -79,7 +79,7 @@ export const NPCS: Npc[] = [
     ty: 12,
     color: "#58c878",
     lines: [
-      "* The TRIANGLE KING waits past the gold door.",
+      "* LORD PETER waits past the gold door.",
       "* South wall. Three roots. The mural must match before he wakes.",
       "* When he attacks, dodge with the red triangle!",
       "* Don't get hit. Getting hit is bad.",
@@ -113,8 +113,9 @@ export type Enemy = {
   mercyText: string;
   mercyTurns: number;
   attackTime: number;
-  pattern: "seeds" | "salt" | "king";
+  pattern: "seeds" | "salt" | "king" | "bush" | "vine";
   boss?: boolean;
+  minLevel?: number;
 };
 
 export const ENEMIES: Record<string, Enemy> = {
@@ -152,20 +153,57 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   saltking: {
     id: "saltking",
-    name: "TRIANGLE KING",
+    name: "LORD PETER KING DE MI URGOS DE LOS CHRISTOS",
     hp: 120,
     atk: 8,
     def: 6,
     exp: 80,
     gold: 120,
     color: "#f8d030",
-    flavor: "THE TRIANGLE KING blocks the way. The air hums.",
-    check: "* TRIANGLE KING - ATK 8 DEF 6\n* Guards three relics. Very lonely.",
+    flavor:
+      "LORD PETER KING DE MI URGOS DE LOS CHRISTOS blocks the way. One eye watches. The hat tilts.",
+    check:
+      "* LORD PETER - ATK 8 DEF 6\n* Triangle crown. All-seeing eye. Very lonely.",
     mercyText: "* You offered to stay and talk a while.",
     mercyTurns: 4,
     attackTime: 9000,
     pattern: "king",
     boss: true,
+  },
+  wildbush: {
+    id: "wildbush",
+    name: "ANGRY BUSH",
+    hp: 52,
+    atk: 5,
+    def: 3,
+    exp: 14,
+    gold: 12,
+    color: "#287818",
+    flavor: "An ANGRY BUSH rattles its leaves at you.",
+    check: "* ANGRY BUSH - ATK 5 DEF 3\n* Burns when defeated. Smells like smoke.",
+    mercyText: "* You watered it politely. It is still angry.",
+    mercyTurns: 3,
+    attackTime: 5500,
+    pattern: "bush",
+  },
+  grapevine: {
+    id: "grapevine",
+    name: "POISONOUS IVY LAUREL VINE",
+    hp: 420,
+    atk: 14,
+    def: 10,
+    exp: 200,
+    gold: 0,
+    color: "#581878",
+    flavor: "The POISONOUS IVY LAUREL VINE uncoils. Grapes drip like poison.",
+    check:
+      "* IVY LAUREL VINE - ATK 14 DEF 10\n* Requires LV 7+. Impossible without training.",
+    mercyText: "* The vine laughs with a thousand leaves.",
+    mercyTurns: 99,
+    attackTime: 7500,
+    pattern: "vine",
+    boss: true,
+    minLevel: 7,
   },
 };
 

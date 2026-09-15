@@ -4,7 +4,7 @@ import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 type Bullet = { x: number; y: number; vx: number; vy: number; r: number; kind: "dot" | "bar" };
 
 type Props = {
-  pattern: "seeds" | "salt" | "king";
+  pattern: "seeds" | "salt" | "king" | "bush" | "vine";
   duration: number;
   damage: number;
   onHit: (dmg: number) => void;
@@ -57,7 +57,38 @@ export function BulletBox({ pattern, duration, damage, onHit, onDone }: Props) {
             kind: "dot",
           });
         }
-      } else {
+      } else if (pattern === "bush") {
+        for (let i = 0; i < 5; i++) {
+          bullets.push({
+            x: Math.random() * W,
+            y: -8 - i * 12,
+            vx: (Math.random() - 0.5) * 40,
+            vy: 50 + Math.random() * 40,
+            r: 3,
+            kind: "dot",
+          });
+        }
+      } else if (pattern === "vine") {
+        const phase = elapsed / 500;
+        for (let i = 0; i < 6; i++) {
+          const a = phase + (i / 6) * Math.PI * 2;
+          bullets.push({
+            x: heart.x + Math.cos(a) * 160,
+            y: H / 2 + Math.sin(a) * 70,
+            vx: -Math.cos(a) * 85,
+            vy: -Math.sin(a) * 65,
+            r: 5,
+            kind: "dot",
+          });
+        }
+        if (Math.random() < 0.4) {
+          const gapX = 40 + Math.random() * (W - 120);
+          for (let x = 4; x < W; x += 12) {
+            if (x > gapX && x < gapX + 36) continue;
+            bullets.push({ x, y: H + 6, vx: 0, vy: -95, r: 4, kind: "bar" });
+          }
+        }
+      } else if (pattern === "king") {
         const mode = Math.random();
         if (mode < 0.5) {
           const cx = heart.x;
@@ -98,7 +129,14 @@ export function BulletBox({ pattern, duration, damage, onHit, onDone }: Props) {
       heart.x = Math.max(8, Math.min(W - 8, heart.x));
       heart.y = Math.max(8, Math.min(H - 8, heart.y));
 
-      const interval = pattern === "king" ? 900 : pattern === "salt" ? 520 : 340;
+      const interval =
+        pattern === "king" || pattern === "vine"
+          ? 900
+          : pattern === "salt"
+            ? 520
+            : pattern === "bush"
+              ? 400
+              : 340;
       if (spawnTimer <= 0 && elapsed < duration - 900) {
         spawnTimer = interval;
         spawn();

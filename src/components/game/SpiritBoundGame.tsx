@@ -2,12 +2,15 @@ import * as React from "react";
 import { Battle, type BattleResult } from "@/components/game/spirit-bound/Battle";
 import { DialogueBox } from "@/components/game/spirit-bound/DialogueBox";
 import { Overworld } from "@/components/game/spirit-bound/Overworld";
+import { GoldenEggReader } from "@/components/game/spirit-bound/GoldenEggReader";
+import { GrasslandsOverworld } from "@/components/game/spirit-bound/GrasslandsOverworld";
 import { SplashIntro } from "@/components/game/spirit-bound/SplashIntro";
 import { ArcadeTree } from "@/components/game/spirit-bound/shrine/ArcadeTree";
 import { ReasonTrial } from "@/components/game/spirit-bound/reason/ReasonTrial";
 import { ShrineTrial } from "@/components/game/spirit-bound/shrine/ShrineTrial";
-import { startMusic } from "@/game/spirit-bound/shrine/audio";
+import { startMusic, playDemonicLaugh, playBurnSfx } from "@/game/spirit-bound/shrine/audio";
 import { ENEMIES, TILE, type Npc } from "@/game/spirit-bound/data";
+import { GRASS_TILE, VINE_MIN_LEVEL, type GrassNpc } from "@/game/spirit-bound/grasslands-data";
 import { cn } from "@/lib/utils";
 
 type Mode =
@@ -26,6 +29,7 @@ type Mode =
   | "ending";
 
 const MAX_HP_BY_LEVEL = (lv: number) => 20 + (lv - 1) * 6;
+const MAX_LEVEL = 12;
 
 export interface SpiritBoundGameProps {
   onMenu: () => void;
@@ -49,6 +53,13 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
   const [spawn, setSpawn] = React.useState({ x: 2 * TILE, y: 1 * TILE });
   const [banner, setBanner] = React.useState<string | null>(null);
   const [bossBeaten, setBossBeaten] = React.useState(false);
+  const [exitDoorOpen, setExitDoorOpen] = React.useState(false);
+  const [mapId, setMapId] = React.useState<"greenvale" | "grasslands">("greenvale");
+  const [burntBushes, setBurntBushes] = React.useState<Set<string>>(() => new Set());
+  const [vinePurged, setVinePurged] = React.useState(false);
+  const [pendingBushKey, setPendingBushKey] = React.useState<string | null>(null);
+  const [afterDialogue, setAfterDialogue] = React.useState<"none" | "vine">("none");
+  const [goldenEggOpen, setGoldenEggOpen] = React.useState(false);
   const [shrineCleared, setShrineCleared] = React.useState(false);
 
   const maxHp = MAX_HP_BY_LEVEL(level);
@@ -122,10 +133,12 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
       setSpawn({ x: at.x, y: at.y });
       if (bossBeaten) {
         setDialogue({
-          lines: [
-            "* The shrine is quiet now.",
-            "* The TRIANGLE KING waves you off. Thanks for playing!",
-          ],
+          lines: exitDoorOpen
+            ? [
+                "* The shrine is quiet.",
+                "* The bright door still leads to the IVY LAUREL GRASSLANDS.",
+              ]
+            : ["* The shrine is quiet now.", "* LORD PETER's crown lies in the dust."],
         });
         setMode("dialogue");
         return;
@@ -140,11 +153,77 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     [bossBeaten, shrineCleared],
   );
 
+  const onExitToGrasslands = React.useCallback((_at: { x: number; y: number }) => {
+    setMapId("grasslands");
+    setSpawn({ x: 2 * GRASS_TILE, y: 3 * GRASS_TILE });
+    setBanner("IVY LAUREL GRASSLANDS");
+  }, []);
+
+  React.useEffect(() => {
+    if (!goldenEggOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (["Escape", "x", "X", "z", "Z", "Enter", " "].includes(e.key)) {
+        e.preventDefault();
+        setGoldenEggOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goldenEggOpen]);
+
+  const onGoldenEgg = React.useCallback(() => {
+    setGoldenEggOpen(true);
+  }, []);
+
+  const onGrassTalk = React.useCallback((npc: GrassNpc) => {
+    setDialogue({ name: npc.name, lines: npc.lines.map((l) => (l.startsWith("*") ? l : `* ${l}`)) });
+    setMode("dialogue");
+  }, []);
+
+  const onGrassBush = React.useCallback((at: { x: number; y: number }, key: string) => {
+    if (vinePurged || burntBushes.has(key)) return;
+    setSpawn(at);
+    setPendingBushKey(key);
+    setEnemyId("wildbush");
+    setMode("battle");
+  }, [vinePurged, burntBushes]);
+
+  const onGrassVine = React.useCallback(
+    (at: { x: number; y: number }) => {
+      if (vinePurged) return;
+      setSpawn(at);
+      if (level < VINE_MIN_LEVEL) {
+        setDialogue({
+          lines: [
+            `* The vine's thorns ignore you. (Need LV ${VINE_MIN_LEVEL}, you are LV ${level})`,
+            "* Train on the bushes in the grasslands first.",
+          ],
+        });
+        setMode("dialogue");
+        return;
+      }
+      setEnemyId("grapevine");
+      setMode("battle");
+    },
+    [level, vinePurged],
+  );
+
+  const onGrassWild = React.useCallback((at: { x: number; y: number }) => {
+    if (vinePurged) return;
+    setSpawn(at);
+    setEnemyId("wildbush");
+    setMode("battle");
+  }, [vinePurged]);
+
   const onBattleEnd = (r: BattleResult) => {
     setItems(r.items);
     setHp(r.hp);
-    const wasBoss = enemyId === "saltking";
+    const wasKing = enemyId === "saltking";
+    const wasBush = enemyId === "wildbush";
+    const wasVine = enemyId === "grapevine";
+    const bushKey = pendingBushKey;
     setEnemyId(null);
+    setPendingBushKey(null);
 
     if (r.outcome === "dead") {
       setMode("gameover");
@@ -158,7 +237,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
       nextGold = gold + r.gold;
       setExp(nextExp);
       setGold(nextGold);
-      nextLevel = Math.min(9, 1 + Math.floor(nextExp / 25));
+      nextLevel = Math.min(MAX_LEVEL, 1 + Math.floor(nextExp / 25));
       if (nextLevel > level) {
         setLevel(nextLevel);
         setHp(MAX_HP_BY_LEVEL(nextLevel));
@@ -167,11 +246,46 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         setBanner(`+${r.exp} EXP  +${r.gold} R`);
       }
     }
-    if (wasBoss && (r.outcome === "win" || r.outcome === "spare")) {
+
+    if (wasBush && (r.outcome === "win" || r.outcome === "spare") && bushKey) {
+      setBurntBushes((prev) => new Set(prev).add(bushKey));
+      playBurnSfx();
+      setBanner("BUSH BURNED");
+    }
+
+    if (wasKing && (r.outcome === "win" || r.outcome === "spare")) {
       setBossBeaten(true);
-      onVictory({ level: nextLevel, gold: nextGold, exp: nextExp });
+      setExitDoorOpen(true);
+      playDemonicLaugh();
+      setDialogue({
+        name: "FATES",
+        lines: [
+          "* LORD PETER KING DE MI URGOS DE LOS CHRISTOS crumbles.",
+          "* The triangle eye dims. The hat falls sideways.",
+          "* Adoni Je Hovah your old poisonous ivy laurel vine will be stopped by Paul Barnabus the Nazarene. Mark my words!",
+          "* Demonic laughter echoes through the shrine...",
+          "* The gold door blazes open. A pastoral field waits beyond.",
+        ],
+      });
+      setMode("dialogue");
       return;
     }
+
+    if (wasVine && (r.outcome === "win" || r.outcome === "spare")) {
+      setVinePurged(true);
+      setAfterDialogue("vine");
+      playBurnSfx();
+      setDialogue({
+        lines: [
+          "* The POISONOUS IVY LAUREL VINE shrivels.",
+          "* Flames race across every meadow. Night falls.",
+          "* No enemies remain. The grasslands are still.",
+        ],
+      });
+      setMode("dialogue");
+      return;
+    }
+
     setMode("overworld");
   };
 
@@ -182,6 +296,13 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
     setHp(20);
     setItems({ cookie: 3, hotdog: 1 });
     setBossBeaten(false);
+    setExitDoorOpen(false);
+    setMapId("greenvale");
+    setBurntBushes(new Set());
+    setVinePurged(false);
+    setPendingBushKey(null);
+    setAfterDialogue("none");
+    setGoldenEggOpen(false);
     setShrineCleared(false);
     setSpawn({ x: 2 * TILE, y: 1 * TILE });
     setMode("overworld");
@@ -225,7 +346,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
               <p>Z / ENTER — talk & confirm</p>
               <p>X / ESC — cancel</p>
               <p className="text-game-orange">
-                Tall grass hides monsters. The gold door hides a shrine, then a king.
+                Defeat LORD PETER, then explore the grasslands beyond the door.
               </p>
             </div>
             <div className="mt-2 flex w-full max-w-[420px] flex-col gap-2">
@@ -300,19 +421,45 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
 
         {(mode === "overworld" || mode === "dialogue") && (
           <section className="relative overflow-hidden rounded-lg border-4 border-game-yellow bg-game-bg shadow-[0_0_0_4px_#181010]">
-            <Overworld
-              spawn={spawn}
-              paused={mode !== "overworld"}
-              onTalk={onTalk}
-              onEncounter={onEncounter}
-              onBossDoor={onBossDoor}
-            />
+            {mapId === "greenvale" ? (
+              <Overworld
+                spawn={spawn}
+                paused={mode !== "overworld"}
+                exitDoorOpen={exitDoorOpen}
+                onTalk={onTalk}
+                onEncounter={onEncounter}
+                onBossDoor={onBossDoor}
+                onExitToGrasslands={onExitToGrasslands}
+              />
+            ) : (
+              <GrasslandsOverworld
+                spawn={spawn}
+                paused={mode !== "overworld" || goldenEggOpen}
+                night={vinePurged}
+                burntBushes={burntBushes}
+                vineDefeated={vinePurged}
+                onTalk={onGrassTalk}
+                onBush={onGrassBush}
+                onVine={onGrassVine}
+                onWildGrass={onGrassWild}
+                onGoldenEgg={onGoldenEgg}
+              />
+            )}
+            {goldenEggOpen && mapId === "grasslands" && (
+              <GoldenEggReader onClose={() => setGoldenEggOpen(false)} />
+            )}
             {mode === "dialogue" && dialogue && (
               <DialogueBox
                 {...(dialogue.name ? { name: dialogue.name } : {})}
                 lines={dialogue.lines}
                 onDone={() => {
                   setDialogue(null);
+                  if (afterDialogue === "vine") {
+                    setAfterDialogue("none");
+                    onVictory({ level, gold, exp });
+                    setMode("ending");
+                    return;
+                  }
                   setMode("overworld");
                 }}
               />
@@ -373,10 +520,11 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
               <p className="text-[22px]">▲</p>
               <p className="-mt-1 text-[22px] tracking-[0.4em]">▲ ▲</p>
             </div>
-            <p className="text-[14px] text-game-yellow">THE TRIANGLE KING YIELDS</p>
+            <p className="text-[14px] text-game-yellow">THE VINE IS PURGED</p>
             <p className="max-w-sm text-[10px] leading-relaxed">
-              * The three relics shine again.
-              <br />* You finished the demo at LV {level} with {gold} R.
+              * The grasslands burn into a peaceful night.
+              <br />* You finished at LV {level} with {gold} R.
+              <br />* Paul Barnabus's road is clear.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <button
@@ -408,7 +556,9 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         mode !== "reasonCampaign" &&
         mode !== "ending" && (
           <div className="flex w-full max-w-[640px] flex-wrap items-center justify-between gap-3 font-mono text-[10px] text-muted-foreground">
-            <span className="text-game-yellow">LV {level}</span>
+            <span className="text-game-yellow">
+              {mapId === "grasslands" ? (vinePurged ? "GRASSLANDS · NIGHT" : "GRASSLANDS") : "GREENVALE"} · LV {level}
+            </span>
             <span>
               HP {Math.max(0, hp)} / {maxHp}
             </span>

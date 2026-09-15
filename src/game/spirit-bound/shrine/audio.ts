@@ -1,4 +1,4 @@
-type Sfx = "select" | "move" | "invalid" | "success" | "fail" | "tick";
+type Sfx = "select" | "move" | "invalid" | "success" | "fail" | "tick" | "burn" | "demonic";
 
 let ctx: AudioContext | null = null;
 let music: { gain: GainNode; timer: number; stop: () => void } | null = null;
@@ -51,6 +51,27 @@ export function playSfx(kind: Sfx) {
     beep(165, 0.28, "sawtooth", 0.04, 0.12);
   }
   if (kind === "tick") beep(880, 0.04, "square", 0.03);
+  if (kind === "burn") {
+    beep(120, 0.08, "sawtooth", 0.06);
+    beep(80, 0.2, "square", 0.05, 0.06);
+    beep(60, 0.35, "triangle", 0.04, 0.12);
+  }
+}
+
+/** Low demonic laugh after LORD PETER falls. */
+export function playDemonicLaugh() {
+  const ac = context();
+  if (!ac) return;
+  void ac.resume();
+  const freqs = [110, 98, 87, 73, 65, 55];
+  freqs.forEach((f, i) => {
+    beep(f, 0.22, "sawtooth", 0.07, i * 0.18);
+    beep(f * 1.5, 0.12, "square", 0.03, i * 0.18 + 0.05);
+  });
+}
+
+export function playBurnSfx() {
+  playSfx("burn");
 }
 
 /** Original 8-bit loop — adventure square lead + warm bass, not a licensed theme. */

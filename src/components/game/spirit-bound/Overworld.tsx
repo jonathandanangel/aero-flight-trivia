@@ -6,16 +6,18 @@ import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 type Props = {
   spawn: { x: number; y: number };
   paused: boolean;
+  exitDoorOpen?: boolean;
   onTalk: (npc: Npc) => void;
   onEncounter: (enemyId: string, at: { x: number; y: number }) => void;
   onBossDoor: (at: { x: number; y: number }) => void;
+  onExitToGrasslands?: (at: { x: number; y: number }) => void;
 };
 
 const W = MAP_W * TILE;
 const H = MAP_H * TILE;
 const SPEED = 1.9;
 
-export function Overworld({ spawn, paused, onTalk, onEncounter, onBossDoor }: Props) {
+export function Overworld({ spawn, paused, exitDoorOpen = false, onTalk, onEncounter, onBossDoor, onExitToGrasslands }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pos = useRef({ ...spawn });
   const dir = useRef<"up" | "down" | "left" | "right">("down");
@@ -25,8 +27,8 @@ export function Overworld({ spawn, paused, onTalk, onEncounter, onBossDoor }: Pr
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
 
-  const cb = useRef({ onTalk, onEncounter, onBossDoor });
-  cb.current = { onTalk, onEncounter, onBossDoor };
+  const cb = useRef({ onTalk, onEncounter, onBossDoor, onExitToGrasslands });
+  cb.current = { onTalk, onEncounter, onBossDoor, onExitToGrasslands };
 
   const facingNpc = (): Npc | undefined => {
     const cx = pos.current.x + TILE / 2;
@@ -106,7 +108,11 @@ export function Overworld({ spawn, paused, onTalk, onEncounter, onBossDoor }: Pr
           const ty = Math.floor((p.y + TILE / 2) / TILE);
           const t = tileAt(tx, ty);
           if (t === "D") {
-            cb.current.onBossDoor({ x: p.x, y: p.y + TILE });
+            if (exitDoorOpen) {
+              cb.current.onExitToGrasslands?.({ x: p.x, y: p.y });
+            } else {
+              cb.current.onBossDoor({ x: p.x, y: p.y });
+            }
             return;
           }
           if (t === "g") {
@@ -129,7 +135,7 @@ export function Overworld({ spawn, paused, onTalk, onEncounter, onBossDoor }: Pr
       ctx.fillRect(0, 0, W, H);
       for (let ty = 0; ty < MAP_H; ty++) {
         for (let tx = 0; tx < MAP_W; tx++) {
-          drawTile(ctx, tx, ty, frame.current);
+          drawTile(ctx, tx, ty, frame.current, exitDoorOpen);
         }
       }
 
@@ -146,7 +152,7 @@ export function Overworld({ spawn, paused, onTalk, onEncounter, onBossDoor }: Pr
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [held]);
+  }, [held, exitDoorOpen]);
 
   return (
     <canvas
@@ -159,7 +165,7 @@ export function Overworld({ spawn, paused, onTalk, onEncounter, onBossDoor }: Pr
   );
 }
 
-function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: number) {
+function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: number, openDoor = false) {
   const t = tileAt(tx, ty);
   const x = tx * TILE;
   const y = ty * TILE;
@@ -200,9 +206,15 @@ function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: 
 
   if (t === "D") {
     px(ctx, x, y, TILE, TILE, "#2a2010");
-    px(ctx, x + 3, y + 2, TILE - 6, TILE - 4, "#705018");
-    px(ctx, x + 5, y + 4, TILE - 10, TILE - 8, "#181010");
-    drawTriForce(ctx, x + 4, y + 5, 5);
+    if (openDoor) {
+      px(ctx, x + 3, y + 2, TILE - 6, TILE - 4, "#88e8ff");
+      px(ctx, x + 5, y + 4, TILE - 10, TILE - 8, "#c8f8ff");
+      px(ctx, x + 8, y + 6, 8, 4, "#f8ffff");
+    } else {
+      px(ctx, x + 3, y + 2, TILE - 6, TILE - 4, "#705018");
+      px(ctx, x + 5, y + 4, TILE - 10, TILE - 8, "#181010");
+      drawTriForce(ctx, x + 4, y + 5, 5);
+    }
     return;
   }
 
