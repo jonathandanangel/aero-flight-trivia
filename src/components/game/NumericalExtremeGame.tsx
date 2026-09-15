@@ -32,6 +32,7 @@ import {
   type NonlinearSystemResult,
   type VibrationResult,
 } from "@/game/numerical-extreme";
+import { audio } from "@/game/audio";
 import { cn } from "@/lib/utils";
 
 type Mode = "main" | "vector" | "method" | "composite" | "diff" | "algorithms";
@@ -1183,13 +1184,13 @@ export function NumericalExtremeGame({ onMenu }: NumericalExtremeGameProps) {
 
   return (
     <div className="numerical-extreme-shell extreme-shell mx-auto flex w-full max-w-6xl flex-col gap-4 px-2 py-4">
-      <header className="overflow-hidden rounded-xl border border-cyan/50 bg-deepblue/80 shadow-[0_0_40px_rgba(34,211,238,0.14)]">
+      <header className="nx-header overflow-hidden rounded-xl border border-cyan/50 bg-deepblue/80 shadow-[0_0_40px_rgba(34,211,238,0.14)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-cyan/30 px-4 py-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-magenta">
               ZEUS AMMON-RA 11
             </p>
-            <h1 className="mt-1 font-display text-xl uppercase tracking-[0.16em] text-cyan text-glow sm:text-2xl">
+            <h1 className="nx-title mt-1 font-display text-xl uppercase tracking-[0.16em] text-cyan text-glow sm:text-2xl">
               NUMERICAL EXTREME
             </h1>
             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
@@ -1205,16 +1206,20 @@ export function NumericalExtremeGame({ onMenu }: NumericalExtremeGameProps) {
           </button>
         </div>
         <nav className="flex flex-wrap gap-px bg-cyan/15 p-px">
-          {MODES.map((item) => (
+          {MODES.map((item, index) => (
             <button
               key={item.id}
               type="button"
-              onClick={() => setMode(item.id)}
+              onMouseEnter={() => audio.play("hover")}
+              onClick={() => {
+                audio.play("numeric-tab", index);
+                setMode(item.id);
+              }}
               className={cn(
-                "min-h-10 flex-1 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.12em] transition",
+                "nx-tab min-h-10 flex-1 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.12em] transition",
                 mode === item.id
-                  ? "bg-cyan text-deepblue"
-                  : "bg-deepblue/90 text-cyan hover:bg-cyan/20",
+                  ? "nx-tab-active bg-cyan text-deepblue"
+                  : "bg-deepblue/90 text-cyan hover:bg-cyan/20 hover:text-moon",
               )}
             >
               {item.label}
