@@ -1,11 +1,14 @@
 import * as React from "react";
 import { Chart } from "@/components/game/numerical-extreme/Chart";
+import { BrainOverload } from "@/components/game/BrainOverload";
 import {
+  EquationBox,
   ErrorBanner,
   Field,
   GhostButton,
   Metric,
   NumberInput,
+  NumericalComputeContext,
   Panel,
   RunButton,
   Select,
@@ -33,6 +36,7 @@ import {
   type VibrationResult,
 } from "@/game/numerical-extreme";
 import { audio } from "@/game/audio";
+import { useGame } from "@/game/store";
 import { cn } from "@/lib/utils";
 
 type Mode = "main" | "vector" | "method" | "composite" | "diff" | "algorithms";
@@ -851,6 +855,45 @@ function parsePoints(raw: string): Array<[number, number]> {
     });
 }
 
+function formatDividedDifferenceTable(table: Array<Array<number | null>>): string {
+  const width = Math.max(
+    10,
+    ...table.flatMap((row) => row.map((cell) => (cell == null ? 1 : formatNumber(cell, 6).length))),
+  );
+  const header = ["f[x]", ...table.slice(1).map((_, i) => `Δ^${i + 1}`)]
+    .map((label) => label.padEnd(width))
+    .join(" ");
+  const body = table
+    .map((row, rowIndex) =>
+      row
+        .map((cell, colIndex) => {
+          if (colIndex > table.length - 1 - rowIndex) return "".padEnd(width);
+          return (cell == null ? "—" : formatNumber(cell, 6)).padEnd(width);
+        })
+        .join(" "),
+    )
+    .join("\n");
+  return `${header}\n${body}`;
+}
+
+function formatSplineSegments(
+  segments: InterpolationResult["naturalCubicSpline"]["segments"],
+): string {
+  return segments
+    .map((segment, index) => {
+      const a = formatNumber(segment.a, 8);
+      const b = formatNumber(segment.b, 8);
+      const c = formatNumber(segment.c, 8);
+      const d = formatNumber(segment.d, 8);
+      return [
+        `Segment ${index + 1}: [${formatNumber(segment.left)}, ${formatNumber(segment.right)}]`,
+        `  t = x − ${formatNumber(segment.left)}`,
+        `  S(t) = ${a} + (${b})·t + (${c})·t² + (${d})·t³`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
 function DiffPanel() {
   const [rawPoints, setRawPoints] = React.useState(INTERP_PRESETS.sample);
   const [query, setQuery] = React.useState(2.5);
@@ -861,7 +904,9 @@ function DiffPanel() {
     event.preventDefault();
     setError("");
     try {
-      setResult(interpolate(parsePoints(rawPoints), query, 500));
+      const next = interpolate(parsePoints(rawPoints), query, 500);
+      setResult(next);
+      audio.play("numeric-result");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Interpolation failed.");
     }
@@ -913,21 +958,35 @@ function DiffPanel() {
             {error && <ErrorBanner message={error} />}
           </div>
         </Panel>
+
+        <Panel title="Three coordinated views" eyebrow="Same data · different forms">
+          <ul className="space-y-2 font-mono text-[11px] leading-relaxed text-muted-foreground">
+            <li>Newton: triangular divided-difference table and nested evaluation.</li>
+            <li>Lagrange: readable basis form, evaluated with stable barycentric weights.</li>
+            <li>Natural spline: piecewise cubics with zero endpoint second derivatives.</li>
+          </ul>
+        </Panel>
       </form>
 
       <div className="space-y-3">
         {!result ? (
           <Panel title="Ready" eyebrow="DIFF">
             <p className="font-mono text-xs text-muted-foreground">
-              Newton, Lagrange, and natural cubic spline evaluation with agreement checks.
+              Newton, Lagrange, and natural cubic spline evaluation with agreement checks. Built
+              equations appear here after Interpolate.
             </p>
           </Panel>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-2">
-              <Metric label="Newton" value={result.newton.value} />
-              <Metric label="Lagrange" value={result.lagrange.value} accent="magenta" />
-              <Metric label="Spline" value={result.naturalCubicSpline.value} accent="amber" />
+            <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+              <Metric label="Newton P(q)" value={result.newton.value} />
+              <Metric label="Lagrange L(q)" value={result.lagrange.value} accent="magenta" />
+              <Metric label="Spline S(q)" value={result.naturalCubicSpline.value} accent="amber" />
+              <Metric
+                label="|P−L|"
+                value={result.agreement.newtonVsLagrangeAbsoluteDifference}
+                accent="moon"
+              />
             </div>
             <Chart
               x={result.plot.x}
@@ -945,9 +1004,47 @@ function DiffPanel() {
                   color: "#f59e0b",
                 },
               ]}
-              referenceX={[query]}
+              referenceX={[query, ...result.points.map((point) => point.x)]}
               height={260}
             />
+
+            <Panel
+              title="Newton divided differences"
+              eyebrow={`Triangular table · query x = ${formatNumber(result.query)}`}
+            >
+              <div className="space-y-3">
+                <EquationBox label="Divided-difference table">
+                  {formatDividedDifferenceTable(result.newton.dividedDifferenceTable)}
+                </EquationBox>
+                <EquationBox label="Newton nested form P(x)">
+                  {`P(x) = ${result.newton.formula}`}
+                </EquationBox>
+                <EquationBox label="Coefficients f[x₀…xₖ]">
+                  {result.newton.coefficients.map((c, i) => `a${i} = ${formatNumber(c, 10)}`).join("\n")}
+                </EquationBox>
+              </div>
+            </Panel>
+
+            <Panel title="Lagrange representation" eyebrow="Equivalent global polynomial">
+              <div className="space-y-3">
+                <p className="font-mono text-[11px] text-muted-foreground">{result.lagrange.evaluation}</p>
+                <EquationBox label="L(x)">
+                  {result.lagrange.formula
+                    ? `L(x) = ${result.lagrange.formula}`
+                    : "(Expanded readable form omitted above 12 points — barycentric weights still used numerically.)"}
+                </EquationBox>
+              </div>
+            </Panel>
+
+            <Panel
+              title="Natural cubic segments"
+              eyebrow={result.naturalCubicSpline.boundaryCondition}
+            >
+              <EquationBox label="Piecewise cubics Sᵢ(t)">
+                {formatSplineSegments(result.naturalCubicSpline.segments)}
+              </EquationBox>
+            </Panel>
+
             {result.warnings.length > 0 && (
               <ErrorBanner message={result.warnings.join(" · ")} />
             )}
@@ -1180,62 +1277,77 @@ function AlgorithmsPanel() {
 }
 
 export function NumericalExtremeGame({ onMenu }: NumericalExtremeGameProps) {
+  const { settings } = useGame();
   const [mode, setMode] = React.useState<Mode>("main");
+  const [overloadBurst, setOverloadBurst] = React.useState(0);
+
+  const triggerEnochRa = React.useCallback(() => {
+    setOverloadBurst((value) => value + 1);
+  }, []);
 
   return (
-    <div className="numerical-extreme-shell extreme-shell mx-auto flex w-full max-w-6xl flex-col gap-4 px-2 py-4">
-      <header className="nx-header overflow-hidden rounded-xl border border-cyan/50 bg-deepblue/80 shadow-[0_0_40px_rgba(34,211,238,0.14)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-cyan/30 px-4 py-3">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-magenta">
-              ZEUS AMMON-RA 11
-            </p>
-            <h1 className="nx-title mt-1 font-display text-xl uppercase tracking-[0.16em] text-cyan text-glow sm:text-2xl">
-              NUMERICAL EXTREME
-            </h1>
-            <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-              Local TypeScript engine · V11 / V15 ports
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onMenu}
-            className="rounded-lg border border-amber/50 bg-deepblue/70 px-4 py-2 font-display text-xs uppercase tracking-[0.2em] text-amber transition hover:bg-amber/15"
-          >
-            Main menu
-          </button>
-        </div>
-        <nav className="flex flex-wrap gap-px bg-cyan/15 p-px">
-          {MODES.map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              onMouseEnter={() => audio.play("hover")}
-              onClick={() => {
-                audio.play("numeric-tab", index);
-                setMode(item.id);
-              }}
-              className={cn(
-                "nx-tab min-h-10 flex-1 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.12em] transition",
-                mode === item.id
-                  ? "nx-tab-active bg-cyan text-deepblue"
-                  : "bg-deepblue/90 text-cyan hover:bg-cyan/20 hover:text-moon",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      </header>
+    <NumericalComputeContext.Provider value={triggerEnochRa}>
+      <div className="numerical-extreme-shell extreme-shell relative mx-auto flex w-full max-w-6xl flex-col gap-4 px-2 py-4">
+        <BrainOverload
+          burst={overloadBurst}
+          reducedMotion={settings.reducedMotion}
+          durationMs={1000}
+          onDone={() => setOverloadBurst(0)}
+        />
 
-      <main className="min-w-0">
-        {mode === "main" && <MainPanel />}
-        {mode === "vector" && <VectorPanel />}
-        {mode === "method" && <MethodPanel />}
-        {mode === "composite" && <CompositePanel />}
-        {mode === "diff" && <DiffPanel />}
-        {mode === "algorithms" && <AlgorithmsPanel />}
-      </main>
-    </div>
+        <header className="nx-header overflow-hidden rounded-xl border border-cyan/50 bg-deepblue/80 shadow-[0_0_40px_rgba(34,211,238,0.14)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-cyan/30 px-4 py-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-magenta">
+                ZEUS AMMON-RA 11
+              </p>
+              <h1 className="nx-title mt-1 font-display text-xl uppercase tracking-[0.16em] text-cyan text-glow sm:text-2xl">
+                NUMERICAL EXTREME
+              </h1>
+              <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                Local TypeScript engine · V11 / V15 ports
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onMenu}
+              className="rounded-lg border border-amber/50 bg-deepblue/70 px-4 py-2 font-display text-xs uppercase tracking-[0.2em] text-amber transition hover:bg-amber/15"
+            >
+              Main menu
+            </button>
+          </div>
+          <nav className="flex flex-wrap gap-px bg-cyan/15 p-px">
+            {MODES.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                onMouseEnter={() => audio.play("hover")}
+                onClick={() => {
+                  audio.play("numeric-tab", index);
+                  setMode(item.id);
+                }}
+                className={cn(
+                  "nx-tab min-h-10 flex-1 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.12em] transition",
+                  mode === item.id
+                    ? "nx-tab-active bg-cyan text-deepblue"
+                    : "bg-deepblue/90 text-cyan hover:bg-cyan/20 hover:text-moon",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </header>
+
+        <main className="min-w-0">
+          {mode === "main" && <MainPanel />}
+          {mode === "vector" && <VectorPanel />}
+          {mode === "method" && <MethodPanel />}
+          {mode === "composite" && <CompositePanel />}
+          {mode === "diff" && <DiffPanel />}
+          {mode === "algorithms" && <AlgorithmsPanel />}
+        </main>
+      </div>
+    </NumericalComputeContext.Provider>
   );
 }

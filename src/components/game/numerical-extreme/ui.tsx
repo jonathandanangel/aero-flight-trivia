@@ -3,8 +3,35 @@ import { audio } from "@/game/audio";
 import { formatNumber } from "@/game/numerical-extreme";
 import { cn } from "@/lib/utils";
 
+/** Fired by RunButton so the shell can play the Enoch-Ra brain flourish. */
+export const NumericalComputeContext = React.createContext<() => void>(() => {});
+
 const controlClass =
   "w-full rounded-lg border border-cyan/40 bg-deepblue/80 px-3 py-2 font-mono text-xs text-moon outline-none transition placeholder:text-muted-foreground hover:border-cyan/60 focus:border-cyan focus:ring-1 focus:ring-cyan/30";
+
+/** Monospace equation / telemetry box — matches MAIN / ALGORITHMS engine logs. */
+export function EquationBox({
+  label,
+  children,
+  className,
+}: {
+  label?: string;
+  children: string;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      {label && (
+        <p className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          {label}
+        </p>
+      )}
+      <pre className="max-h-56 overflow-auto rounded-lg border border-cyan/20 bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-mint whitespace-pre-wrap break-all">
+        {children}
+      </pre>
+    </div>
+  );
+}
 
 export function Panel({
   title,
@@ -117,11 +144,13 @@ export function RunButton({
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
 }) {
+  const onCompute = React.useContext(NumericalComputeContext);
   return (
     <button
       {...props}
       onClick={(event) => {
         audio.play("numeric-run");
+        onCompute();
         props.onClick?.(event);
       }}
       onMouseEnter={(event) => {
