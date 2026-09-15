@@ -189,12 +189,12 @@ export function BulletBox({ pattern, duration, damage, onHit, onDone }: Props) {
       }
 
       const flash = invuln > 0 && Math.floor(elapsed / 80) % 2 === 0;
+      // Inverted red triangle (point down) — contrasts upward gold attack triangles.
       ctx.fillStyle = flash ? "#7a1b2b" : "#e83828";
-      ctx.fillRect(heart.x - 1, heart.y - 6, 2, 2);
-      ctx.fillRect(heart.x - 3, heart.y - 4, 6, 2);
+      ctx.fillRect(heart.x - 6, heart.y - 4, 12, 2);
       ctx.fillRect(heart.x - 5, heart.y - 2, 10, 2);
-      ctx.fillRect(heart.x - 6, heart.y, 12, 2);
-      ctx.fillRect(heart.x - 4, heart.y + 2, 8, 2);
+      ctx.fillRect(heart.x - 3, heart.y, 6, 2);
+      ctx.fillRect(heart.x - 1, heart.y + 2, 2, 2);
       ctx.fillStyle = flash ? "#7a1b2b" : "#f8d030";
       ctx.fillRect(heart.x - 1, heart.y - 2, 2, 2);
 
