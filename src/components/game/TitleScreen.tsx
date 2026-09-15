@@ -11,7 +11,7 @@ export interface TitleScreenProps {
   onExtremeV2: () => void;
   onHeatTransferExtreme: () => void;
   onHeatTransferIntro: () => void;
-  onSaltburg: () => void;
+  onSpiritBound: () => void;
   onNumericalExtreme: () => void;
   onSettings: () => void;
   onValidate: () => void;
@@ -84,10 +84,10 @@ export function TitleScreen(p: TitleScreenProps) {
         </button>
         <button
           type="button"
-          className={`${item} saltburg-menu-item`}
-          onClick={p.onSaltburg}
+          className={`${item} spirit-bound-menu-item`}
+          onClick={p.onSpiritBound}
         >
-          SALTBURG
+          THE LEGEND OF TRIANGLES
         </button>
         <button
           type="button"

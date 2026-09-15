@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { isDown, useKeys } from "@/game/saltburg/useKeys";
+import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
 
 type Bullet = { x: number; y: number; vx: number; vy: number; r: number; kind: "dot" | "bar" };
 
@@ -120,28 +120,45 @@ export function BulletBox({ pattern, duration, damage, onHit, onDone }: Props) {
         }
       }
 
-      // render
-      ctx.fillStyle = "#0d0f1a";
+      ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#181010";
       ctx.fillRect(0, 0, W, H);
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(2, 2, W - 4, H - 4);
+      ctx.fillStyle = "#f8d030";
+      ctx.fillRect(0, 0, W, 4);
+      ctx.fillRect(0, H - 4, W, 4);
+      ctx.fillRect(0, 0, 4, H);
+      ctx.fillRect(W - 4, 0, 4, H);
+      ctx.fillStyle = "#705018";
+      ctx.fillRect(4, 4, W - 8, 2);
+      ctx.fillRect(4, H - 6, W - 8, 2);
 
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = "#f8f0c8";
       for (const b of bullets) {
-        if (b.kind === "bar") ctx.fillRect(b.x - 6, b.y - 3, 12, 6);
-        else {
-          ctx.beginPath();
-          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-          ctx.fill();
+        if (b.kind === "bar") {
+          ctx.fillRect(b.x - 6, b.y - 3, 12, 6);
+          ctx.fillStyle = "#f8d030";
+          ctx.fillRect(b.x - 2, b.y - 5, 4, 10);
+          ctx.fillStyle = "#f8f0c8";
+        } else {
+          const r = Math.max(4, b.r);
+          ctx.fillStyle = "#f8d030";
+          ctx.fillRect(b.x - 1, b.y - r, 2, 2);
+          ctx.fillRect(b.x - 2, b.y - r + 2, 4, 2);
+          ctx.fillRect(b.x - 3, b.y - r + 4, 6, 2);
+          ctx.fillRect(b.x - r + 1, b.y, r * 2 - 2, 2);
+          ctx.fillStyle = "#f8f0c8";
         }
       }
 
-      ctx.fillStyle = invuln > 0 && Math.floor(elapsed / 80) % 2 === 0 ? "#7a1b2b" : "#ff4d6d";
-      ctx.fillRect(heart.x - 5, heart.y - 4, 10, 8);
-      ctx.fillRect(heart.x - 3, heart.y - 6, 3, 3);
-      ctx.fillRect(heart.x, heart.y - 6, 3, 3);
-      ctx.fillRect(heart.x - 3, heart.y + 4, 6, 3);
+      const flash = invuln > 0 && Math.floor(elapsed / 80) % 2 === 0;
+      ctx.fillStyle = flash ? "#7a1b2b" : "#e83828";
+      ctx.fillRect(heart.x - 1, heart.y - 6, 2, 2);
+      ctx.fillRect(heart.x - 3, heart.y - 4, 6, 2);
+      ctx.fillRect(heart.x - 5, heart.y - 2, 10, 2);
+      ctx.fillRect(heart.x - 6, heart.y, 12, 2);
+      ctx.fillRect(heart.x - 4, heart.y + 2, 8, 2);
+      ctx.fillStyle = flash ? "#7a1b2b" : "#f8d030";
+      ctx.fillRect(heart.x - 1, heart.y - 2, 2, 2);
 
       if (elapsed >= duration && !done) {
         done = true;

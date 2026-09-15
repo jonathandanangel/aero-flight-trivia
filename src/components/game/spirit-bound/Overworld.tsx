@@ -1,0 +1,287 @@
+import { useEffect, useRef } from "react";
+import { isSolid, MAP_H, MAP_W, NPCS, TILE, tileAt, WILD_POOL, type Npc } from "@/game/spirit-bound/data";
+import { drawTriForce, pixelTriangle, px } from "@/game/spirit-bound/pixel";
+import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
+
+type Props = {
+  spawn: { x: number; y: number };
+  paused: boolean;
+  onTalk: (npc: Npc) => void;
+  onEncounter: (enemyId: string, at: { x: number; y: number }) => void;
+  onBossDoor: (at: { x: number; y: number }) => void;
+};
+
+const W = MAP_W * TILE;
+const H = MAP_H * TILE;
+const SPEED = 1.9;
+
+export function Overworld({ spawn, paused, onTalk, onEncounter, onBossDoor }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const pos = useRef({ ...spawn });
+  const dir = useRef<"up" | "down" | "left" | "right">("down");
+  const steps = useRef(0);
+  const budget = useRef(90 + Math.floor(Math.random() * 120));
+  const frame = useRef(0);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+
+  const cb = useRef({ onTalk, onEncounter, onBossDoor });
+  cb.current = { onTalk, onEncounter, onBossDoor };
+
+  const facingNpc = (): Npc | undefined => {
+    const cx = pos.current.x + TILE / 2;
+    const cy = pos.current.y + TILE / 2;
+    const d = dir.current;
+    const tx = Math.floor((cx + (d === "left" ? -TILE : d === "right" ? TILE : 0)) / TILE);
+    const ty = Math.floor((cy + (d === "up" ? -TILE : d === "down" ? TILE : 0)) / TILE);
+    return NPCS.find((n) => n.tx === tx && n.ty === ty);
+  };
+
+  const held = useKeys((key) => {
+    if (pausedRef.current) return;
+    if (["z", "Z", "Enter", " "].includes(key)) {
+      const npc = facingNpc();
+      if (npc) cb.current.onTalk(npc);
+    }
+  });
+
+  useEffect(() => {
+    pos.current = { ...spawn };
+    steps.current = 0;
+    budget.current = 90 + Math.floor(Math.random() * 120);
+  }, [spawn]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    let raf = 0;
+
+    const blocked = (x: number, y: number) => {
+      const pad = 4;
+      const corners = [
+        [x + pad, y + TILE / 2],
+        [x + TILE - pad, y + TILE / 2],
+        [x + pad, y + TILE - 2],
+        [x + TILE - pad, y + TILE - 2],
+      ];
+      return corners.some(([cx, cy]) =>
+        isSolid(Math.floor((cx ?? 0) / TILE), Math.floor((cy ?? 0) / TILE)),
+      );
+    };
+
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      frame.current += 1;
+      const keys = held.current;
+
+      if (!pausedRef.current) {
+        let dx = 0;
+        let dy = 0;
+        if (isDown(keys, "ArrowLeft", "a")) {
+          dx -= SPEED;
+          dir.current = "left";
+        }
+        if (isDown(keys, "ArrowRight", "d")) {
+          dx += SPEED;
+          dir.current = "right";
+        }
+        if (isDown(keys, "ArrowUp", "w")) {
+          dy -= SPEED;
+          dir.current = "up";
+        }
+        if (isDown(keys, "ArrowDown", "s")) {
+          dy += SPEED;
+          dir.current = "down";
+        }
+
+        const p = pos.current;
+        if (dx && !blocked(p.x + dx, p.y)) p.x += dx;
+        if (dy && !blocked(p.x, p.y + dy)) p.y += dy;
+
+        if (dx || dy) {
+          steps.current += 1;
+          const tx = Math.floor((p.x + TILE / 2) / TILE);
+          const ty = Math.floor((p.y + TILE / 2) / TILE);
+          const t = tileAt(tx, ty);
+          if (t === "D") {
+            cb.current.onBossDoor({ x: p.x, y: p.y + TILE });
+            return;
+          }
+          if (t === "g") {
+            steps.current += 2;
+            if (steps.current >= budget.current) {
+              steps.current = 0;
+              budget.current = 90 + Math.floor(Math.random() * 120);
+              const id = WILD_POOL[Math.floor(Math.random() * WILD_POOL.length)] ?? "flowerling";
+              cb.current.onEncounter(id, { x: p.x, y: p.y });
+              return;
+            }
+          } else if (steps.current > 0) {
+            steps.current -= 0.15;
+          }
+        }
+      }
+
+      ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = "#183010";
+      ctx.fillRect(0, 0, W, H);
+      for (let ty = 0; ty < MAP_H; ty++) {
+        for (let tx = 0; tx < MAP_W; tx++) {
+          drawTile(ctx, tx, ty, frame.current);
+        }
+      }
+
+      for (const n of NPCS) {
+        const bob = Math.sin((frame.current + n.tx * 17) / 25) * 1.5;
+        drawNpc(ctx, n.tx * TILE, n.ty * TILE + bob, n.id, n.color);
+      }
+
+      const p = pos.current;
+      const walking = isDown(held.current, "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown");
+      const walkBob = walking ? Math.sin(frame.current / 5) * 1.5 : 0;
+      drawHero(ctx, p.x, p.y + walkBob, dir.current, walking ? frame.current : 0);
+    };
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [held]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={W}
+      height={H}
+      className="h-auto w-full max-w-full"
+      style={{ imageRendering: "pixelated" }}
+    />
+  );
+}
+
+function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: number) {
+  const t = tileAt(tx, ty);
+  const x = tx * TILE;
+  const y = ty * TILE;
+
+  if (t === "#") {
+    px(ctx, x, y, TILE, TILE, "#5a3a18");
+    px(ctx, x, y, TILE, 4, "#387820");
+    px(ctx, x + 2, y + 1, 6, 3, "#58a030");
+    px(ctx, x + 14, y, 8, 4, "#286018");
+    px(ctx, x + 2, y + 8, 8, 6, "#7a5028");
+    px(ctx, x + 12, y + 14, 10, 6, "#3a2410");
+    if ((tx + ty) % 4 === 0) pixelTriangle(ctx, x + 8, y + 8, 8, "#f8d030");
+    return;
+  }
+
+  if (t === "w") {
+    px(ctx, x, y, TILE, TILE, "#1858a8");
+    px(ctx, x, y, TILE, TILE, (tx + ty) % 2 === 0 ? "#1858a8" : "#104888");
+    const wave = Math.sin((frame + tx * 9) / 22) * 2;
+    px(ctx, x + 3, y + 8 + wave, 10, 2, "#58a8f0");
+    px(ctx, x + 12, y + 14 - wave, 6, 2, "#f0f8ff");
+    if ((tx + ty) % 5 === 0) pixelTriangle(ctx, x + 8, y + 4, 6, "#88c8ff");
+    return;
+  }
+
+  if (t === "g") {
+    px(ctx, x, y, TILE, TILE, "#389028");
+    px(ctx, x + 1, y + 1, 6, 4, "#58c040");
+    for (let i = 0; i < 3; i++) {
+      const gx = x + 4 + i * 7;
+      const sway = Math.sin((frame + tx * 5 + ty * 3 + i * 11) / 20) * 1.5;
+      px(ctx, gx + sway, y + 8, 3, 12, "#186818");
+      px(ctx, gx + sway, y + 8, 3, 3, "#70d848");
+    }
+    if ((tx * 3 + ty) % 7 === 0) pixelTriangle(ctx, x + 14, y + 2, 6, "#f8d030");
+    return;
+  }
+
+  if (t === "D") {
+    px(ctx, x, y, TILE, TILE, "#2a2010");
+    px(ctx, x + 3, y + 2, TILE - 6, TILE - 4, "#705018");
+    px(ctx, x + 5, y + 4, TILE - 10, TILE - 8, "#181010");
+    drawTriForce(ctx, x + 4, y + 5, 5);
+    return;
+  }
+
+  if (t === "f") {
+    px(ctx, x, y, TILE, TILE, (tx + ty) % 2 === 0 ? "#c8a048" : "#b89038");
+    px(ctx, x + 11, y + 14, 2, 6, "#186818");
+    pixelTriangle(ctx, x + 6, y + 4, 12, "#f06088");
+    pixelTriangle(ctx, x + 9, y + 8, 6, "#f8d030");
+    return;
+  }
+
+  px(ctx, x, y, TILE, TILE, (tx + ty) % 2 === 0 ? "#c8a048" : "#b89038");
+  px(ctx, x + 2, y + 10, 3, 2, "#a87828");
+  px(ctx, x + 16, y + 4, 2, 2, "#d8b860");
+  if ((tx + ty * 2) % 11 === 0) pixelTriangle(ctx, x + 16, y + 14, 6, "#e8c860");
+}
+
+function drawHero(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  dir: "up" | "down" | "left" | "right",
+  frame: number,
+) {
+  px(ctx, x + 5, y + TILE - 3, TILE - 10, 3, "rgba(0,0,0,0.35)");
+  const step = frame ? (Math.floor(frame / 6) % 2 === 0 ? -1 : 1) : 0;
+
+  px(ctx, x + 8, y + 16, 3, 6, "#703818");
+  px(ctx, x + 13, y + 16, 3, 6, "#703818");
+  if (step) px(ctx, x + 8 + step, y + 20, 3, 2, "#502010");
+
+  px(ctx, x + 6, y + 10, 12, 8, "#20a838");
+  px(ctx, x + 5, y + 11, 2, 6, "#187828");
+  px(ctx, x + 17, y + 11, 2, 6, "#187828");
+
+  px(ctx, x + 8, y + 6, 8, 6, "#f0c090");
+  if (dir !== "up") {
+    const ex = dir === "left" ? 9 : dir === "right" ? 13 : 9;
+    px(ctx, x + ex, y + 8, 2, 2, "#201008");
+    if (dir === "down") px(ctx, x + 13, y + 8, 2, 2, "#201008");
+  }
+
+  px(ctx, x + 7, y + 2, 10, 5, "#187828");
+  pixelTriangle(ctx, x + 9, y - 1, 6, "#20a838");
+  if (dir === "left") px(ctx, x + 5, y + 3, 4, 3, "#187828");
+  if (dir === "right") px(ctx, x + 15, y + 3, 4, 3, "#187828");
+}
+
+function drawNpc(ctx: CanvasRenderingContext2D, x: number, y: number, id: string, color: string) {
+  px(ctx, x + 5, y + TILE - 3, TILE - 10, 3, "rgba(0,0,0,0.35)");
+
+  if (id === "nurse") {
+    px(ctx, x + 8, y + 16, 8, 6, "#f8b0d8");
+    px(ctx, x + 6, y + 8, 12, 10, "#f8e8f8");
+    px(ctx, x + 8, y + 6, 8, 5, "#f0c090");
+    pixelTriangle(ctx, x + 6, y, 12, "#58d0f8");
+    pixelTriangle(ctx, x + 9, y + 4, 6, "#f8f8f8");
+    return;
+  }
+
+  if (id === "dog") {
+    px(ctx, x + 4, y + 14, 16, 6, "#c8c0a8");
+    px(ctx, x + 2, y + 16, 4, 3, "#a89878");
+    px(ctx, x + 16, y + 12, 6, 6, "#c8c0a8");
+    px(ctx, x + 17, y + 14, 2, 2, "#201008");
+    pixelTriangle(ctx, x + 8, y + 8, 8, "#705838");
+    return;
+  }
+
+  px(ctx, x + 7, y + 16, 4, 6, "#4a3018");
+  px(ctx, x + 13, y + 16, 4, 6, "#4a3018");
+  px(ctx, x + 6, y + 10, 12, 8, color);
+  px(ctx, x + 8, y + 5, 8, 6, "#f0c090");
+  px(ctx, x + 9, y + 7, 2, 2, "#201008");
+  px(ctx, x + 13, y + 7, 2, 2, "#201008");
+  if (id === "toby") {
+    px(ctx, x + 6, y + 3, 12, 4, "#f0e8d0");
+    pixelTriangle(ctx, x + 8, y - 2, 8, "#f8d030");
+  } else {
+    pixelTriangle(ctx, x + 9, y + 1, 6, "#20a838");
+  }
+}

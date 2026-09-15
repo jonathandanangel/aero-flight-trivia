@@ -41,13 +41,13 @@ export function DialogueBox({ name, lines, onDone }: Props) {
 
   return (
     <div className="pointer-events-none absolute inset-x-3 bottom-3">
-      <div className="pointer-events-auto rounded-sm border-4 border-game-ink bg-game-bg p-4 font-pixel shadow-[0_0_0_4px_rgba(5,8,22,0.7)]">
+      <div className="pointer-events-auto border-4 border-game-yellow bg-[#201808] p-4 shadow-[0_0_0_4px_#181010,inset_0_0_0_2px_#705018]">
         {name && <div className="mb-2 text-[10px] tracking-widest text-game-yellow">{name}</div>}
-        <p className="min-h-[3.2em] whitespace-pre-line text-[11px] leading-relaxed text-game-ink">
+        <p className="min-h-[3.2em] whitespace-pre-line text-[11px] leading-relaxed text-[#f8f0c8]">
           {shown}
-          <span className="animate-pulse">_</span>
+          <span className="animate-pulse">▲</span>
         </p>
-        <div className="mt-2 text-right text-[9px] text-game-ink/50">
+        <div className="mt-2 text-right text-[9px] text-game-yellow/70">
           {idx + 1}/{lines.length} &nbsp; Z ▼
         </div>
       </div>

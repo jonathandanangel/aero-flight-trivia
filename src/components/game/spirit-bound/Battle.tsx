@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Enemy } from "@/game/saltburg/data";
-import { useKeys } from "@/game/saltburg/useKeys";
+import type { Enemy } from "@/game/spirit-bound/data";
+import { useKeys } from "@/game/spirit-bound/useKeys";
 import { BulletBox } from "./BulletBox";
 
 export type BattleResult = {
@@ -40,7 +40,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
   const finished = useRef(false);
 
   const actOptions = ["Check", enemy.boss ? "Plead" : "Compliment", "Joke"];
-  const itemOptions = [`Cookie (${items.cookie})`, `Hotdog (${items.hotdog})`];
+  const itemOptions = [`Heart (${items.cookie})`, `Fairy (${items.hotdog})`];
   const mercyOptions = ["Spare", "Flee"];
   const subOptions =
     subKind === "act" ? actOptions : subKind === "item" ? itemOptions : mercyOptions;
@@ -157,10 +157,10 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
     if (subKind === "item") {
       if (subIdx === 0 && items.cookie > 0) {
         setItems((i) => ({ ...i, cookie: i.cookie - 1 }));
-        heal(25, "Cookie");
+        heal(25, "Heart");
       } else if (subIdx === 1 && items.hotdog > 0) {
         setItems((i) => ({ ...i, hotdog: i.hotdog - 1 }));
-        heal(40, "Hotdog");
+        heal(40, "Fairy");
       } else {
         say("* You're all out of that.", "action");
       }
@@ -168,7 +168,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
     }
     if (subIdx === 0) {
       if (spareable) {
-        setMessage(`* You spared ${enemy.name}.\n* You earned 0 EXP and ${enemy.gold} gold.`);
+        setMessage(`* You spared ${enemy.name}.\n* You earned 0 EXP and ${enemy.gold} R.`);
         setPhase("message");
         window.setTimeout(() => finish("spare", Math.max(0, realHp)), 1300);
       } else {
@@ -177,7 +177,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
       return;
     }
     if (enemy.boss) {
-      say("* You can't run from THE SALT KING!");
+      say("* You can't run from THE TRIANGLE KING!");
     } else {
       setMessage("* You escaped!");
       setPhase("message");
@@ -233,11 +233,11 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
   const hpPct = Math.max(0, Math.min(1, rollHp / maxHp));
 
   return (
-    <div className="relative mx-auto w-full max-w-[640px] select-none border-4 border-game-ink bg-game-bg p-3 font-pixel text-game-ink">
-      {/* enemy stage */}
-      <div className="relative flex h-[190px] items-center justify-center">
+    <div className="relative mx-auto w-full max-w-[640px] select-none border-4 border-game-yellow bg-game-bg p-3 font-pixel text-[#f8f0c8] shadow-[0_0_0_4px_#181010]">
+      <div className="relative flex h-[190px] items-center justify-center overflow-hidden bg-[#102010]">
+        <TriangleField />
         <div
-          className={`flex flex-col items-center transition-transform ${enemyShake ? "translate-x-1" : ""}`}
+          className={`relative z-10 flex flex-col items-center transition-transform ${enemyShake ? "translate-x-1" : ""}`}
           style={{ opacity: enemyHp <= 0 ? 0.3 : 1 }}
         >
           <EnemySprite color={enemy.color} kind={enemy.pattern} />
@@ -245,9 +245,9 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
             className={`mt-2 text-[10px] tracking-widest ${spareable ? "text-game-yellow" : ""}`}
           >
             {enemy.name}
-            {spareable ? " ♥" : ""}
+            {spareable ? " ▲" : ""}
           </div>
-          <div className="mt-1 h-2 w-32 border-2 border-game-ink">
+          <div className="mt-1 h-2 w-32 border-2 border-game-yellow">
             <div
               className="h-full bg-game-hp transition-[width] duration-300"
               style={{ width: `${Math.max(0, Math.min(1, hpRatio)) * 100}%` }}
@@ -256,8 +256,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
         </div>
       </div>
 
-      {/* main box */}
-      <div className="relative mt-2 border-4 border-game-ink bg-game-bg p-4">
+      <div className="relative mt-2 border-4 border-game-yellow bg-[#201808] p-4">
         {phase === "enemy" ? (
           <BulletBox
             pattern={enemy.pattern}
@@ -267,10 +266,10 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
             onDone={onEnemyTurnEnd}
           />
         ) : phase === "fight" ? (
-          <div className="relative h-[110px] overflow-hidden border-2 border-game-ink">
+          <div className="relative h-[110px] overflow-hidden border-2 border-game-yellow bg-[#181010]">
             <div className="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 bg-game-yellow/60" />
             <div
-              className="absolute inset-y-0 w-3 border-2 border-game-bg bg-game-ink"
+              className="absolute inset-y-0 w-3 border-2 border-[#181010] bg-game-yellow"
               style={{ left: `${attackPos * 96}%` }}
             />
             <p className="absolute bottom-2 left-2 text-[10px] text-game-yellow">
@@ -281,7 +280,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
           <ul className="h-[110px] space-y-2 text-[12px]">
             {subOptions.map((o, i) => (
               <li key={o} className={i === subIdx ? "text-game-yellow" : ""}>
-                {i === subIdx ? "♥ " : "\u00A0\u00A0 "}
+                {i === subIdx ? "▲ " : "\u00A0\u00A0 "}
                 {o}
               </li>
             ))}
@@ -329,7 +328,7 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
                   : "border-game-orange text-game-orange"
               }`}
             >
-              {active ? "♥ " : ""}
+              {active ? "▲ " : ""}
               {a}
             </li>
           );
@@ -343,6 +342,35 @@ export function Battle({ enemy, level, hp, maxHp, items: startItems, onEnd }: Pr
   );
 }
 
+function TriangleField() {
+  const spots = [
+    [8, 16],
+    [40, 120],
+    [80, 40],
+    [140, 150],
+    [200, 24],
+    [260, 110],
+    [320, 50],
+    [380, 140],
+    [460, 30],
+    [520, 100],
+    [560, 160],
+  ] as const;
+  return (
+    <div className="pointer-events-none absolute inset-0 opacity-40">
+      {spots.map(([left, top], i) => (
+        <span
+          key={`${left}-${top}`}
+          className="absolute text-[10px] text-game-yellow"
+          style={{ left, top, transform: i % 2 ? "rotate(180deg)" : undefined }}
+        >
+          ▲
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function EnemySprite({ color, kind }: { color: string; kind: Enemy["pattern"] }) {
   const size = kind === "king" ? 108 : 76;
   return (
@@ -350,29 +378,45 @@ function EnemySprite({ color, kind }: { color: string; kind: Enemy["pattern"] })
       <g fill={color}>
         {kind === "seeds" && (
           <>
-            <rect x="6" y="2" width="4" height="4" />
-            <rect x="3" y="4" width="10" height="4" />
-            <rect x="7" y="8" width="2" height="6" />
-            <rect x="4" y="12" width="8" height="2" />
+            <rect x="7" y="1" width="2" height="2" />
+            <rect x="6" y="3" width="4" height="2" />
+            <rect x="4" y="5" width="8" height="2" />
+            <rect x="3" y="7" width="10" height="2" />
+            <rect x="7" y="9" width="2" height="5" />
+            <rect x="5" y="13" width="6" height="2" />
           </>
         )}
         {kind === "salt" && (
           <>
-            <rect x="5" y="2" width="6" height="3" />
-            <rect x="4" y="5" width="8" height="9" />
+            <rect x="6" y="2" width="4" height="2" />
+            <rect x="4" y="4" width="8" height="3" />
+            <rect x="3" y="7" width="10" height="5" />
+            <rect x="2" y="6" width="2" height="2" />
+            <rect x="12" y="6" width="2" height="2" />
+            <rect x="5" y="12" width="2" height="3" />
+            <rect x="9" y="12" width="2" height="3" />
           </>
         )}
         {kind === "king" && (
           <>
-            <rect x="4" y="1" width="8" height="2" />
-            <rect x="3" y="3" width="10" height="6" />
-            <rect x="2" y="9" width="12" height="6" />
+            <rect x="7" y="0" width="2" height="2" />
+            <rect x="6" y="2" width="4" height="2" />
+            <rect x="4" y="4" width="8" height="2" />
+            <rect x="2" y="6" width="12" height="2" />
+            <rect x="1" y="8" width="14" height="3" />
+            <rect x="3" y="11" width="4" height="2" />
+            <rect x="9" y="11" width="4" height="2" />
+            <rect x="2" y="13" width="3" height="3" />
+            <rect x="11" y="13" width="3" height="3" />
           </>
         )}
       </g>
-      <g fill="#0d0f1a">
-        <rect x="6" y={kind === "king" ? 5 : 6} width="1" height="2" />
-        <rect x="9" y={kind === "king" ? 5 : 6} width="1" height="2" />
+      <g fill="#181010">
+        <rect x="5" y={kind === "king" ? 8 : 6} width="2" height="2" />
+        <rect x="9" y={kind === "king" ? 8 : 6} width="2" height="2" />
+      </g>
+      <g fill="#f8d030">
+        <rect x="7" y={kind === "king" ? 5 : 4} width="2" height="2" />
       </g>
     </svg>
   );

@@ -40,7 +40,7 @@ import { LightCycleGame } from "./LightCycleGame";
 import { NeonMazeGame } from "./NeonMazeGame";
 import { SettingsPanel } from "./SettingsPanel";
 import { NumericalExtremeGame } from "./NumericalExtremeGame";
-import { SaltburgGame } from "./SaltburgGame";
+import { SpiritBoundGame } from "./SpiritBoundGame";
 import { TitleScreen } from "./TitleScreen";
 import { ValidationPanel } from "./ValidationPanel";
 import { WorldBackground } from "./WorldBackground";
@@ -60,7 +60,7 @@ type Screen =
   | "ht-review"
   | "hti-review"
   | "ht-chapter-jump"
-  | "saltburg"
+  | "spirit-bound"
   | "numerical-extreme";
 type Mode =
   | "campaign"
@@ -72,7 +72,7 @@ type Mode =
   | "extreme-v2"
   | "ht-extreme"
   | "ht-intro"
-  | "saltburg"
+  | "spirit-bound"
   | "numerical-extreme";
 type Phase = "answering" | "revealed" | "recall";
 type IntermissionGame = "lightcycle" | "maze";
@@ -158,7 +158,7 @@ export function AeroGrid() {
   const [extremeCorrectCount, setExtremeCorrectCount] = React.useState(0);
   const [htJumpNeedsAdvance, setHtJumpNeedsAdvance] = React.useState(false);
   const [enochGatePending, setEnochGatePending] = React.useState(false);
-  const [saltburgStats, setSaltburgStats] = React.useState({ level: 1, gold: 0, exp: 0 });
+  const [spiritBoundStats, setSpiritBoundStats] = React.useState({ level: 1, gold: 0, exp: 0 });
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
@@ -180,7 +180,7 @@ export function AeroGrid() {
         return heatTransferExtremeQuestions;
       case "ht-intro":
         return heatTransferIntroQuestions;
-      case "saltburg":
+      case "spirit-bound":
       case "numerical-extreme":
         return [];
       case "mastery":
@@ -270,7 +270,7 @@ export function AeroGrid() {
     if (mode === "ht-intro" || mode === "ht-extreme") {
       return undefined;
     }
-    if (mode === "saltburg" || mode === "numerical-extreme") {
+    if (mode === "spirit-bound" || mode === "numerical-extreme") {
       audio.setGenre("supersonic", 1);
       audio.setExtremeTrack(1);
       audio.setTempoMultiplier(1.4);
@@ -724,9 +724,9 @@ export function AeroGrid() {
             setHtJumpNeedsAdvance(false);
             setScreen("briefing");
           }}
-          onSaltburg={() => {
+          onSpiritBound={() => {
             startAudio();
-            setMode("saltburg");
+            setMode("spirit-bound");
             setReviewIds([]);
             setLocalIndex(0);
             setAnswer([]);
@@ -741,8 +741,8 @@ export function AeroGrid() {
             setGauntletRecovery(false);
             setOverloadBurst(0);
             setPsychedelicActive(false);
-            setSaltburgStats({ level: 1, gold: 0, exp: 0 });
-            setScreen("saltburg");
+            setSpiritBoundStats({ level: 1, gold: 0, exp: 0 });
+            setScreen("spirit-bound");
           }}
           onNumericalExtreme={() => {
             startAudio();
@@ -768,11 +768,11 @@ export function AeroGrid() {
         />
       )}
 
-      {screen === "saltburg" && (
-        <SaltburgGame
+      {screen === "spirit-bound" && (
+        <SpiritBoundGame
           onMenu={() => setScreen("title")}
           onVictory={(stats) => {
-            setSaltburgStats(stats);
+            setSpiritBoundStats(stats);
             setScreen("finale");
           }}
         />
@@ -788,16 +788,16 @@ export function AeroGrid() {
       {screen === "finale" && (
         <Finale
           progress={progress}
-          total={mode === "saltburg" ? 1 : isExtremeFamily(mode) ? list.length : TOTAL_QUESTIONS}
+          total={mode === "spirit-bound" ? 1 : isExtremeFamily(mode) ? list.length : TOTAL_QUESTIONS}
           reducedMotion={settings.reducedMotion}
           onReviewMissed={() => beginRun("review", progress.missedIds)}
           onMastery={() => beginRun("mastery")}
           onMenu={() => setScreen("title")}
-          {...(mode === "saltburg"
+          {...(mode === "spirit-bound"
             ? {
                 extremeMission: {
-                  title: "SALTBURG",
-                  score: saltburgStats.level * 100 + saltburgStats.gold,
+                  title: "THE LEGEND OF TRIANGLES",
+                  score: spiritBoundStats.level * 100 + spiritBoundStats.gold,
                   correct: 1,
                   total: 1,
                   continueLabel: "Main menu",
