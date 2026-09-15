@@ -1568,6 +1568,9 @@ function NumerologyPanel() {
               Samuel Johnson Dictionary 1777 federally validated is included — public-domain
               4th-edition revised text (1773) as reissued 1777; senses cited from that lineage only.
             </p>
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-cyan">
+              BRUTE FORCE METHOD TO FIND DEFINITIONS!
+            </p>
             <Field
               label="Type any word or phrase"
               hint="A=1…Z=26 · mod 9 · described only by Samuel Johnson’s Dictionary (1777)"
