@@ -43,7 +43,7 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
   const [pegs, setPegs] = useState<Pegs>([[], [], []]);
   const [selected, setSelected] = useState<PegIndex | null>(null);
   const [moves, setMoves] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(30);
+  const [secondsLeft, setSecondsLeft] = useState(20);
   const [shakePeg, setShakePeg] = useState<PegIndex | null>(null);
   const [verbalSeed, setVerbalSeed] = useState(randomSeed);
   const [verbalLocked, setVerbalLocked] = useState(false);
@@ -334,7 +334,7 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
         </span>
       </div>
       <p className="mb-2 text-[8px] text-[#a88828]">
-        Scrap {paperOrder} · 30s per mural · then one easy watch note · ESC abort
+        Scrap {paperOrder} · ~20s ±5/10 per mural · then one easy watch note · ESC abort
       </p>
       <div className="grid gap-3 md:grid-cols-2">
         <div>

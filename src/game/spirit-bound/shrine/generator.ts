@@ -34,6 +34,12 @@ export function generatePuzzle(difficulty: Difficulty, seed: number, puzzleNumbe
   const pool = statesAtDistance(target, band.minMoves, band.maxMoves);
   const choice = pool[pickIndex(rng, pool.length)] ?? pool[0];
 
+  // Extreme: 20s base, then randomly ±5 or ±10 so murals feel tighter or looser.
+  const timeLimit =
+    difficulty === "extreme"
+      ? Math.max(5, band.timeLimit + (rng() < 0.5 ? -1 : 1) * (rng() < 0.5 ? 5 : 10))
+      : band.timeLimit;
+
   if (choice) {
     return {
       id: puzzleNumber,
@@ -42,7 +48,7 @@ export function generatePuzzle(difficulty: Difficulty, seed: number, puzzleNumbe
       start: choice.state,
       target,
       optimal: choice.depth,
-      timeLimit: band.timeLimit,
+      timeLimit,
     };
   }
 
@@ -54,6 +60,6 @@ export function generatePuzzle(difficulty: Difficulty, seed: number, puzzleNumbe
     start: clonePegs(target),
     target,
     optimal: solved.length,
-    timeLimit: band.timeLimit,
+    timeLimit,
   };
 }
