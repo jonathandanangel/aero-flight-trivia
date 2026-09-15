@@ -54,9 +54,18 @@
   --color-panel: var(--panel);
   --color-panel-border: var(--panel-border);
 
+  /* SALTBURG RPG (spirit-bound) tokens → ZEUS neon */
+  --color-game-ink: var(--moon);
+  --color-game-bg: var(--deepblue);
+  --color-game-yellow: var(--amber);
+  --color-game-orange: var(--warm-orange);
+  --color-game-hp: var(--magenta);
+  --color-game-hp-empty: rgba(234, 247, 255, 0.14);
+
   --font-display: "Orbitron", "Trebuchet MS", sans-serif;
   --font-body: "Rajdhani", "Trebuchet MS", sans-serif;
   --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  --font-pixel: "Share Tech Mono", ui-monospace, monospace;
 }
 
 :root {
@@ -741,6 +750,47 @@
 
 .ht-intro-shell {
   filter: drop-shadow(0 0 28px color-mix(in srgb, #ff8c1a 38%, transparent));
+}
+
+.saltburg-menu-item {
+  border-color: color-mix(in srgb, var(--amber) 78%, transparent);
+  color: var(--amber);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--amber) 72%, transparent);
+}
+
+.saltburg-shell {
+  filter: drop-shadow(0 0 28px color-mix(in srgb, var(--amber) 28%, transparent));
+}
+
+.font-pixel {
+  font-family: var(--font-pixel);
+  letter-spacing: 0.05em;
+}
+
+@keyframes saltburg-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes saltburg-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-out {
+  animation: saltburg-fade-out 0.45s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: saltburg-fade-in 0.35s ease-out;
 }
 
 .gauntlet-field {

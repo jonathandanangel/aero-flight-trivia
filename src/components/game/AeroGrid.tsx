@@ -39,6 +39,7 @@ import { Interaction } from "./Interactions";
 import { LightCycleGame } from "./LightCycleGame";
 import { NeonMazeGame } from "./NeonMazeGame";
 import { SettingsPanel } from "./SettingsPanel";
+import { SaltburgGame } from "./SaltburgGame";
 import { TitleScreen } from "./TitleScreen";
 import { ValidationPanel } from "./ValidationPanel";
 import { WorldBackground } from "./WorldBackground";
@@ -57,7 +58,8 @@ type Screen =
   | "v2-review"
   | "ht-review"
   | "hti-review"
-  | "ht-chapter-jump";
+  | "ht-chapter-jump"
+  | "saltburg";
 type Mode =
   | "campaign"
   | "practice"
@@ -67,7 +69,8 @@ type Mode =
   | "extreme"
   | "extreme-v2"
   | "ht-extreme"
-  | "ht-intro";
+  | "ht-intro"
+  | "saltburg";
 type Phase = "answering" | "revealed" | "recall";
 type IntermissionGame = "lightcycle" | "maze";
 
@@ -152,6 +155,7 @@ export function AeroGrid() {
   const [extremeCorrectCount, setExtremeCorrectCount] = React.useState(0);
   const [htJumpNeedsAdvance, setHtJumpNeedsAdvance] = React.useState(false);
   const [enochGatePending, setEnochGatePending] = React.useState(false);
+  const [saltburgStats, setSaltburgStats] = React.useState({ level: 1, gold: 0, exp: 0 });
 
   const awakenBloodMoon = React.useCallback(() => {
     setProgress((current) => current.bloodMoonAwakened ? {} : { bloodMoonAwakened: true });
@@ -173,6 +177,8 @@ export function AeroGrid() {
         return heatTransferExtremeQuestions;
       case "ht-intro":
         return heatTransferIntroQuestions;
+      case "saltburg":
+        return [];
       case "mastery":
         return stableShuffle(allQuestions, "mastery");
       case "review":
@@ -259,6 +265,15 @@ export function AeroGrid() {
     }
     if (mode === "ht-intro" || mode === "ht-extreme") {
       return undefined;
+    }
+    if (mode === "saltburg") {
+      audio.setGenre("supersonic", 1);
+      audio.setExtremeTrack(1);
+      audio.setTempoMultiplier(1.4);
+      return () => {
+        audio.setTempoMultiplier(1);
+        audio.setExtremeTrack(0);
+      };
     }
     if (isExtremeFamily(mode)) {
       // Every 3 completed questions the turbulent track rotates and escalates.
@@ -705,8 +720,38 @@ export function AeroGrid() {
             setHtJumpNeedsAdvance(false);
             setScreen("briefing");
           }}
+          onSaltburg={() => {
+            startAudio();
+            setMode("saltburg");
+            setReviewIds([]);
+            setLocalIndex(0);
+            setAnswer([]);
+            setPhase("answering");
+            setShowHint(false);
+            setExtremeScore(0);
+            setExtremeCorrectCount(0);
+            setV2Log([]);
+            setHtLog([]);
+            setHtiLog([]);
+            setPendingIntermission(null);
+            setGauntletRecovery(false);
+            setOverloadBurst(0);
+            setPsychedelicActive(false);
+            setSaltburgStats({ level: 1, gold: 0, exp: 0 });
+            setScreen("saltburg");
+          }}
           onSettings={() => setScreen("settings")}
           onValidate={() => setScreen("validate")}
+        />
+      )}
+
+      {screen === "saltburg" && (
+        <SaltburgGame
+          onMenu={() => setScreen("title")}
+          onVictory={(stats) => {
+            setSaltburgStats(stats);
+            setScreen("finale");
+          }}
         />
       )}
 
@@ -716,12 +761,23 @@ export function AeroGrid() {
       {screen === "finale" && (
         <Finale
           progress={progress}
-          total={isExtremeFamily(mode) ? list.length : TOTAL_QUESTIONS}
+          total={mode === "saltburg" ? 1 : isExtremeFamily(mode) ? list.length : TOTAL_QUESTIONS}
           reducedMotion={settings.reducedMotion}
           onReviewMissed={() => beginRun("review", progress.missedIds)}
           onMastery={() => beginRun("mastery")}
           onMenu={() => setScreen("title")}
-          {...(mode === "extreme"
+          {...(mode === "saltburg"
+            ? {
+                extremeMission: {
+                  title: "SALTBURG",
+                  score: saltburgStats.level * 100 + saltburgStats.gold,
+                  correct: 1,
+                  total: 1,
+                  continueLabel: "Main menu",
+                  onContinue: () => setScreen("title"),
+                },
+              }
+            : mode === "extreme"
             ? {
                 extremeMission: {
                   title: "Aerodynamics Extreme",

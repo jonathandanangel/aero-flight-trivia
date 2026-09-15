@@ -1,0 +1,167 @@
+import { useEffect, useRef } from "react";
+import { isDown, useKeys } from "@/game/saltburg/useKeys";
+
+type Bullet = { x: number; y: number; vx: number; vy: number; r: number; kind: "dot" | "bar" };
+
+type Props = {
+  pattern: "seeds" | "salt" | "king";
+  duration: number;
+  damage: number;
+  onHit: (dmg: number) => void;
+  onDone: () => void;
+};
+
+const W = 480;
+const H = 110;
+
+export function BulletBox({ pattern, duration, damage, onHit, onDone }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const held = useKeys();
+  const cb = useRef({ onHit, onDone });
+  cb.current = { onHit, onDone };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    const heart = { x: W / 2, y: H / 2 };
+    const bullets: Bullet[] = [];
+    let raf = 0;
+    let last = performance.now();
+    let elapsed = 0;
+    let spawnTimer = 0;
+    let invuln = 0;
+    let done = false;
+
+    const spawn = () => {
+      if (pattern === "seeds") {
+        const fromLeft = Math.random() < 0.5;
+        bullets.push({
+          x: fromLeft ? -6 : W + 6,
+          y: 10 + Math.random() * (H - 20),
+          vx: (fromLeft ? 1 : -1) * (70 + Math.random() * 60),
+          vy: (Math.random() - 0.5) * 50,
+          r: 4,
+          kind: "dot",
+        });
+      } else if (pattern === "salt") {
+        const top = Math.random() < 0.5;
+        for (let i = 0; i < 3; i++) {
+          bullets.push({
+            x: 20 + Math.random() * (W - 40),
+            y: top ? -6 - i * 18 : H + 6 + i * 18,
+            vx: (Math.random() - 0.5) * 30,
+            vy: (top ? 1 : -1) * (60 + Math.random() * 40),
+            r: 3,
+            kind: "dot",
+          });
+        }
+      } else {
+        const mode = Math.random();
+        if (mode < 0.5) {
+          const cx = heart.x;
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * Math.PI * 2 + elapsed / 400;
+            bullets.push({
+              x: cx + Math.cos(a) * 140,
+              y: H / 2 + Math.sin(a) * 90,
+              vx: -Math.cos(a) * 70,
+              vy: -Math.sin(a) * 55,
+              r: 4,
+              kind: "dot",
+            });
+          }
+        } else {
+          const gapY = 15 + Math.random() * (H - 50);
+          for (let y = 4; y < H; y += 10) {
+            if (y > gapY && y < gapY + 34) continue;
+            bullets.push({ x: W + 8, y, vx: -120, vy: 0, r: 4, kind: "bar" });
+          }
+        }
+      }
+    };
+
+    const loop = (t: number) => {
+      const dt = Math.min(0.05, (t - last) / 1000);
+      last = t;
+      elapsed += dt * 1000;
+      spawnTimer -= dt * 1000;
+      invuln -= dt * 1000;
+
+      const speed = 130 * dt;
+      const k = held.current;
+      if (isDown(k, "ArrowLeft")) heart.x -= speed;
+      if (isDown(k, "ArrowRight")) heart.x += speed;
+      if (isDown(k, "ArrowUp")) heart.y -= speed;
+      if (isDown(k, "ArrowDown")) heart.y += speed;
+      heart.x = Math.max(8, Math.min(W - 8, heart.x));
+      heart.y = Math.max(8, Math.min(H - 8, heart.y));
+
+      const interval = pattern === "king" ? 900 : pattern === "salt" ? 520 : 340;
+      if (spawnTimer <= 0 && elapsed < duration - 900) {
+        spawnTimer = interval;
+        spawn();
+      }
+
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i]!;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        if (b.x < -40 || b.x > W + 40 || b.y < -60 || b.y > H + 60) {
+          bullets.splice(i, 1);
+          continue;
+        }
+        const dx = b.x - heart.x;
+        const dy = b.y - heart.y;
+        if (invuln <= 0 && Math.hypot(dx, dy) < b.r + 5) {
+          invuln = 700;
+          cb.current.onHit(damage);
+        }
+      }
+
+      // render
+      ctx.fillStyle = "#0d0f1a";
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, W - 4, H - 4);
+
+      ctx.fillStyle = "#ffffff";
+      for (const b of bullets) {
+        if (b.kind === "bar") ctx.fillRect(b.x - 6, b.y - 3, 12, 6);
+        else {
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.fillStyle = invuln > 0 && Math.floor(elapsed / 80) % 2 === 0 ? "#7a1b2b" : "#ff4d6d";
+      ctx.fillRect(heart.x - 5, heart.y - 4, 10, 8);
+      ctx.fillRect(heart.x - 3, heart.y - 6, 3, 3);
+      ctx.fillRect(heart.x, heart.y - 6, 3, 3);
+      ctx.fillRect(heart.x - 3, heart.y + 4, 6, 3);
+
+      if (elapsed >= duration && !done) {
+        done = true;
+        cb.current.onDone();
+        return;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [pattern, duration, damage, held]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={W}
+      height={H}
+      className="mx-auto block h-[110px] w-full"
+      style={{ imageRendering: "pixelated" }}
+    />
+  );
+}

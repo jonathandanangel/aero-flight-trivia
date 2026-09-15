@@ -11,6 +11,7 @@ export interface TitleScreenProps {
   onExtremeV2: () => void;
   onHeatTransferExtreme: () => void;
   onHeatTransferIntro: () => void;
+  onSaltburg: () => void;
   onSettings: () => void;
   onValidate: () => void;
 }
@@ -79,6 +80,13 @@ export function TitleScreen(p: TitleScreenProps) {
           onClick={p.onHeatTransferExtreme}
         >
           HEAT TRANSFER EXTREME BANANZA
+        </button>
+        <button
+          type="button"
+          className={`${item} saltburg-menu-item`}
+          onClick={p.onSaltburg}
+        >
+          SALTBURG
         </button>
         <button type="button" className={item} onClick={p.onSettings}>
           Settings
