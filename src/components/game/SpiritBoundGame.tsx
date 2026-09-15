@@ -9,8 +9,8 @@ import { JehovahBook } from "@/components/game/spirit-bound/JehovahBook";
 import { SplashIntro } from "@/components/game/spirit-bound/SplashIntro";
 import { ArcadeTree } from "@/components/game/spirit-bound/shrine/ArcadeTree";
 import { ReasonTrial } from "@/components/game/spirit-bound/reason/ReasonTrial";
-import { DoctrineExtremeGate } from "@/components/game/spirit-bound/reason/DoctrineExtremeGate";
 import { ShrineTrial } from "@/components/game/spirit-bound/shrine/ShrineTrial";
+import { LondonDoctrineGate } from "@/components/game/spirit-bound/shrine/LondonDoctrineGate";
 import {
   startMusic,
   startGrasslandsMusic,
@@ -630,7 +630,7 @@ export function SpiritBoundGame({ onMenu, onVictory }: SpiritBoundGameProps) {
         {mode === "shrine" && <ShrineTrial onSolved={onShrineSolved} />}
 
         {mode === "doctrine" && pendingPaper && (
-          <DoctrineExtremeGate
+          <LondonDoctrineGate
             paperOrder={pendingPaper.order}
             onSolved={onDoctrineSolved}
             onAbort={onDoctrineAbort}

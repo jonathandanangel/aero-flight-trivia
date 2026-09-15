@@ -498,8 +498,12 @@ function EnemySprite({
       </g>
       {burning && kind === "bush" ? (
         <g>
-          <rect x="5" y="3" width="6" height="8" fill="#f86020" />
-          <rect x="7" y="1" width="3" height="6" fill="#f8d030" />
+          <rect x="5" y="3" width="6" height="8" fill="#f86020">
+            <animate attributeName="y" values="3;1;3" dur="0.25s" repeatCount="indefinite" />
+          </rect>
+          <rect x="7" y="1" width="3" height="6" fill="#f8d030">
+            <animate attributeName="y" values="1;0;1" dur="0.2s" repeatCount="indefinite" />
+          </rect>
           <rect x="4" y="6" width="2" height="5" fill="#f04010" />
           <rect x="11" y="5" width="2" height="5" fill="#f87828" />
         </g>

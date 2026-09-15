@@ -6,7 +6,7 @@ export const PIECE_COUNT = 9;
 export type PegIndex = 0 | 1 | 2;
 export type Pegs = [number[], number[], number[]];
 
-export type Difficulty = "easy" | "medium" | "hard" | "expert";
+export type Difficulty = "easy" | "medium" | "hard" | "expert" | "extreme";
 
 export type Piece = {
   id: number;
