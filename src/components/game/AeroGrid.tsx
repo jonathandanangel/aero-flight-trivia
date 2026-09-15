@@ -209,14 +209,22 @@ export function AeroGrid() {
       ? mode
       : null;
 
-  // Open Bananza chapter gate only after Enoch-Ra (HP > 11 overload), once the gauntlet is done.
+  // Open Bananza chapter gate only after Enoch-Ra (HP > 11 overload), once the
+  // expanding-brain flourish has finished (do not cut it off).
   React.useEffect(() => {
     if (!enochGatePending || mode !== "ht-extreme") return;
     if (screen === "gauntlet" || screen === "ht-chapter-jump") return;
+    if (overloadBurst > 0) return;
     setEnochGatePending(false);
-    setHtJumpNeedsAdvance(false);
     setScreen("ht-chapter-jump");
-  }, [enochGatePending, screen, mode]);
+  }, [enochGatePending, screen, mode, overloadBurst]);
+
+  const handleBrainOverloadDone = React.useCallback(() => {
+    setOverloadBurst(0);
+    if (isExtremeFamily(mode)) setPsychedelicActive(true);
+    // Chapter skip/return only arms when Bananza crosses into Enoch-Ra (HP > 11).
+    if (mode === "ht-extreme") setEnochGatePending(true);
+  }, [mode]);
 
   React.useEffect(() => {
     if (!htAudioSession) return undefined;
@@ -604,12 +612,8 @@ export function AeroGrid() {
       <BrainOverload
         burst={overloadBurst}
         reducedMotion={settings.reducedMotion}
-        onDone={() => {
-          setOverloadBurst(0);
-          if (isExtremeFamily(mode)) setPsychedelicActive(true);
-          // Chapter skip/return only arms when Bananza crosses into Enoch-Ra (HP > 11).
-          if (mode === "ht-extreme") setEnochGatePending(true);
-        }}
+        {...(mode === "ht-extreme" ? { durationMs: 1450 } : {})}
+        onDone={handleBrainOverloadDone}
       />
 
       {screen === "title" && (
@@ -1001,17 +1005,23 @@ export function AeroGrid() {
                 if (gauntletRecovery) {
                   setExtremeScore((value) => value + score);
                   setGauntletRecovery(false);
-                  // Chapter gate only if Enoch-Ra just triggered (HP > 11), not every recovery.
-                  if (enochGatePending) {
-                    openHtChapterGate(true);
+                  // Gate only after Enoch-Ra; if brain is still expanding, keep play under it.
+                  if (enochGatePending || overloadBurst > 0) {
+                    if (overloadBurst > 0) setEnochGatePending(true);
+                    setHtJumpNeedsAdvance(true);
+                    if (overloadBurst > 0) setScreen("play");
+                    else openHtChapterGate(true);
                   } else {
                     setScreen("play");
                     advance();
                   }
                 } else {
                   setExtremeScore(score);
-                  if (enochGatePending) {
-                    openHtChapterGate(false);
+                  if (enochGatePending || overloadBurst > 0) {
+                    if (overloadBurst > 0) setEnochGatePending(true);
+                    setHtJumpNeedsAdvance(false);
+                    if (overloadBurst > 0) setScreen("play");
+                    else openHtChapterGate(false);
                   } else {
                     setScreen("play");
                   }

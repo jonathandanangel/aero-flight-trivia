@@ -853,7 +853,7 @@
 .brain-overload {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: 120;
   display: grid;
   place-items: center;
   pointer-events: none;
@@ -887,6 +887,18 @@
   border: 3px solid color-mix(in srgb, var(--magenta) 80%, transparent);
   opacity: 0;
   animation: brain-overload-blast 700ms ease-out 1.5s both;
+}
+
+/* Bananza / Enoch-Ra: same expand-from-small brain, snappier */
+.brain-overload--snap {
+  animation-duration: var(--brain-overload-ms, 1.45s);
+}
+.brain-overload--snap .brain-overload-img {
+  animation-duration: var(--brain-overload-ms, 1.45s);
+}
+.brain-overload--snap .brain-overload-blast {
+  animation-delay: 0.85s;
+  animation-duration: 500ms;
 }
 
 @keyframes brain-overload-grow {
