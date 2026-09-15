@@ -2,7 +2,9 @@ import { useEffect, useRef } from "react";
 import { isSolid, MAP_H, MAP_W, NPCS, TILE, tileAt, WILD_POOL, type Npc } from "@/game/spirit-bound/data";
 import { drawTriForce, pixelTriangle, px } from "@/game/spirit-bound/pixel";
 import { drawLegendHero } from "@/game/spirit-bound/hero";
-import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
+import { frameDt, HERO_SPEED, isWalking, moveFromKeys } from "@/game/spirit-bound/move";
+import { ensureLayer, type LayerCache } from "@/game/spirit-bound/layer-cache";
+import { useKeys } from "@/game/spirit-bound/useKeys";
 
 type Props = {
   spawn: { x: number; y: number };
@@ -16,7 +18,6 @@ type Props = {
 
 const W = MAP_W * TILE;
 const H = MAP_H * TILE;
-const SPEED = 1.9;
 
 export function Overworld({
   spawn,
@@ -70,9 +71,20 @@ export function Overworld({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
     let raf = 0;
+    let last = performance.now();
+    const layerCache: { current: LayerCache | null } = { current: null };
+
+    // Precompute tiles that need light animation (water / tall grass).
+    const animTiles: { tx: number; ty: number; t: string }[] = [];
+    for (let ty = 0; ty < MAP_H; ty++) {
+      for (let tx = 0; tx < MAP_W; tx++) {
+        const t = tileAt(tx, ty);
+        if (t === "w" || t === "g") animTiles.push({ tx, ty, t });
+      }
+    }
 
     const blocked = (x: number, y: number) => {
       const pad = 4;
@@ -87,30 +99,18 @@ export function Overworld({
       );
     };
 
-    const loop = () => {
+    const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
+      const dt = frameDt(now, last);
+      last = now;
       frame.current += 1;
       const keys = held.current;
 
       if (!pausedRef.current) {
-        let dx = 0;
-        let dy = 0;
-        if (isDown(keys, "ArrowLeft", "a")) {
-          dx -= SPEED;
-          dir.current = "left";
-        }
-        if (isDown(keys, "ArrowRight", "d")) {
-          dx += SPEED;
-          dir.current = "right";
-        }
-        if (isDown(keys, "ArrowUp", "w")) {
-          dy -= SPEED;
-          dir.current = "up";
-        }
-        if (isDown(keys, "ArrowDown", "s")) {
-          dy += SPEED;
-          dir.current = "down";
-        }
+        const { ax, ay, facing } = moveFromKeys(keys);
+        if (facing) dir.current = facing;
+        const dx = ax * HERO_SPEED * dt;
+        const dy = ay * HERO_SPEED * dt;
 
         const p = pos.current;
         if (dx && !blocked(p.x + dx, p.y)) p.x += dx;
@@ -145,11 +145,21 @@ export function Overworld({
       }
 
       ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle = "#183010";
-      ctx.fillRect(0, 0, W, H);
-      for (let ty = 0; ty < MAP_H; ty++) {
-        for (let tx = 0; tx < MAP_W; tx++) {
-          drawTile(ctx, tx, ty, frame.current, exitDoorOpen);
+      const base = ensureLayer(layerCache, `door:${exitDoorOpen ? 1 : 0}`, W, H, (g) => {
+        g.fillStyle = "#183010";
+        g.fillRect(0, 0, W, H);
+        for (let ty = 0; ty < MAP_H; ty++) {
+          for (let tx = 0; tx < MAP_W; tx++) {
+            drawTile(g, tx, ty, 0, exitDoorOpen, false);
+          }
+        }
+      });
+      ctx.drawImage(base, 0, 0);
+
+      // Light animation only on water/grass — every other frame to save CPU.
+      if (frame.current % 2 === 0) {
+        for (const { tx, ty } of animTiles) {
+          drawTile(ctx, tx, ty, frame.current, exitDoorOpen, true);
         }
       }
 
@@ -159,8 +169,8 @@ export function Overworld({
       }
 
       const p = pos.current;
-      const walking = isDown(held.current, "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown");
-      const walkBob = walking ? Math.sin(frame.current / 5) * 1.5 : 0;
+      const walking = isWalking(held.current);
+      const walkBob = walking ? Math.sin(now / 90) * 1.2 : 0;
       drawHero(ctx, p.x, p.y + walkBob, dir.current, walking ? frame.current : 0);
     };
 
@@ -179,7 +189,14 @@ export function Overworld({
   );
 }
 
-function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: number, openDoor = false) {
+function drawTile(
+  ctx: CanvasRenderingContext2D,
+  tx: number,
+  ty: number,
+  frame: number,
+  openDoor = false,
+  animate = true,
+) {
   const t = tileAt(tx, ty);
   const x = tx * TILE;
   const y = ty * TILE;
@@ -196,11 +213,15 @@ function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: 
   }
 
   if (t === "w") {
-    px(ctx, x, y, TILE, TILE, "#1858a8");
     px(ctx, x, y, TILE, TILE, (tx + ty) % 2 === 0 ? "#1858a8" : "#104888");
-    const wave = Math.sin((frame + tx * 9) / 22) * 2;
-    px(ctx, x + 3, y + 8 + wave, 10, 2, "#58a8f0");
-    px(ctx, x + 12, y + 14 - wave, 6, 2, "#f0f8ff");
+    if (animate) {
+      const wave = Math.sin((frame + tx * 9) / 22) * 2;
+      px(ctx, x + 3, y + 8 + wave, 10, 2, "#58a8f0");
+      px(ctx, x + 12, y + 14 - wave, 6, 2, "#f0f8ff");
+    } else {
+      px(ctx, x + 3, y + 8, 10, 2, "#58a8f0");
+      px(ctx, x + 12, y + 14, 6, 2, "#f0f8ff");
+    }
     if ((tx + ty) % 5 === 0) pixelTriangle(ctx, x + 8, y + 4, 6, "#88c8ff");
     return;
   }
@@ -210,7 +231,7 @@ function drawTile(ctx: CanvasRenderingContext2D, tx: number, ty: number, frame: 
     px(ctx, x + 1, y + 1, 6, 4, "#58c040");
     for (let i = 0; i < 3; i++) {
       const gx = x + 4 + i * 7;
-      const sway = Math.sin((frame + tx * 5 + ty * 3 + i * 11) / 20) * 1.5;
+      const sway = animate ? Math.sin((frame + tx * 5 + ty * 3 + i * 11) / 20) * 1.5 : 0;
       px(ctx, gx + sway, y + 8, 3, 12, "#186818");
       px(ctx, gx + sway, y + 8, 3, 3, "#70d848");
     }

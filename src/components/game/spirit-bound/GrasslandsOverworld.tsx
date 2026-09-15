@@ -12,8 +12,10 @@ import {
 } from "@/game/spirit-bound/grasslands-data";
 import { SCATTERED_PAPERS, paperAt, type ScatteredPaper } from "@/game/spirit-bound/scattered-papers";
 import { drawLegendHero } from "@/game/spirit-bound/hero";
+import { frameDt, HERO_SPEED, isWalking, moveFromKeys } from "@/game/spirit-bound/move";
+import { ensureLayer, type LayerCache } from "@/game/spirit-bound/layer-cache";
 import { pixelTriangle, px } from "@/game/spirit-bound/pixel";
-import { isDown, useKeys } from "@/game/spirit-bound/useKeys";
+import { useKeys } from "@/game/spirit-bound/useKeys";
 
 type Props = {
   spawn: { x: number; y: number };
@@ -37,7 +39,6 @@ type Props = {
 
 const W = GRASS_W * GRASS_TILE;
 const H = GRASS_H * GRASS_TILE;
-const SPEED = 1.9;
 
 export function GrasslandsOverworld({
   spawn,
@@ -148,9 +149,27 @@ export function GrasslandsOverworld({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
     let raf = 0;
+    let last = performance.now();
+    const layerCache: { current: LayerCache | null } = { current: null };
+
+    // Precompute bush coords + night smolder tiles once per loop setup.
+    const bushList: { key: string; tx: number; ty: number }[] = [];
+    for (const key of bushTiles) {
+      const [tsx, tsy] = key.split(",").map(Number);
+      bushList.push({ key, tx: tsx ?? 0, ty: tsy ?? 0 });
+    }
+    const smolder: { tx: number; ty: number }[] = [];
+    if (night) {
+      for (let ty = 0; ty < GRASS_H; ty++) {
+        for (let tx = 0; tx < GRASS_W; tx++) {
+          const t = grassTileAt(tx, ty);
+          if (t === "h" || t === "r" || t === "c") smolder.push({ tx, ty });
+        }
+      }
+    }
 
     const blocked = (x: number, y: number) => {
       const pad = 4;
@@ -167,42 +186,27 @@ export function GrasslandsOverworld({
       });
     };
 
-    const loop = () => {
+    const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
+      const dt = frameDt(now, last);
+      last = now;
       frame.current += 1;
       if (burnFlash.current > 0 && burnFlash.current < 9000) burnFlash.current += 1;
       if (burningRef.current) bushBurnFrame.current += 1;
 
       const keys = held.current;
       if (!pausedRef.current) {
-        let dx = 0;
-        let dy = 0;
-        if (isDown(keys, "ArrowLeft", "a")) {
-          dx -= SPEED;
-          dir.current = "left";
-        }
-        if (isDown(keys, "ArrowRight", "d")) {
-          dx += SPEED;
-          dir.current = "right";
-        }
-        if (isDown(keys, "ArrowUp", "w")) {
-          dy -= SPEED;
-          dir.current = "up";
-        }
-        if (isDown(keys, "ArrowDown", "s")) {
-          dy += SPEED;
-          dir.current = "down";
-        }
+        const { ax, ay, facing } = moveFromKeys(keys);
+        if (facing) dir.current = facing;
+        const dx = ax * HERO_SPEED * dt;
+        const dy = ay * HERO_SPEED * dt;
 
         const p = pos.current;
         if (dx && !blocked(p.x + dx, p.y)) p.x += dx;
         if (dy && !blocked(p.x, p.y + dy)) p.y += dy;
 
-        // Night explore: walk the burning world, but no bush/vine/wild fights.
         if (dx || dy) {
-          if (night) {
-            // movement only
-          } else {
+          if (!night) {
             steps.current += 1;
             const tx = Math.floor((p.x + GRASS_TILE / 2) / GRASS_TILE);
             const ty = Math.floor((p.y + GRASS_TILE / 2) / GRASS_TILE);
@@ -233,29 +237,30 @@ export function GrasslandsOverworld({
       }
 
       ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle = night ? "#0a1028" : "#58c838";
-      ctx.fillRect(0, 0, W, H);
-
-      for (let ty = 0; ty < GRASS_H; ty++) {
-        for (let tx = 0; tx < GRASS_W; tx++) {
-          drawGrassTile(ctx, tx, ty, frame.current, night, burntRef.current, bushRef.current);
+      // Cache base map; rebuild only when night/burnt set changes.
+      const burntKey = burntRef.current.size;
+      const base = ensureLayer(layerCache, `n${night ? 1 : 0}:b${burntKey}:v${vineDefeated ? 1 : 0}`, W, H, (g) => {
+        g.fillStyle = night ? "#0a1028" : "#58c838";
+        g.fillRect(0, 0, W, H);
+        for (let ty = 0; ty < GRASS_H; ty++) {
+          for (let tx = 0; tx < GRASS_W; tx++) {
+            drawGrassTile(g, tx, ty, 0, night, false);
+          }
         }
-      }
+      });
+      ctx.drawImage(base, 0, 0);
 
-      // Live / burning / ash bushes overlaid on grass
-      for (const key of bushRef.current) {
-        const [tsx, tsy] = key.split(",").map(Number);
-        const tx = tsx ?? 0;
-        const ty = tsy ?? 0;
-        const x = tx * GRASS_TILE;
-        const y = ty * GRASS_TILE;
-        const isBurning = burningRef.current === key;
-        const isBurnt = burntRef.current.has(key);
+      // Live / burning / ash bushes (sparse)
+      for (const b of bushList) {
+        const x = b.tx * GRASS_TILE;
+        const y = b.ty * GRASS_TILE;
+        const isBurning = burningRef.current === b.key;
+        const isBurnt = burntRef.current.has(b.key);
         if (isBurning) {
           drawBushOnFire(ctx, x, y, bushBurnFrame.current);
         } else if (isBurnt || night) {
           drawBushAsh(ctx, x, y, night);
-          if (night) drawFireFlicker(ctx, x, y, frame.current + tx * 7);
+          if (night && frame.current % 2 === 0) drawFireFlicker(ctx, x, y, frame.current + b.tx * 7);
         } else {
           drawLiveBush(ctx, x, y, frame.current);
         }
@@ -271,39 +276,22 @@ export function GrasslandsOverworld({
           drawGrassNpc(ctx, n.tx * GRASS_TILE, n.ty * GRASS_TILE, n.id, frame.current);
         }
       } else {
-        // Houses/cliffs smolder at night
-        for (let ty = 0; ty < GRASS_H; ty++) {
-          for (let tx = 0; tx < GRASS_W; tx++) {
-            const t = grassTileAt(tx, ty);
-            if (t === "h" || t === "r" || t === "c") {
-              drawFireFlicker(ctx, tx * GRASS_TILE, ty * GRASS_TILE, frame.current + tx * 3 + ty);
-            }
+        if (frame.current % 2 === 0) {
+          for (const s of smolder) {
+            drawFireFlicker(ctx, s.tx * GRASS_TILE, s.ty * GRASS_TILE, frame.current + s.tx * 3 + s.ty);
           }
         }
         if (vineDefeated) {
-          // vine burns in the distance (east)
           drawBurningVineDistant(ctx, 20 * GRASS_TILE, 15 * GRASS_TILE, frame.current);
         }
       }
 
-      drawGoldenEgg(
-        ctx,
-        GOLDEN_EGG.tx * GRASS_TILE,
-        GOLDEN_EGG.ty * GRASS_TILE,
-        frame.current,
-        night,
-      );
-      drawHawkEgg(
-        ctx,
-        HAWK_EGG.tx * GRASS_TILE,
-        HAWK_EGG.ty * GRASS_TILE,
-        frame.current,
-        night,
-      );
+      drawGoldenEgg(ctx, GOLDEN_EGG.tx * GRASS_TILE, GOLDEN_EGG.ty * GRASS_TILE, frame.current, night);
+      drawHawkEgg(ctx, HAWK_EGG.tx * GRASS_TILE, HAWK_EGG.ty * GRASS_TILE, frame.current, night);
 
       const p = pos.current;
-      const walking = isDown(held.current, "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown");
-      const walkBob = walking ? Math.sin(frame.current / 5) * 1.5 : 0;
+      const walking = isWalking(held.current);
+      const walkBob = walking ? Math.sin(now / 90) * 1.2 : 0;
       drawHero(ctx, p.x, p.y + walkBob, dir.current, walking ? frame.current : 0, night);
 
       if (night && burnFlash.current > 0 && burnFlash.current < 120) {
@@ -314,7 +302,7 @@ export function GrasslandsOverworld({
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [held, night, vineDefeated]);
+  }, [held, night, vineDefeated, bushTiles, burntBushes]);
 
   return (
     <canvas
@@ -333,8 +321,7 @@ function drawGrassTile(
   ty: number,
   frame: number,
   night: boolean,
-  _burnt: Set<string>,
-  _bushes: Set<string>,
+  animate = true,
 ) {
   const t = grassTileAt(tx, ty);
   const x = tx * GRASS_TILE;
@@ -363,7 +350,7 @@ function drawGrassTile(
     if (!night) {
       for (let i = 0; i < 2; i++) {
         const gx = x + 4 + i * 10;
-        const sway = Math.sin((frame + tx * 5 + ty * 3) / 18) * 1.2;
+        const sway = animate ? Math.sin((frame + tx * 5 + ty * 3) / 18) * 1.2 : 0;
         px(ctx, gx + sway, y + 10, 2, 8, "#287818");
       }
     }

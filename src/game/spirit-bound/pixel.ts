@@ -9,7 +9,8 @@ export function px(
   color: string,
 ) {
   ctx.fillStyle = color;
-  ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+  // Skip Math.round when already on-grid — hot path for overworld tiles.
+  ctx.fillRect(x | 0, y | 0, w | 0, h | 0);
 }
 
 export function pixelTriangle(

@@ -121,7 +121,7 @@ export function BulletBox({ pattern, duration, damage, onHit, onDone }: Props) {
       spawnTimer -= dt * 1000;
       invuln -= dt * 1000;
 
-      const speed = 130 * dt;
+      const speed = 155 * dt;
       const k = held.current;
       if (isDown(k, "ArrowLeft")) heart.x -= speed;
       if (isDown(k, "ArrowRight")) heart.x += speed;

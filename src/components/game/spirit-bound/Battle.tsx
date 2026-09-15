@@ -397,74 +397,57 @@ function EnemySprite({
 }) {
   const size = kind === "king" || kind === "vine" ? 120 : 76;
 
-  // Triangle King — Bill Cipher–style yellow pyramid (top hat, eye, bowtie, blue fire).
+  // Triangle King — Cipher-style yellow pyramid, static pixel rects only (no SMIL).
   if (kind === "king") {
     return (
       <svg width={size} height={size} viewBox="0 0 32 36" style={{ imageRendering: "pixelated" }}>
-        {/* thin limbs */}
-        <g stroke="#181010" strokeWidth="1" fill="none">
-          <path d="M10 16 L4 12 L2 8" />
-          <path d="M22 16 L28 12 L30 8" />
-          <path d="M13 28 L11 33 L9 34" />
-          <path d="M19 28 L21 33 L23 34" />
-        </g>
-        {/* hands */}
-        <g fill="#181010">
-          <rect x="1" y="6" width="3" height="2" />
-          <rect x="0" y="5" width="1" height="2" />
-          <rect x="3" y="5" width="1" height="2" />
-          <rect x="28" y="6" width="3" height="2" />
-          <rect x="28" y="5" width="1" height="2" />
-          <rect x="31" y="5" width="1" height="2" />
-          <rect x="8" y="34" width="3" height="1" />
-          <rect x="21" y="34" width="3" height="1" />
-        </g>
-        {/* blue flames */}
-        <g>
-          <rect x="1" y="2" width="3" height="3" fill="#58a8f8">
-            <animate attributeName="y" values="2;0;2" dur="0.35s" repeatCount="indefinite" />
-          </rect>
-          <rect x="2" y="1" width="1" height="2" fill="#b8e8ff">
-            <animate attributeName="y" values="1;0;1" dur="0.28s" repeatCount="indefinite" />
-          </rect>
-          <rect x="28" y="2" width="3" height="3" fill="#58a8f8">
-            <animate attributeName="y" values="2;0;2" dur="0.32s" repeatCount="indefinite" />
-          </rect>
-          <rect x="29" y="1" width="1" height="2" fill="#b8e8ff">
-            <animate attributeName="y" values="1;0;1" dur="0.26s" repeatCount="indefinite" />
-          </rect>
-        </g>
+        {/* arms / hands */}
+        <rect x="3" y="14" width="2" height="2" fill="#181010" />
+        <rect x="2" y="12" width="2" height="2" fill="#181010" />
+        <rect x="1" y="9" width="2" height="3" fill="#181010" />
+        <rect x="0" y="7" width="3" height="2" fill="#181010" />
+        <rect x="27" y="14" width="2" height="2" fill="#181010" />
+        <rect x="28" y="12" width="2" height="2" fill="#181010" />
+        <rect x="29" y="9" width="2" height="3" fill="#181010" />
+        <rect x="29" y="7" width="3" height="2" fill="#181010" />
+        {/* static blue fire (no animate — was hitching the battle UI) */}
+        <rect x="0" y="3" width="3" height="3" fill="#58a8f8" />
+        <rect x="1" y="2" width="1" height="2" fill="#b8e8ff" />
+        <rect x="29" y="3" width="3" height="3" fill="#58a8f8" />
+        <rect x="30" y="2" width="1" height="2" fill="#b8e8ff" />
         {/* top hat */}
         <rect x="12" y="0" width="8" height="2" fill="#181010" />
         <rect x="13" y="2" width="6" height="5" fill="#181010" />
         <rect x="11" y="6" width="10" height="1" fill="#181010" />
-        {/* yellow triangle body */}
-        <polygon points="16,7 4,27 28,27" fill="#f8d030" stroke="#181010" strokeWidth="1" />
-        {/* brick / pyramid lines near base */}
-        <g stroke="#c8a020" strokeWidth="1">
-          <line x1="8" y1="23" x2="24" y2="23" />
-          <line x1="10" y1="25" x2="22" y2="25" />
-          <line x1="12" y1="23" x2="12" y2="27" />
-          <line x1="16" y1="23" x2="16" y2="27" />
-          <line x1="20" y1="23" x2="20" y2="27" />
-        </g>
-        {/* single eye + lashes */}
-        <ellipse cx="16" cy="16" rx="4" ry="3.5" fill="#f8f8f8" stroke="#181010" strokeWidth="1" />
+        {/* pyramid body (stacked rects = triangle) */}
+        <rect x="15" y="7" width="2" height="2" fill="#f8d030" />
+        <rect x="14" y="9" width="4" height="2" fill="#f8d030" />
+        <rect x="12" y="11" width="8" height="2" fill="#f8d030" />
+        <rect x="10" y="13" width="12" height="2" fill="#f8d030" />
+        <rect x="8" y="15" width="16" height="3" fill="#f8d030" />
+        <rect x="6" y="18" width="20" height="3" fill="#f8d030" />
+        <rect x="5" y="21" width="22" height="3" fill="#f8d030" />
+        <rect x="4" y="24" width="24" height="3" fill="#f8d030" />
+        {/* brick lines */}
+        <rect x="6" y="25" width="20" height="1" fill="#c8a020" />
+        <rect x="8" y="27" width="16" height="1" fill="#c8a020" />
+        <rect x="12" y="24" width="1" height="3" fill="#c8a020" />
+        <rect x="16" y="24" width="1" height="3" fill="#c8a020" />
+        <rect x="20" y="24" width="1" height="3" fill="#c8a020" />
+        {/* eye */}
+        <rect x="13" y="14" width="6" height="5" fill="#f8f8f8" />
         <rect x="15" y="14" width="2" height="5" fill="#181010" />
-        <g stroke="#181010" strokeWidth="1">
-          <line x1="13" y1="12" x2="12" y2="10" />
-          <line x1="15" y1="11" x2="15" y2="9" />
-          <line x1="17" y1="11" x2="17" y2="9" />
-          <line x1="19" y1="12" x2="20" y2="10" />
-          <line x1="13" y1="20" x2="12" y2="22" />
-          <line x1="15" y1="21" x2="15" y2="23" />
-          <line x1="17" y1="21" x2="17" y2="23" />
-          <line x1="19" y1="20" x2="20" y2="22" />
-        </g>
+        <rect x="12" y="13" width="1" height="1" fill="#181010" />
+        <rect x="19" y="13" width="1" height="1" fill="#181010" />
+        <rect x="12" y="19" width="1" height="1" fill="#181010" />
+        <rect x="19" y="19" width="1" height="1" fill="#181010" />
         {/* bowtie */}
-        <rect x="14" y="26" width="4" height="2" fill="#181010" />
-        <rect x="12" y="26" width="2" height="2" fill="#181010" />
-        <rect x="18" y="26" width="2" height="2" fill="#181010" />
+        <rect x="12" y="26" width="8" height="2" fill="#181010" />
+        {/* legs */}
+        <rect x="11" y="28" width="2" height="5" fill="#181010" />
+        <rect x="19" y="28" width="2" height="5" fill="#181010" />
+        <rect x="9" y="33" width="4" height="1" fill="#181010" />
+        <rect x="19" y="33" width="4" height="1" fill="#181010" />
       </svg>
     );
   }
@@ -515,12 +498,8 @@ function EnemySprite({
       </g>
       {burning && kind === "bush" ? (
         <g>
-          <rect x="5" y="3" width="6" height="8" fill="#f86020">
-            <animate attributeName="y" values="3;1;3" dur="0.25s" repeatCount="indefinite" />
-          </rect>
-          <rect x="7" y="1" width="3" height="6" fill="#f8d030">
-            <animate attributeName="y" values="1;0;1" dur="0.2s" repeatCount="indefinite" />
-          </rect>
+          <rect x="5" y="3" width="6" height="8" fill="#f86020" />
+          <rect x="7" y="1" width="3" height="6" fill="#f8d030" />
           <rect x="4" y="6" width="2" height="5" fill="#f04010" />
           <rect x="11" y="5" width="2" height="5" fill="#f87828" />
         </g>
