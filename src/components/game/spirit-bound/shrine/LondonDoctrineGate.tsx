@@ -16,7 +16,7 @@ type Props = {
 type Phase = "play" | "cleared" | "failed";
 
 /**
- * Extreme London Task (living-tree peg puzzle) gate for doctrine scraps.
+ * Extreme Executive Accumen (living-tree peg puzzle) gate for doctrine scraps.
  * Single mural maxes ~19 optimal moves, so we chain extreme puzzles until
  * cumulative optimal path length reaches 50+ (scales with scrap order).
  */
@@ -157,7 +157,7 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
   if (phase === "cleared") {
     return (
       <section className="flex min-h-[420px] flex-col items-center justify-center gap-4 border-4 border-game-yellow bg-game-bg p-6 text-center font-pixel text-[#f8f0c8] shadow-[0_0_0_4px_#181010]">
-        <p className="text-[10px] text-game-yellow">LONDON TASK · SEAL BROKEN</p>
+        <p className="text-[10px] text-game-yellow">EXECUTIVE ACCUMEN · SEAL BROKEN</p>
         <p className="text-[9px] leading-relaxed">
           Path weight {pathDone}/{targetPath}
           <br />
@@ -192,7 +192,7 @@ export function LondonDoctrineGate({ paperOrder, onSolved, onAbort }: Props) {
   return (
     <section className="relative overflow-hidden border-4 border-game-yellow bg-game-bg p-3 font-pixel text-[#f8f0c8] shadow-[0_0_0_4px_#181010] sm:p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[9px]">
-        <span className="text-game-yellow">EXTREME · LONDON TASK</span>
+        <span className="text-game-yellow">EXTREME · EXECUTIVE ACCUMEN</span>
         <span className="text-game-orange">
           PATH {pathDone}/{targetPath} · OPT {puzzle.optimal} · MOVES {moves}
         </span>
