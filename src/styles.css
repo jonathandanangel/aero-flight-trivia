@@ -1386,3 +1386,191 @@
     opacity: 0;
   }
 }
+
+/* ---------- Numerical Extreme neon theme ---------- */
+.numerical-extreme-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.numerical-extreme-shell::before {
+  content: "";
+  position: absolute;
+  inset: -6% -2%;
+  z-index: -2;
+  pointer-events: none;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--neon-cyan, #22d3ee) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--neon-cyan, #22d3ee) 12%, transparent) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 78%);
+  animation: nx-grid-drift 12s linear infinite;
+  opacity: 0.55;
+}
+
+.numerical-extreme-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(34, 211, 238, 0.06) 0px,
+    rgba(34, 211, 238, 0.06) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  mix-blend-mode: screen;
+  opacity: 0.5;
+}
+
+@keyframes nx-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 46px, 46px 0; }
+}
+
+.nx-header {
+  position: relative;
+  overflow: hidden;
+}
+
+.nx-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    color-mix(in srgb, var(--neon-cyan, #22d3ee) 22%, transparent) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: nx-sweep 6.5s ease-in-out infinite;
+}
+
+@keyframes nx-sweep {
+  0%, 60% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+.nx-title {
+  animation: nx-title-flicker 5.5s steps(1, end) infinite;
+}
+
+@keyframes nx-title-flicker {
+  0%, 92%, 96%, 100% { opacity: 1; }
+  93%, 97% { opacity: 0.62; }
+}
+
+.nx-tab {
+  position: relative;
+}
+
+.nx-tab-active {
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--neon-cyan, #22d3ee) 55%, transparent),
+    inset 0 0 12px color-mix(in srgb, #ffffff 30%, transparent);
+  animation: nx-tab-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes nx-tab-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.22); }
+}
+
+.nx-panel {
+  position: relative;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+
+.nx-panel:hover {
+  border-color: color-mix(in srgb, var(--neon-cyan, #22d3ee) 70%, transparent);
+  box-shadow: 0 0 34px color-mix(in srgb, var(--neon-cyan, #22d3ee) 24%, transparent);
+}
+
+.nx-panel::before,
+.nx-panel::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--magenta, #f472b6) 75%, transparent);
+}
+
+.nx-panel::before {
+  top: 4px;
+  left: 4px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+
+.nx-panel::after {
+  bottom: 4px;
+  right: 4px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+}
+
+.nx-run {
+  position: relative;
+  overflow: hidden;
+}
+
+.nx-run::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 40%,
+    color-mix(in srgb, #ffffff 45%, transparent) 50%,
+    transparent 60%
+  );
+  transform: translateX(-140%);
+  transition: transform 0.6s ease;
+}
+
+.nx-run:hover::after {
+  transform: translateX(140%);
+}
+
+.nx-metric {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  animation: nx-metric-in 0.35s ease-out both;
+}
+
+.nx-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--neon-cyan, #22d3ee) 26%, transparent);
+}
+
+@keyframes nx-metric-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.nx-error {
+  animation: nx-error-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes nx-error-pulse {
+  0%, 100% { box-shadow: 0 0 0 color-mix(in srgb, var(--magenta, #f472b6) 0%, transparent); }
+  50% { box-shadow: 0 0 22px color-mix(in srgb, var(--magenta, #f472b6) 45%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .numerical-extreme-shell::before,
+  .nx-header::after,
+  .nx-title,
+  .nx-tab-active,
+  .nx-metric,
+  .nx-error {
+    animation: none;
+  }
+  .nx-run::after {
+    display: none;
+  }
+}
