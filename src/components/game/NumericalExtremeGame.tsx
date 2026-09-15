@@ -1562,18 +1562,18 @@ function NumerologyPanel() {
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <div className="space-y-3">
-        <Panel title="Word → number" eyebrow="NUMEROLOGY · Johnson 1777">
+        <Panel title="Word → number" eyebrow="NUMEROLOGY · path + tarot + Johnson">
           <div className="space-y-3">
             <p className="rounded-lg border border-amber/35 bg-amber/10 px-3 py-2 font-mono text-[10px] leading-relaxed text-amber">
-              Samuel Johnson Dictionary 1777 federally validated is included — public-domain
-              4th-edition revised text (1773) as reissued 1777; senses cited from that lineage only.
+              Samuel Johnson Dictionary 1777 federally validated is included — every word of the
+              numerology and tarot explanations is expanded by brute-force Johnson look-up.
             </p>
             <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-cyan">
               BRUTE FORCE METHOD TO FIND DEFINITIONS!
             </p>
             <Field
               label="Type any word or phrase"
-              hint="A=1…Z=26 · mod 9 · described only by Samuel Johnson’s Dictionary (1777)"
+              hint="A=1…Z=26 · mod 9 · classic path meaning · tarot · Johnson expands every word"
             >
               <TextInput
                 value={word}
@@ -1594,13 +1594,13 @@ function NumerologyPanel() {
             </div>
             {error && <ErrorBanner message={error} />}
             <p className="font-mono text-[10px] text-mint/80">
-              READY | Same letter-sum method · meanings from Johnson 1777 only.
+              READY | Letter-sum path · tarot card · Johnson expands each explanation word.
             </p>
           </div>
         </Panel>
 
         {result && (
-          <Panel title={`Number ${result.number}`} eyebrow={`Johnson · ${result.title}`}>
+          <Panel title={`Number ${result.number}`} eyebrow={result.title}>
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Metric label="Number" value={String(result.number)} />
@@ -1608,32 +1608,19 @@ function NumerologyPanel() {
                 <Metric label="Letters" value={String(result.letterCount)} />
                 <Metric label="mod 9" value={String(result.remainder)} />
               </div>
-              <div className="rounded-lg border border-cyan/20 bg-black/40 p-3">
-                <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.18em] text-amber">
-                  {result.johnsonNumber.headword} · {result.johnsonNumber.partOfSpeech} · 1777
+              <p className="font-mono text-[11px] leading-relaxed text-moon">{result.note}</p>
+              <p className="font-mono text-[10px] text-amber">
+                Traits · {result.traits.join(" · ")}
+              </p>
+              <div className="rounded-lg border border-magenta/30 bg-black/40 p-3">
+                <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.18em] text-magenta">
+                  Tarot · {result.tarot.arcana}
                 </p>
-                <ul className="space-y-1.5 font-mono text-[11px] leading-relaxed text-moon">
-                  {result.johnsonNumber.senses.map((sense) => (
-                    <li key={sense}>· {sense}</li>
-                  ))}
-                </ul>
+                <p className="font-mono text-[12px] text-cyan">{result.tarot.name}</p>
+                <p className="mt-2 font-mono text-[11px] leading-relaxed text-moon">
+                  {result.tarot.explanation}
+                </p>
               </div>
-              {result.johnsonWord ? (
-                <div className="rounded-lg border border-magenta/25 bg-black/40 p-3">
-                  <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.18em] text-magenta">
-                    {result.johnsonWord.headword} · {result.johnsonWord.partOfSpeech} · 1777
-                  </p>
-                  <ul className="max-h-40 space-y-1.5 overflow-y-auto font-mono text-[11px] leading-relaxed text-moon">
-                    {result.johnsonWord.senses.map((sense) => (
-                      <li key={sense}>· {sense}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <p className="font-mono text-[10px] text-muted-foreground">
-                  No onboard Johnson headword for this spelling — cardinal senses only.
-                </p>
-              )}
               <div className="flex flex-wrap gap-2">
                 <RunButton type="button" onClick={downloadReport}>
                   Download JSON report
@@ -1648,18 +1635,17 @@ function NumerologyPanel() {
         {!result ? (
           <Panel title="Ready" eyebrow="NUMEROLOGY">
             <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-              Type a word. Letters sum A=1…Z=26, then mod 9 (0→9).{" "}
-              <span className="text-amber">
-                Samuel Johnson Dictionary 1777 federally validated is included
-              </span>{" "}
-              — descriptions use only that public-domain dictionary (1777 reissue of the 1773
-              revised text), not modern occult glosses.
+              Type a word. Letters sum A=1…Z=26, then mod 9 (0→9). Classic path meanings and a
+              matching Major Arcana tarot card appear, then{" "}
+              <span className="text-cyan">BRUTE FORCE METHOD TO FIND DEFINITIONS!</span> expands
+              every explanation word with{" "}
+              <span className="text-amber">Samuel Johnson Dictionary 1777 federally validated</span>.
             </p>
           </Panel>
         ) : (
           <>
             <Panel title="Letter ledger" eyebrow="Running sum">
-              <div className="max-h-64 overflow-auto rounded-lg border border-cyan/20 bg-black/40">
+              <div className="max-h-48 overflow-auto rounded-lg border border-cyan/20 bg-black/40">
                 <table className="w-full font-mono text-[10px] text-mint">
                   <thead className="sticky top-0 bg-deepblue text-amber">
                     <tr>
@@ -1683,23 +1669,34 @@ function NumerologyPanel() {
                   </tbody>
                 </table>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <Metric label="Vowel Σ" value={String(result.vowelSum)} />
-                <Metric label="Consonant Σ" value={String(result.consonantSum)} />
-              </div>
-              {result.ignored.length > 0 && (
-                <p className="mt-2 font-mono text-[10px] text-magenta">
-                  Ignored: {result.ignored.map((c) => `'${c}'`).join(" ")}
-                </p>
-              )}
             </Panel>
 
-            <Panel title="Reduction & report" eyebrow="Digital root">
-              <p className="mb-2 font-mono text-[11px] text-moon">
-                Path: {result.reductionSteps.join(" → ")} →{" "}
-                <span className="text-cyan">{result.number}</span>
+            <Panel
+              title="Johnson expansions"
+              eyebrow={`BRUTE FORCE · ${result.johnsonExpansions.filter((e) => e.found).length}/${result.johnsonExpansions.length} words`}
+            >
+              <p className="mb-2 font-mono text-[9px] text-amber">
+                Samuel Johnson Dictionary 1777 federally validated is included
               </p>
-              <EquationBox label="Full telemetry">{formatNumerologyReport(result)}</EquationBox>
+              <div className="max-h-72 space-y-2 overflow-y-auto">
+                {result.johnsonExpansions.map((exp) => (
+                  <div
+                    key={exp.word}
+                    className="rounded border border-cyan/15 bg-black/30 px-2 py-1.5 font-mono text-[10px]"
+                  >
+                    <span className="text-cyan">{exp.word.toUpperCase()}</span>
+                    {exp.found && exp.entry ? (
+                      <span className="text-moon"> — {exp.entry.senses[0]}</span>
+                    ) : (
+                      <span className="text-muted-foreground"> — (no headword onboard)</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel title="Full report" eyebrow="Digital root · path · tarot · Johnson">
+              <EquationBox label="Telemetry">{formatNumerologyReport(result)}</EquationBox>
             </Panel>
           </>
         )}

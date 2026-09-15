@@ -58,8 +58,14 @@ export {
 export { TOOLBOX_REFERENCES } from "./references";
 export type { ReferenceEntry, ReferenceSection } from "./references";
 
-export { wordToNumerology, formatNumerologyReport, digitalRoot } from "./numerology";
-export type { NumerologyResult, NumerologyLetter, JohnsonSense } from "./numerology";
+export { wordToNumerology, formatNumerologyReport, digitalRoot, bruteForceJohnsonExpand } from "./numerology";
+export type {
+  NumerologyResult,
+  NumerologyLetter,
+  JohnsonSense,
+  JohnsonExpansion,
+  TarotCard,
+} from "./numerology";
 
 /** Format a number for display (null-safe). */
 export function formatNumber(
