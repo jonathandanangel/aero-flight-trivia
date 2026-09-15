@@ -1,4 +1,5 @@
 import * as React from "react";
+import { audio } from "@/game/audio";
 import { formatNumber } from "@/game/numerical-extreme";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-xl border border-cyan/40 bg-deepblue/70 shadow-[0_0_28px_rgba(34,211,238,0.08)]",
+        "nx-panel overflow-hidden rounded-xl border border-cyan/40 bg-deepblue/70 shadow-[0_0_28px_rgba(34,211,238,0.08)]",
         className,
       )}
     >
@@ -119,10 +120,18 @@ export function RunButton({
   return (
     <button
       {...props}
+      onClick={(event) => {
+        audio.play("numeric-run");
+        props.onClick?.(event);
+      }}
+      onMouseEnter={(event) => {
+        audio.play("hover");
+        props.onMouseEnter?.(event);
+      }}
       type={props.type ?? "submit"}
       disabled={loading || props.disabled}
       className={cn(
-        "flex w-full items-center justify-center gap-2 rounded-lg border border-cyan/60 bg-cyan/20 px-4 py-2.5 font-display text-xs uppercase tracking-[0.2em] text-cyan shadow-[0_0_24px_rgba(34,211,238,0.18)] transition hover:bg-cyan/30 hover:text-moon disabled:cursor-not-allowed disabled:opacity-50",
+        "nx-run flex w-full items-center justify-center gap-2 rounded-lg border border-cyan/60 bg-cyan/20 px-4 py-2.5 font-display text-xs uppercase tracking-[0.2em] text-cyan shadow-[0_0_24px_rgba(34,211,238,0.18)] transition hover:bg-cyan/30 hover:text-moon disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
     >
@@ -170,7 +179,7 @@ export function Metric({
   return (
     <div
       className={cn(
-        "rounded-lg border bg-gradient-to-br to-transparent p-3",
+        "nx-metric rounded-lg border bg-gradient-to-br to-transparent p-3",
         colors[accent],
       )}
     >
@@ -184,8 +193,11 @@ export function Metric({
 }
 
 export function ErrorBanner({ message }: { message: string }) {
+  React.useEffect(() => {
+    if (message) audio.play("numeric-error");
+  }, [message]);
   return (
-    <div className="rounded-lg border border-magenta/40 bg-magenta/10 px-3 py-2.5 font-mono text-xs text-magenta">
+    <div className="nx-error rounded-lg border border-magenta/40 bg-magenta/10 px-3 py-2.5 font-mono text-xs text-magenta">
       {message}
     </div>
   );
