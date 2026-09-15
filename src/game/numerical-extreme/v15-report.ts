@@ -212,11 +212,15 @@ export function buildVibrationReport(result: VibrationResult): string {
       lines.push(`C1,C2 = ${result.coefficients.map((c) => formatNumber(c, 10)).join(", ")}`);
     }
     const energyRaw = result.plot["mechanicalEnergy"];
-    const energy = Array.isArray(energyRaw)
-      ? energyRaw.filter((v): v is number => typeof v === "number" && Number.isFinite(v))
-      : [];
-    if (energy.length) {
-      lines.push(`max mechanical energy ≈ ${formatNumber(Math.max(...energy), 10)}`);
+    const energy: number[] = [];
+    if (Array.isArray(energyRaw)) {
+      for (const v of energyRaw) {
+        if (typeof v === "number" && Number.isFinite(v)) energy.push(v);
+      }
+    }
+    if (energy.length > 0) {
+      const peak = energy.reduce((m, v) => (v > m ? v : m), energy[0]!);
+      lines.push(`max mechanical energy ≈ ${formatNumber(peak, 10)}`);
     }
   } else {
     const zeta = result.dampingRatio;
