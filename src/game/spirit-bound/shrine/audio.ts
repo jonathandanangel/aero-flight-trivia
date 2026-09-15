@@ -111,10 +111,13 @@ function stretchTheme(motif: Theme, targetSec = 100): Theme {
 }
 
 /**
- * Shared Onett-like town pulse (~120 BPM eighths). Original motifs only —
- * inspired by cheerful SNES town-theme *feel*, not a licensed copy of Onett.
+ * Measured from the reference Onett town-theme MP3 (~117.75 BPM).
+ * Eighth-note grid = 60 / 117.75 / 2 ≈ 0.2548s. Original motifs only —
+ * inspired by cheerful SNES town-theme *feel*, not a licensed copy.
  */
-const TOWN_STEP = 0.25; // 120 BPM eighth-note grid (matches common town-theme stroll)
+const TOWN_BPM = 117.75;
+const TOWN_STEP = 60 / TOWN_BPM / 2; // ~0.2548s eighths
+const TOWN_THEME_SEC = 152; // ~full playthrough length of the reference track
 
 /** Bounce bass: root–rest–fifth–rest pattern (town stroll backbone). */
 function townBass(roots: number[]): number[] {
@@ -229,7 +232,7 @@ const GRASSLAND_MOTIFS: Theme[] = [
   },
 ];
 
-const GRASSLAND_THEMES: Theme[] = GRASSLAND_MOTIFS.map((m) => stretchTheme(m, 152));
+const GRASSLAND_THEMES: Theme[] = GRASSLAND_MOTIFS.map((m) => stretchTheme(m, TOWN_THEME_SEC));
 
 let grasslandsPlaylistIndex = 0;
 
@@ -340,7 +343,7 @@ export function startMusic() {
   startThemeLoop(GREENVALE.lead, GREENVALE.bass, GREENVALE.step, { loopForever: true });
 }
 
-/** Entering grasslands — cycle all Onett-feel town themes (~152s each), then repeat. */
+/** Entering grasslands — cycle all Onett-feel town themes (~152s / ~117.75 BPM each), then repeat. */
 export function startGrasslandsMusic() {
   playGrasslandsThemeAt(0);
 }
