@@ -84,53 +84,125 @@ const GREENVALE = {
   step: 0.255,
 };
 
-/** Five optimistic grasslands themes — pick one at random when entering the grape-vine world. */
-const GRASSLAND_THEMES = [
+type Theme = { lead: number[]; bass: number[]; step: number };
+
+/** Stretch a short motif into an EarthBound-town-length track (~90–110s). */
+function stretchTheme(motif: Theme, targetSec = 100): Theme {
+  const onePass = Math.max(1, motif.lead.length) * motif.step;
+  const repeats = Math.max(1, Math.ceil(targetSec / onePass));
+  const lead: number[] = [];
+  const bass: number[] = [];
+  for (let r = 0; r < repeats; r++) {
+    // Slight A / A' / B variation so long plays don't feel stuck.
+    const lift = r % 3 === 2 ? 1.122 : r % 3 === 1 ? 1 : 0.944; // ~±2 semitones-ish on lead rests kept
+    for (let i = 0; i < motif.lead.length; i++) {
+      const L = motif.lead[i] ?? 0;
+      const B = motif.bass[i % motif.bass.length] ?? 0;
+      lead.push(L > 0 ? Math.round(L * (r % 3 === 0 ? 1 : lift)) : 0);
+      bass.push(B);
+    }
+    // short breath between phrase blocks
+    for (let k = 0; k < 4; k++) {
+      lead.push(0);
+      bass.push(0);
+    }
+  }
+  return { lead, bass, step: motif.step };
+}
+
+/**
+ * Five original EarthBound-town *feel* grasslands themes (not licensed copies).
+ * Each is stretched to ~original town-theme length, then the playlist advances.
+ */
+const GRASSLAND_MOTIFS: Theme[] = [
   {
     // sunny meadow bounce
-    lead: [523, 659, 784, 659, 587, 659, 523, 0, 440, 523, 659, 523, 392, 440, 523, 0, 587, 659, 784, 880, 784, 659, 587, 0, 523, 587, 659, 523, 440, 392, 523, 0],
-    bass: [131, 0, 196, 0, 165, 0, 196, 0, 147, 0, 220, 0, 196, 0, 131, 0, 175, 0, 220, 0, 196, 0, 165, 0, 131, 0, 196, 0, 110, 0, 131, 0],
+    lead: [
+      523, 659, 784, 659, 587, 659, 523, 0, 440, 523, 659, 523, 392, 440, 523, 0, 587, 659, 784, 880, 784, 659, 587, 0, 523, 587, 659, 523, 440, 392, 523, 0, 659, 784, 880, 784, 659, 587, 523, 0, 440, 523, 587, 659, 784, 659, 523, 0, 392, 440, 523, 587, 659, 523, 440, 0, 523, 659, 523, 392, 440, 523, 659, 0,
+    ],
+    bass: [
+      131, 0, 196, 0, 165, 0, 196, 0, 147, 0, 220, 0, 196, 0, 131, 0, 175, 0, 220, 0, 196, 0, 165, 0, 131, 0, 196, 0, 110, 0, 131, 0, 131, 0, 196, 0, 165, 0, 196, 0, 147, 0, 220, 0, 196, 0, 131, 0, 175, 0, 220, 0, 196, 0, 165, 0, 131, 0, 196, 0, 98, 0, 131, 0,
+    ],
     step: 0.24,
   },
   {
-    // cheerful stroll (higher lead)
-    lead: [659, 698, 784, 880, 784, 698, 659, 0, 523, 587, 659, 784, 659, 587, 523, 0, 784, 880, 988, 880, 784, 698, 659, 0, 587, 659, 523, 440, 523, 587, 659, 0],
-    bass: [165, 0, 165, 0, 247, 0, 220, 0, 131, 0, 196, 0, 165, 0, 131, 0, 196, 0, 247, 0, 220, 0, 165, 0, 147, 0, 196, 0, 131, 0, 165, 0],
+    // cheerful stroll
+    lead: [
+      659, 698, 784, 880, 784, 698, 659, 0, 523, 587, 659, 784, 659, 587, 523, 0, 784, 880, 988, 880, 784, 698, 659, 0, 587, 659, 523, 440, 523, 587, 659, 0, 880, 784, 698, 659, 587, 523, 440, 0, 523, 659, 784, 880, 784, 659, 523, 0, 698, 784, 880, 784, 659, 587, 523, 0, 440, 523, 587, 659, 784, 659, 523, 0,
+    ],
+    bass: [
+      165, 0, 165, 0, 247, 0, 220, 0, 131, 0, 196, 0, 165, 0, 131, 0, 196, 0, 247, 0, 220, 0, 165, 0, 147, 0, 196, 0, 131, 0, 165, 0, 165, 0, 220, 0, 247, 0, 196, 0, 131, 0, 196, 0, 165, 0, 131, 0, 196, 0, 247, 0, 220, 0, 165, 0, 147, 0, 196, 0, 110, 0, 165, 0,
+    ],
     step: 0.22,
   },
   {
     // soft pastoral waltz-ish
-    lead: [392, 523, 659, 523, 440, 523, 659, 784, 659, 523, 440, 0, 349, 440, 523, 0, 523, 587, 659, 587, 523, 440, 392, 0, 440, 523, 587, 659, 523, 440, 392, 0],
-    bass: [98, 0, 0, 147, 0, 0, 131, 0, 0, 196, 0, 0, 110, 0, 0, 165, 0, 0, 147, 0, 0, 196, 0, 0, 98, 0, 0, 131, 0, 0, 98, 0],
+    lead: [
+      392, 523, 659, 523, 440, 523, 659, 784, 659, 523, 440, 0, 349, 440, 523, 0, 523, 587, 659, 587, 523, 440, 392, 0, 440, 523, 587, 659, 523, 440, 392, 0, 659, 587, 523, 440, 523, 587, 659, 0, 392, 440, 523, 659, 523, 440, 392, 0, 349, 392, 440, 523, 440, 392, 349, 0, 523, 440, 392, 440, 523, 587, 659, 0,
+    ],
+    bass: [
+      98, 0, 0, 147, 0, 0, 131, 0, 0, 196, 0, 0, 110, 0, 0, 165, 0, 0, 147, 0, 0, 196, 0, 0, 98, 0, 0, 131, 0, 0, 98, 0, 98, 0, 0, 147, 0, 0, 131, 0, 0, 196, 0, 0, 110, 0, 0, 165, 0, 0, 147, 0, 0, 196, 0, 0, 87, 0, 0, 131, 0, 0, 98, 0,
+    ],
     step: 0.28,
   },
   {
     // bright picnic
-    lead: [784, 659, 523, 659, 784, 880, 784, 0, 698, 784, 880, 784, 659, 587, 523, 0, 880, 784, 698, 659, 587, 659, 784, 0, 523, 659, 784, 988, 784, 659, 523, 0],
-    bass: [196, 0, 131, 0, 196, 0, 247, 0, 175, 0, 220, 0, 165, 0, 131, 0, 220, 0, 175, 0, 165, 0, 196, 0, 131, 0, 196, 0, 247, 0, 196, 0],
+    lead: [
+      784, 659, 523, 659, 784, 880, 784, 0, 698, 784, 880, 784, 659, 587, 523, 0, 880, 784, 698, 659, 587, 659, 784, 0, 523, 659, 784, 988, 784, 659, 523, 0, 880, 988, 880, 784, 698, 659, 587, 0, 523, 587, 659, 784, 880, 784, 659, 0, 698, 659, 587, 523, 587, 659, 784, 0, 523, 440, 523, 659, 784, 880, 784, 0,
+    ],
+    bass: [
+      196, 0, 131, 0, 196, 0, 247, 0, 175, 0, 220, 0, 165, 0, 131, 0, 220, 0, 175, 0, 165, 0, 196, 0, 131, 0, 196, 0, 247, 0, 196, 0, 196, 0, 247, 0, 220, 0, 175, 0, 165, 0, 196, 0, 131, 0, 220, 0, 175, 0, 147, 0, 196, 0, 131, 0, 165, 0, 196, 0, 247, 0, 196, 0,
+    ],
     step: 0.23,
   },
   {
     // hopeful sunrise
-    lead: [440, 494, 523, 587, 659, 587, 523, 0, 523, 587, 659, 698, 784, 698, 659, 0, 587, 659, 784, 880, 784, 659, 587, 0, 523, 440, 392, 440, 523, 587, 659, 0],
-    bass: [110, 0, 131, 0, 147, 0, 165, 0, 131, 0, 165, 0, 196, 0, 220, 0, 147, 0, 196, 0, 220, 0, 165, 0, 131, 0, 110, 0, 98, 0, 131, 0],
+    lead: [
+      440, 494, 523, 587, 659, 587, 523, 0, 523, 587, 659, 698, 784, 698, 659, 0, 587, 659, 784, 880, 784, 659, 587, 0, 523, 440, 392, 440, 523, 587, 659, 0, 784, 698, 659, 587, 523, 494, 440, 0, 523, 587, 659, 784, 880, 784, 659, 0, 587, 523, 494, 523, 587, 659, 784, 0, 440, 523, 587, 659, 523, 440, 392, 0,
+    ],
+    bass: [
+      110, 0, 131, 0, 147, 0, 165, 0, 131, 0, 165, 0, 196, 0, 220, 0, 147, 0, 196, 0, 220, 0, 165, 0, 131, 0, 110, 0, 98, 0, 131, 0, 110, 0, 147, 0, 165, 0, 196, 0, 131, 0, 165, 0, 196, 0, 220, 0, 147, 0, 196, 0, 165, 0, 131, 0, 110, 0, 98, 0, 87, 0, 110, 0,
+    ],
     step: 0.26,
   },
 ];
 
-function startThemeLoop(lead: number[], bass: number[], stepMs: number) {
+const GRASSLAND_THEMES: Theme[] = GRASSLAND_MOTIFS.map((m) => stretchTheme(m, 100));
+
+let grasslandsPlaylistIndex = 0;
+
+function startThemeLoop(
+  lead: number[],
+  bass: number[],
+  stepMs: number,
+  opts?: { loopForever?: boolean; onComplete?: () => void },
+) {
   const ac = context();
   if (!ac) return;
   void ac.resume();
   stopBurnLoop();
-  stopAmbient();
+  // Clear prior music without calling stopAmbient recursion into a new start.
+  if (music) {
+    try {
+      music.stop();
+    } catch {
+      /* already stopped */
+    }
+    music = null;
+  }
 
   const gain = ac.createGain();
   gain.gain.value = 0.04;
   gain.connect(ac.destination);
 
+  const loopForever = opts?.loopForever ?? true;
+  const totalSteps = lead.length;
   let step = 0;
+  let finished = false;
+  let timer = 0;
+
   const tick = () => {
+    if (finished) return;
     const t = ac.currentTime;
     const L = lead[step % lead.length] ?? 0;
     const B = bass[step % bass.length] ?? 0;
@@ -171,27 +243,44 @@ function startThemeLoop(lead: number[], bass: number[], stepMs: number) {
       o.stop(t + 0.1);
     }
     step += 1;
+    if (!loopForever && step >= totalSteps) {
+      finished = true;
+      window.clearInterval(timer);
+      music = null;
+      opts?.onComplete?.();
+    }
   };
 
   tick();
-  const timer = window.setInterval(tick, stepMs * 1000);
+  timer = window.setInterval(tick, stepMs * 1000);
   music = {
     gain,
     timer,
     stop: () => {
+      finished = true;
       window.clearInterval(timer);
     },
   };
 }
 
-export function startMusic() {
-  startThemeLoop(GREENVALE.lead, GREENVALE.bass, GREENVALE.step);
+function playGrasslandsThemeAt(index: number) {
+  const theme = GRASSLAND_THEMES[index % GRASSLAND_THEMES.length] ?? GRASSLAND_THEMES[0]!;
+  grasslandsPlaylistIndex = index % GRASSLAND_THEMES.length;
+  startThemeLoop(theme.lead, theme.bass, theme.step, {
+    loopForever: false,
+    onComplete: () => {
+      playGrasslandsThemeAt(grasslandsPlaylistIndex + 1);
+    },
+  });
 }
 
-/** Entering the grasslands door — random optimistic EarthBound-feel theme (1 of 5). */
+export function startMusic() {
+  startThemeLoop(GREENVALE.lead, GREENVALE.bass, GREENVALE.step, { loopForever: true });
+}
+
+/** Entering grasslands — play all 5 EarthBound-feel themes in order (~100s each), then cycle. */
 export function startGrasslandsMusic() {
-  const theme = GRASSLAND_THEMES[Math.floor(Math.random() * GRASSLAND_THEMES.length)] ?? GRASSLAND_THEMES[0]!;
-  startThemeLoop(theme.lead, theme.bass, theme.step);
+  playGrasslandsThemeAt(0);
 }
 
 export function startAmbient() {
